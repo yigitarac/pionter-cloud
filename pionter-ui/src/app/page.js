@@ -10,8 +10,40 @@ export default function AnaSayfa() {
   const [sifre, setSifre] = useState("");
   const [mevcutYol, setMevcutYol] = useState("/");
   const [karanlikMod, setKaranlikMod] = useState(true);
+  const [dil, setDil] = useState("en");
   const [surukleniyor, setSurukleniyor] = useState(false);
   const dosyaGirdiRef = useRef(null);
+
+  const sozluk = {
+    en: {
+      ipPlaceholder: "Server IP (e.g. 60.223.112.141)",
+      userPlaceholder: "Username",
+      passPlaceholder: "Password",
+      connectBtn: "Connect",
+      currentPath: "Current Path:",
+      upFolder: "Up",
+      loading: "Processing...",
+      emptyFolder: "This folder is empty or not connected yet.",
+      dragDrop: "Drag and drop files here",
+      orSelect: "or select from your computer",
+      selectBtn: "Select File",
+    },
+    tr: {
+      ipPlaceholder: "Sunucu IP (Örn: 60.223.112.141)",
+      userPlaceholder: "Kullanıcı Adı",
+      passPlaceholder: "Şifre",
+      connectBtn: "Bağlan",
+      currentPath: "Mevcut Konum:",
+      upFolder: "Üst Klasör",
+      loading: "İşlem yapılıyor...",
+      emptyFolder: "Bu klasör boş veya henüz bağlanılmadı.",
+      dragDrop: "Dosyaları buraya sürükleyin",
+      orSelect: "veya bilgisayarınızdan seçin",
+      selectBtn: "Dosya Seç",
+    },
+  };
+
+  const t = sozluk[dil];
 
   const klasoruYenile = (hedefYol) => {
     fetch("http://localhost:8080/api/files", {
@@ -83,6 +115,7 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       });
   };
+
   const sunucuyaDosyaYukle = (dosya) => {
     if (!dosya) return;
     setYukleniyor(true);
@@ -153,47 +186,55 @@ export default function AnaSayfa() {
               <span className="text-[#458588] dark:text-[#83a598]">Cloud</span>
             </h1>
           </div>
-          <button
-            onClick={() => setKaranlikMod(!karanlikMod)}
-            className="p-2 rounded-full hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-          >
-            {karanlikMod ? (
-              <svg
-                className="w-6 h-6 text-[#d79921]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="w-6 h-6 text-[#458588]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                />
-              </svg>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDil(dil === "en" ? "tr" : "en")}
+              className="px-3 py-1.5 rounded-lg font-bold text-sm bg-[#ebdbb2] dark:bg-[#3c3836] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors"
+            >
+              {dil === "en" ? "TR" : "EN"}
+            </button>
+            <button
+              onClick={() => setKaranlikMod(!karanlikMod)}
+              className="p-2 rounded-full hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+            >
+              {karanlikMod ? (
+                <svg
+                  className="w-6 h-6 text-[#d79921]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-6 h-6 text-[#458588]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
         </header>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-[#ebdbb2] dark:bg-[#3c3836] rounded-xl p-2 mb-8 flex flex-col md:flex-row gap-2 border border-[#d5c4a1] dark:border-[#504945] shadow-sm">
             <input
               type="text"
-              placeholder="Sunucu IP"
+              placeholder={t.ipPlaceholder}
               value={ip}
               onChange={(e) => setIp(e.target.value)}
               className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
@@ -201,7 +242,7 @@ export default function AnaSayfa() {
             <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
             <input
               type="text"
-              placeholder="Kullanıcı Adı"
+              placeholder={t.userPlaceholder}
               value={kullaniciAdi}
               onChange={(e) => setKullaniciAdi(e.target.value)}
               className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
@@ -209,7 +250,7 @@ export default function AnaSayfa() {
             <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
             <input
               type="password"
-              placeholder="Şifre"
+              placeholder={t.passPlaceholder}
               value={sifre}
               onChange={(e) => setSifre(e.target.value)}
               className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
@@ -218,7 +259,7 @@ export default function AnaSayfa() {
               onClick={baglantiyiBaslat}
               className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
             >
-              Bağlan
+              {t.connectBtn}
             </button>
           </div>
 
@@ -242,11 +283,9 @@ export default function AnaSayfa() {
                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                 />
               </svg>
-              <p className="text-sm font-medium mb-1">
-                Dosyaları buraya sürükleyin
-              </p>
+              <p className="text-sm font-medium mb-1">{t.dragDrop}</p>
               <p className="text-xs text-[#928374] dark:text-[#a89984] mb-4">
-                veya bilgisayarınızdan seçin
+                {t.orSelect}
               </p>
               <input
                 type="file"
@@ -258,7 +297,7 @@ export default function AnaSayfa() {
                 onClick={() => dosyaGirdiRef.current.click()}
                 className="px-4 py-2 bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#3c3836] rounded-lg text-sm font-semibold transition-colors"
               >
-                Dosya Seç
+                {t.selectBtn}
               </button>
             </div>
           )}
@@ -267,6 +306,7 @@ export default function AnaSayfa() {
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
+                  title={t.upFolder}
                   onClick={oncekiKlasoreDon}
                   className="mr-4 p-1.5 rounded-md hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
                   disabled={mevcutYol === "/"}
@@ -285,7 +325,8 @@ export default function AnaSayfa() {
                     />
                   </svg>
                 </button>
-                <span className="truncate max-w-[200px] md:max-w-md lg:max-w-xl">
+                <span className="opacity-70 mr-2">{t.currentPath}</span>
+                <span className="truncate max-w-[200px] md:max-w-md lg:max-w-xl font-bold">
                   {mevcutYol}
                 </span>
               </div>
@@ -314,7 +355,7 @@ export default function AnaSayfa() {
                   ></path>
                 </svg>
                 <p className="text-sm text-[#7c6f64] dark:text-[#a89984] animate-pulse">
-                  İşlem yapılıyor...
+                  {t.loading}
                 </p>
               </div>
             ) : dosyalar.length === 0 ? (
@@ -332,9 +373,7 @@ export default function AnaSayfa() {
                     d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"
                   />
                 </svg>
-                <p className="text-sm">
-                  Bu klasör boş veya henüz bağlanılmadı.
-                </p>
+                <p className="text-sm">{t.emptyFolder}</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
