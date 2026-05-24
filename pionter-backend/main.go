@@ -13,6 +13,7 @@ import (
 func main() {
 	http.HandleFunc("/api/files", dosyalariGetir)
 	http.HandleFunc("/api/download", dosyaIndir)
+	http.HandleFunc("/api/upload", dosyaYukle)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -114,4 +115,50 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	}
 	defer acilanDosya.Close()
 	io.Copy(w, acilanDosya)
+}
+func dosyaYukle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	r.ParseMultipartForm(10 << 20)
+	ip := r.FormValue("ip")
+	kullaniciAdi := r.FormValue("kullaniciAdi")
+	sifre := r.FormValue("sifre")
+	yol := r.FormValue("yol")
+	gelenDosya, baslik, err := r.FormFile("dosya")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer gelenDosya.Close()
+	config := &ssh.ClientConfig{
+		User:            kullaniciAdi,
+		Auth:            []ssh.AuthMethod{ssh.Password(sifre)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	client, err := ssh.Dial("tcp", ip+":22", config)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	sftpClient, err := sftp.NewClient(client)
+	fmt.Println("Sunucuya başarıyla bağlandım!")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer client.Close()
+	defer sftpClient.Close()
+	var tamYol = yol + "/" + baslik.Filename
+	hedefDosya, err := sftpClient.Create(tamYol)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer hedefDosya.Close()
+	io.Copy(hedefDosya, gelenDosya)
 }
