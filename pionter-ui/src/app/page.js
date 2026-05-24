@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -11,12 +11,15 @@ export default function AnaSayfa() {
   const [mevcutYol, setMevcutYol] = useState("/");
   const [karanlikMod, setKaranlikMod] = useState(true);
 
-  const baglantiyiBaslat = () => {
-    setYukleniyor(true);
+  // Yükleme Alanı State'leri
+  const [surukleniyor, setSurukleniyor] = useState(false);
+  const dosyaGirdiRef = useRef(null);
+
+  const klasoruYenile = (hedefYol) => {
     fetch("http://localhost:8080/api/files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: mevcutYol }),
+      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: hedefYol }),
     })
       .then((cevap) => cevap.json())
       .then((veri) => {
@@ -27,6 +30,11 @@ export default function AnaSayfa() {
         console.log("Hata:", hata);
         setYukleniyor(false);
       });
+  };
+
+  const baglantiyiBaslat = () => {
+    setYukleniyor(true);
+    klasoruYenile(mevcutYol);
   };
 
   const klasoreGir = (dosya) => {
@@ -34,66 +42,27 @@ export default function AnaSayfa() {
       dosyayiIndir(dosya);
       return;
     }
-
     setYukleniyor(true);
-    let yeniYol = "";
-    if (mevcutYol === "/") {
-      yeniYol = "/" + dosya.ad;
-    } else {
-      yeniYol = mevcutYol + "/" + dosya.ad;
-    }
-
+    let yeniYol =
+      mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     setMevcutYol(yeniYol);
-
-    fetch("http://localhost:8080/api/files", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: yeniYol }),
-    })
-      .then((cevap) => cevap.json())
-      .then((veri) => {
-        setDosyalar(veri);
-        setYukleniyor(false);
-      })
-      .catch((hata) => {
-        console.log("Hata:", hata);
-        setYukleniyor(false);
-      });
+    klasoruYenile(yeniYol);
   };
 
   const oncekiKlasoreDon = () => {
     if (mevcutYol === "/") return;
-
     let index = mevcutYol.lastIndexOf("/");
     let yeniYol = mevcutYol.substring(0, index);
     if (yeniYol === "") yeniYol = "/";
-
     setMevcutYol(yeniYol);
     setYukleniyor(true);
-
-    fetch("http://localhost:8080/api/files", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: yeniYol }),
-    })
-      .then((cevap) => cevap.json())
-      .then((veri) => {
-        setDosyalar(veri);
-        setYukleniyor(false);
-      })
-      .catch((hata) => {
-        console.log("Hata:", hata);
-        setYukleniyor(false);
-      });
+    klasoruYenile(yeniYol);
   };
+
   const dosyayiIndir = (dosya) => {
     setYukleniyor(true);
-    let dosyaYolu = "";
-    if (mevcutYol === "/") {
-      dosyaYolu = "/" + dosya.ad;
-    } else {
-      dosyaYolu = mevcutYol + "/" + dosya.ad;
-    }
+    let dosyaYolu =
+      mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     fetch("http://localhost:8080/api/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,6 +85,62 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       });
   };
+
+  // --- UPLOAD (YÜKLEME) MANTIĞI ---
+  const sunucuyaDosyaYukle = (dosya) => {
+    if (!dosya) return;
+    setYukleniyor(true);
+
+    const formData = new FormData();
+    formData.append("ip", ip);
+    formData.append("kullaniciAdi", kullaniciAdi);
+    formData.append("sifre", sifre);
+    formData.append("yol", mevcutYol);
+    formData.append("dosya", dosya); // Fiziksel dosyanın kendisi
+
+    fetch("http://localhost:8080/api/upload", {
+      method: "POST",
+      // DİKKAT: FormData kullanırken "Content-Type" belirlemiyoruz, tarayıcı kendisi hallediyor!
+      body: formData,
+    })
+      .then((cevap) => {
+        if (cevap.ok) {
+          klasoruYenile(mevcutYol); // Yükleme bitince ekranı tazele
+        } else {
+          console.log("Yükleme başarısız!");
+          setYukleniyor(false);
+        }
+      })
+      .catch((hata) => {
+        console.log("Yükleme Hatası:", hata);
+        setYukleniyor(false);
+      });
+  };
+
+  const suruklemeUstte = (e) => {
+    e.preventDefault();
+    setSurukleniyor(true);
+  };
+
+  const suruklemeAyrildi = (e) => {
+    e.preventDefault();
+    setSurukleniyor(false);
+  };
+
+  const dosyaBirakildi = (e) => {
+    e.preventDefault();
+    setSurukleniyor(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      sunucuyaDosyaYukle(e.dataTransfer.files[0]);
+    }
+  };
+
+  const butonlaSecildi = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      sunucuyaDosyaYukle(e.target.files[0]);
+    }
+  };
+
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <div className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200">
@@ -136,7 +161,6 @@ export default function AnaSayfa() {
           <button
             onClick={() => setKaranlikMod(!karanlikMod)}
             className="p-2 rounded-full hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-            title="Temayı Değiştir"
           >
             {karanlikMod ? (
               <svg
@@ -174,7 +198,7 @@ export default function AnaSayfa() {
           <div className="bg-[#ebdbb2] dark:bg-[#3c3836] rounded-xl p-2 mb-8 flex flex-col md:flex-row gap-2 border border-[#d5c4a1] dark:border-[#504945] shadow-sm">
             <input
               type="text"
-              placeholder="Sunucu IP (Örn: 60.223.112.141)"
+              placeholder="Sunucu IP"
               value={ip}
               onChange={(e) => setIp(e.target.value)}
               className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
@@ -202,6 +226,47 @@ export default function AnaSayfa() {
               Bağlan
             </button>
           </div>
+
+          {dosyalar.length > 0 && (
+            <div
+              onDragOver={suruklemeUstte}
+              onDragLeave={suruklemeAyrildi}
+              onDrop={dosyaBirakildi}
+              className={`mb-6 p-8 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-200 ${surukleniyor ? "border-[#458588] bg-[#458588]/10 dark:bg-[#83a598]/10 scale-[1.01]" : "border-[#d5c4a1] dark:border-[#504945] hover:border-[#a89984] dark:hover:border-[#7c6f64] bg-transparent"}`}
+            >
+              <svg
+                className={`w-12 h-12 mb-3 transition-colors ${surukleniyor ? "text-[#458588] dark:text-[#83a598]" : "text-[#928374] dark:text-[#a89984]"}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="text-sm font-medium mb-1">
+                Dosyaları buraya sürükleyin
+              </p>
+              <p className="text-xs text-[#928374] dark:text-[#a89984] mb-4">
+                veya bilgisayarınızdan seçin
+              </p>
+              <input
+                type="file"
+                ref={dosyaGirdiRef}
+                onChange={butonlaSecildi}
+                className="hidden"
+              />
+              <button
+                onClick={() => dosyaGirdiRef.current.click()}
+                className="px-4 py-2 bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#3c3836] rounded-lg text-sm font-semibold transition-colors"
+              >
+                Dosya Seç
+              </button>
+            </div>
+          )}
 
           <div>
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
@@ -254,7 +319,7 @@ export default function AnaSayfa() {
                   ></path>
                 </svg>
                 <p className="text-sm text-[#7c6f64] dark:text-[#a89984] animate-pulse">
-                  Sunucu ile iletişim kuruluyor...
+                  İşlem yapılıyor...
                 </p>
               </div>
             ) : dosyalar.length === 0 ? (
