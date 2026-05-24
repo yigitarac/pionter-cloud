@@ -66,6 +66,41 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       });
   };
+  const oncekiKlasoreDon = () => {
+    let yeniYol = "";
+    if (mevcutYol === "/") {
+      return;
+    } else {
+      let index = mevcutYol.lastIndexOf("/");
+      yeniYol = mevcutYol.substring(0, index);
+      if (yeniYol === "") {
+        yeniYol = "/";
+      }
+    }
+    setMevcutYol(yeniYol);
+    setYukleniyor(true);
+    fetch("http://localhost:8080/api/files", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ip: ip,
+        kullaniciAdi: kullaniciAdi,
+        sifre: sifre,
+        yol: yeniYol,
+      }),
+    })
+      .then((cevap) => cevap.json())
+      .then((veri) => {
+        setDosyalar(veri);
+        setYukleniyor(false);
+      })
+      .catch((hata) => {
+        console.log("Hata:", hata);
+        setYukleniyor(false);
+      });
+  };
   return (
     <div>
       <h1>Pionter Cloud</h1>
@@ -99,21 +134,30 @@ export default function AnaSayfa() {
         </button>
       </div>
       <ul>
-        {yukleniyor ? (
-          <p>Sunucuya Bağlanılıyor...</p>
-        ) : (
-          dosyalar.map((dosya, index) => (
-            <li
-              key={index}
-              onClick={() => klasoreGir(dosya)}
-              className="cursor-pointer hover:bg-gray-200"
-            >
-              {" "}
-              {dosya.ad} {dosya.klasorMu ? "📁" : "📄"}
-            </li>
-          ))
-        )}
+        {(() => {
+          if (yukleniyor) {
+            return <p>Sunucuya Bağlanılıyor...</p>;
+          } else {
+            return dosyalar.map((dosya, index) => (
+              <li
+                key={index}
+                onClick={() => klasoreGir(dosya)}
+                className="cursor-pointer hover:bg-gray-200"
+              >
+                {" "}
+                {dosya.ad} {dosya.klasorMu ? "📁" : "📄"}
+              </li>
+            ));
+          }
+        })()}
       </ul>
+      <button
+        onClick={oncekiKlasoreDon}
+        className="bg-blue-500 p-2 rounded text-white font-bold"
+      >
+        {" "}
+        ÖNCEKİ KLASÖRE DÖN{" "}
+      </button>
     </div>
   );
 }
