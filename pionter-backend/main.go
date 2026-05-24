@@ -21,6 +21,11 @@ type BaglantiBilgileri struct {
 	Sifre        string `json:"sifre"`
 }
 
+type DosyaBilgileri struct {
+	Ad       string `json:"ad"`
+	KlasorMu bool   `json:"klasorMu"`
+}
+
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
@@ -58,9 +63,12 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer sftpClient.Close()
-	var dosyaListesi []string
+	var dosyaListesi []DosyaBilgileri
 	for _, dosya := range dosyalar {
-		dosyaListesi = append(dosyaListesi, (dosya.Name()))
+		yeniDosya := DosyaBilgileri{}
+		yeniDosya.Ad = dosya.Name()
+		yeniDosya.KlasorMu = dosya.IsDir()
+		dosyaListesi = append(dosyaListesi, yeniDosya)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dosyaListesi)

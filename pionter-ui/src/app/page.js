@@ -67,7 +67,9 @@ export default function AnaSayfa() {
         {yukleniyor ? (
           <p>Sunucuya Bağlanılıyor...</p>
         ) : (
-          dosyalar.map((dosya, index) => <li key={index}>{dosya}</li>)
+          dosyalar.map((dosya, index) => (
+            <li key={index}> {dosya.ad} {dosya.klasorMu ? "📁" : "📄"}</li>
+          ))
         )}
       </ul>
     </div>
