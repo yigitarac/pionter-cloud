@@ -24,6 +24,7 @@ export default function AnaSayfa() {
   const [sunucuPort, setSunucuPort] = useState("22");
   const [baglantiTipi, setBaglantiTipi] = useState("password");
   const [sshPrivateKey, setSshPrivateKey] = useState("");
+  const [sunucular, setSunucular] = useState([]);
 
   const sozluk = {
     en: {
@@ -270,7 +271,62 @@ export default function AnaSayfa() {
       sunucuyaDosyaYukle(e.target.files[0]);
     }
   };
+  const sunucuKaydet = () => {
+    if (
+      !sunucuTakmaAd ||
+      !sunucuIp ||
+      !sunucuKullanici ||
+      !sunucuPort ||
+      !izoleKlasor
+    ) {
+      alert(
+        dil === "tr"
+          ? "Lütfen zorunlu alanları doldur."
+          : "Please fill the required fields.",
+      );
+      return;
+    }
 
+    if (baglantiTipi === "password" && !sunucuSifre) {
+      alert(
+        dil === "tr"
+          ? "Lütfen sunucu şifresini gir."
+          : "Please enter the server password.",
+      );
+      return;
+    }
+
+    if (baglantiTipi === "ssh_key" && !sshPrivateKey) {
+      alert(
+        dil === "tr"
+          ? "Lütfen SSH private key gir."
+          : "Please enter the SSH private key.",
+      );
+      return;
+    }
+
+    const yeniSunucu = {
+      id: Date.now(),
+      takmaAd: sunucuTakmaAd,
+      ip: sunucuIp,
+      kullanici: sunucuKullanici,
+      port: sunucuPort,
+      baglantiTipi: baglantiTipi,
+      izoleKlasor: izoleKlasor,
+    };
+
+    setSunucular([...sunucular, yeniSunucu]);
+
+    setSunucuTakmaAd("");
+    setSunucuIp("");
+    setSunucuKullanici("root");
+    setSunucuPort("22");
+    setSunucuSifre("");
+    setSshPrivateKey("");
+    setIzoleKlasor("/PionterCloud");
+    setBaglantiTipi("password");
+    setSunucuFormAcik(false);
+  };
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <div className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200">
@@ -431,12 +487,39 @@ export default function AnaSayfa() {
                     </button>
 
                     <button
-                      onClick={() => alert(t.saveLater)}
+                      onClick={sunucuKaydet}
                       className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
                     >
                       {t.save}
                     </button>
                   </div>
+                </div>
+              )}
+              {sunucular.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-[#a89984] dark:border-[#7c6f64] p-8 text-center">
+                  <p className="text-sm font-semibold mb-2">{t.noServersYet}</p>
+                  <p className="text-xs text-[#7c6f64] dark:text-[#a89984]">
+                    {t.noServersInfo}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sunucular.map((sunucu) => (
+                    <div
+                      key={sunucu.id}
+                      className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4"
+                    >
+                      <h3 className="font-bold text-lg mb-1">
+                        {sunucu.takmaAd}
+                      </h3>
+                      <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
+                        {sunucu.kullanici}@{sunucu.ip}:{sunucu.port}
+                      </p>
+                      <p className="text-xs text-[#928374] dark:text-[#a89984] mt-2">
+                        {sunucu.izoleKlasor} · {sunucu.baglantiTipi}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
