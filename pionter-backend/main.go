@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/pkg/sftp"
@@ -11,6 +12,7 @@ import (
 
 func main() {
 	http.HandleFunc("/api/files", dosyalariGetir)
+	http.HandleFunc("/api/download", dosyaIndir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -73,4 +75,43 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dosyaListesi)
+}
+func dosyaIndir(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	var bilgiler BaglantiBilgileri
+	err := json.NewDecoder(r.Body).Decode(&bilgiler)
+	if err != nil {
+		fmt.Println("Gelen paketi okuyamadım:", err)
+		return
+	}
+	config := &ssh.ClientConfig{
+		User:            bilgiler.KullaniciAdi,
+		Auth:            []ssh.AuthMethod{ssh.Password(bilgiler.Sifre)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	client, err := ssh.Dial("tcp", bilgiler.IP+":22", config)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	defer sftpClient.Close()
+	defer client.Close()
+	acilanDosya, err := sftpClient.Open(bilgiler.Yol)
+	if err != nil {
+		fmt.Println("Dosya açılamadı!", err)
+		return
+	}
+	defer acilanDosya.Close()
+	io.Copy(w, acilanDosya)
 }

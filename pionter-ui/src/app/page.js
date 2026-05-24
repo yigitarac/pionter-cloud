@@ -30,7 +30,10 @@ export default function AnaSayfa() {
   };
 
   const klasoreGir = (dosya) => {
-    if (!dosya.klasorMu) return;
+    if (!dosya.klasorMu) {
+      dosyayiIndir(dosya);
+      return;
+    }
 
     setYukleniyor(true);
     let yeniYol = "";
@@ -83,7 +86,36 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       });
   };
-
+  const dosyayiIndir = (dosya) => {
+    setYukleniyor(true);
+    let dosyaYolu = "";
+    if (mevcutYol === "/") {
+      dosyaYolu = "/" + dosya.ad;
+    } else {
+      dosyaYolu = mevcutYol + "/" + dosya.ad;
+    }
+    fetch("http://localhost:8080/api/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: dosyaYolu }),
+    })
+      .then((cevap) => cevap.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = dosya.ad;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        setYukleniyor(false);
+      })
+      .catch((hata) => {
+        console.log(hata);
+        setYukleniyor(false);
+      });
+  };
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <div className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200">
