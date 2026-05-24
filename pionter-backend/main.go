@@ -19,6 +19,7 @@ type BaglantiBilgileri struct {
 	IP           string `json:"ip"`
 	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
+	Yol          string `json:"yol"`
 }
 
 type DosyaBilgileri struct {
@@ -57,7 +58,7 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer client.Close()
-	dosyalar, err := sftpClient.ReadDir("/")
+	dosyalar, err := sftpClient.ReadDir(bilgiler.Yol)
 	if err != nil {
 		fmt.Println(err)
 		panic(err)

@@ -8,6 +8,7 @@ export default function AnaSayfa() {
   const [ip, setIp] = useState("");
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
+  const [mevcutYol, setMevcutYol] = useState("/");
   const baglantiyiBaslat = () => {
     setYukleniyor(true);
     fetch("http://localhost:8080/api/files", {
@@ -19,6 +20,40 @@ export default function AnaSayfa() {
         ip: ip,
         kullaniciAdi: kullaniciAdi,
         sifre: sifre,
+        yol: mevcutYol,
+      }),
+    })
+      .then((cevap) => cevap.json())
+      .then((veri) => {
+        setDosyalar(veri);
+        setYukleniyor(false);
+      })
+      .catch((hata) => {
+        console.log("Hata:", hata);
+        setYukleniyor(false);
+      });
+  };
+  const klasoreGir = (dosya) => {
+    setYukleniyor(true);
+    let yeniYol = "";
+    if (!dosya.klasorMu) {
+      return;
+    } else if (mevcutYol === "/") {
+      yeniYol = "/" + dosya.ad;
+    } else {
+      yeniYol = mevcutYol + "/" + dosya.ad;
+    }
+    setMevcutYol(yeniYol);
+    fetch("http://localhost:8080/api/files", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ip: ip,
+        kullaniciAdi: kullaniciAdi,
+        sifre: sifre,
+        yol: yeniYol,
       }),
     })
       .then((cevap) => cevap.json())
@@ -68,7 +103,14 @@ export default function AnaSayfa() {
           <p>Sunucuya Bağlanılıyor...</p>
         ) : (
           dosyalar.map((dosya, index) => (
-            <li key={index}> {dosya.ad} {dosya.klasorMu ? "📁" : "📄"}</li>
+            <li
+              key={index}
+              onClick={() => klasoreGir(dosya)}
+              className="cursor-pointer hover:bg-gray-200"
+            >
+              {" "}
+              {dosya.ad} {dosya.klasorMu ? "📁" : "📄"}
+            </li>
           ))
         )}
       </ul>
