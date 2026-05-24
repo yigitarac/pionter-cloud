@@ -5,21 +5,38 @@ import { useState, useRef } from "react";
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
   const [yukleniyor, setYukleniyor] = useState(false);
-  const [ip, setIp] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
   const [mevcutYol, setMevcutYol] = useState("/");
+  const [sunucuIp, setSunucuIp] = useState("");
+  const [sunucuKullanici, setSunucuKullanici] = useState("root");
+  const [sunucuSifre, setSunucuSifre] = useState("");
+  const [izoleKlasor, setIzoleKlasor] = useState("/PionterCloud");
+  const [girisYapildi, setGirisYapildi] = useState(false);
+  const [seciliSunucu, setSeciliSunucu] = useState(null);
   const [karanlikMod, setKaranlikMod] = useState(true);
   const [dil, setDil] = useState("en");
   const [surukleniyor, setSurukleniyor] = useState(false);
   const dosyaGirdiRef = useRef(null);
+  const [sunucuFormAcik, setSunucuFormAcik] = useState(false);
+  const [sunucuTakmaAd, setSunucuTakmaAd] = useState("");
+  const [sunucuPort, setSunucuPort] = useState("22");
+  const [baglantiTipi, setBaglantiTipi] = useState("password");
+  const [sshPrivateKey, setSshPrivateKey] = useState("");
 
   const sozluk = {
     en: {
-      ipPlaceholder: "Server IP (e.g. 60.223.112.141)",
-      userPlaceholder: "Username",
+      userPlaceholder: "Pionter Username",
       passPlaceholder: "Password",
-      connectBtn: "Connect",
+      connectBtn: "Login & Connect",
+      registerBtn: "Register Account",
+      switchToReg: "Need an account? Register here.",
+      switchToLogin: "Already have an account? Login here.",
+      srvIp: "Server IP",
+      srvUser: "Server User (e.g. root)",
+      srvPass: "Server Password",
+      folder: "Isolated Folder (e.g. /PionterCloud)",
       currentPath: "Current Path:",
       upFolder: "Up",
       loading: "Processing...",
@@ -27,12 +44,38 @@ export default function AnaSayfa() {
       dragDrop: "Drag and drop files here",
       orSelect: "or select from your computer",
       selectBtn: "Select File",
+      regSuccess: "Registration successful! You can now login.",
+      regFail: "Registration failed. Username might be taken.",
+      myServers: "My Servers",
+      serversDraftInfo:
+        "We are not saving real servers yet. For now, we are building the screen draft.",
+      addServer: "Add Server",
+      noServersYet: "No servers added yet.",
+      noServersInfo: "In the next task, we will make this form save a server.",
+      newServer: "Add New Server",
+      serverNickname: "Server Nickname",
+      sshUser: "SSH User",
+      sshPort: "SSH Port",
+      connectWithPassword: "Connect with password",
+      connectWithKey: "Connect with SSH key",
+      isolatedFolder: "Isolated Folder",
+      sshPrivateKey: "SSH Private Key",
+      cancel: "Cancel",
+      save: "Save",
+      saveLater: "We will make the save action work in the next task.",
+      loginMissing: "Please enter username and password!",
     },
     tr: {
-      ipPlaceholder: "Sunucu IP (Örn: 60.223.112.141)",
-      userPlaceholder: "Kullanıcı Adı",
+      userPlaceholder: "Pionter Kullanıcı Adı",
       passPlaceholder: "Şifre",
-      connectBtn: "Bağlan",
+      connectBtn: "Giriş Yap ve Bağlan",
+      registerBtn: "Hesap Oluştur",
+      switchToReg: "Hesabın yok mu? Buradan kayıt ol.",
+      switchToLogin: "Zaten hesabın var mı? Buradan giriş yap.",
+      srvIp: "Sunucu IP",
+      srvUser: "Sunucu Kullanıcısı (Örn: root)",
+      srvPass: "Sunucu Şifresi",
+      folder: "İzole Klasör (Örn: /PionterCloud)",
       currentPath: "Mevcut Konum:",
       upFolder: "Üst Klasör",
       loading: "İşlem yapılıyor...",
@@ -40,20 +83,76 @@ export default function AnaSayfa() {
       dragDrop: "Dosyaları buraya sürükleyin",
       orSelect: "veya bilgisayarınızdan seçin",
       selectBtn: "Dosya Seç",
+      regSuccess: "Kayıt başarılı! Şimdi giriş yapabilirsiniz.",
+      regFail: "Kayıt başarısız. Kullanıcı adı alınmış olabilir.",
+      myServers: "Sunucularım",
+      serversDraftInfo:
+        "Henüz gerçek sunucu kaydı yapmıyoruz. Şimdilik ekran taslağını kuruyoruz.",
+      addServer: "Sunucu Ekle",
+      noServersYet: "Henüz sunucu eklenmedi.",
+      noServersInfo:
+        "Bir sonraki görevde bu formun sunucu kaydetmesini sağlayacağız.",
+      newServer: "Yeni Sunucu Ekle",
+      serverNickname: "Sunucu Takma Adı",
+      sshUser: "SSH Kullanıcısı",
+      sshPort: "SSH Portu",
+      connectWithPassword: "Şifre ile bağlan",
+      connectWithKey: "SSH Key ile bağlan",
+      isolatedFolder: "İzole Klasör",
+      sshPrivateKey: "SSH Private Key",
+      cancel: "Vazgeç",
+      save: "Kaydet",
+      saveLater: "Kaydetme işlemini bir sonraki görevde yapacağız.",
+      loginMissing: "Kullanıcı adı ve şifre gir!",
     },
   };
 
   const t = sozluk[dil];
 
+  const yeniKayitOlustur = () => {
+    if (!kullaniciAdi || !sifre) {
+      alert(
+        dil === "tr"
+          ? "Lütfen kullanıcı adı ve şifre girin!"
+          : "Please enter username and password!",
+      );
+      return;
+    }
+
+    setYukleniyor(true);
+    fetch("http://localhost:8080/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: kullaniciAdi,
+        pionter_sifre: sifre,
+      }),
+    })
+      .then((cevap) => {
+        setYukleniyor(false);
+        if (cevap.ok) {
+          alert(t.regSuccess);
+          setIsLogin(true);
+        } else {
+          alert(t.regFail);
+        }
+      })
+      .catch((hata) => {
+        console.log("Kayıt Hatası:", hata);
+        setYukleniyor(false);
+        alert(t.regFail);
+      });
+  };
+
   const klasoruYenile = (hedefYol) => {
     fetch("http://localhost:8080/api/files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: hedefYol }),
+      body: JSON.stringify({ kullaniciAdi, sifre, yol: hedefYol }),
     })
       .then((cevap) => cevap.json())
       .then((veri) => {
-        setDosyalar(veri);
+        setDosyalar(veri || []);
         setYukleniyor(false);
       })
       .catch((hata) => {
@@ -63,8 +162,12 @@ export default function AnaSayfa() {
   };
 
   const baglantiyiBaslat = () => {
-    setYukleniyor(true);
-    klasoruYenile(mevcutYol);
+    if (!kullaniciAdi || !sifre) {
+      alert(t.loginMissing);
+      return;
+    }
+
+    setGirisYapildi(true);
   };
 
   const klasoreGir = (dosya) => {
@@ -96,7 +199,7 @@ export default function AnaSayfa() {
     fetch("http://localhost:8080/api/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, kullaniciAdi, sifre, yol: dosyaYolu }),
+      body: JSON.stringify({ kullaniciAdi, sifre, yol: dosyaYolu }),
     })
       .then((cevap) => cevap.blob())
       .then((blob) => {
@@ -121,7 +224,6 @@ export default function AnaSayfa() {
     setYukleniyor(true);
 
     const formData = new FormData();
-    formData.append("ip", ip);
     formData.append("kullaniciAdi", kullaniciAdi);
     formData.append("sifre", sifre);
     formData.append("yol", mevcutYol);
@@ -186,6 +288,7 @@ export default function AnaSayfa() {
               <span className="text-[#458588] dark:text-[#83a598]">Cloud</span>
             </h1>
           </div>
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => setDil(dil === "en" ? "tr" : "en")}
@@ -229,40 +332,175 @@ export default function AnaSayfa() {
             </button>
           </div>
         </header>
-
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-[#ebdbb2] dark:bg-[#3c3836] rounded-xl p-2 mb-8 flex flex-col md:flex-row gap-2 border border-[#d5c4a1] dark:border-[#504945] shadow-sm">
-            <input
-              type="text"
-              placeholder={t.ipPlaceholder}
-              value={ip}
-              onChange={(e) => setIp(e.target.value)}
-              className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-            />
-            <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
-            <input
-              type="text"
-              placeholder={t.userPlaceholder}
-              value={kullaniciAdi}
-              onChange={(e) => setKullaniciAdi(e.target.value)}
-              className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-            />
-            <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
-            <input
-              type="password"
-              placeholder={t.passPlaceholder}
-              value={sifre}
-              onChange={(e) => setSifre(e.target.value)}
-              className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-            />
-            <button
-              onClick={baglantiyiBaslat}
-              className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
-            >
-              {t.connectBtn}
-            </button>
-          </div>
+          {girisYapildi && !seciliSunucu && (
+            <div className="mb-8 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold">{t.myServers}</h2>
+                  <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mt-1">
+                    {t.serversDraftInfo}
+                  </p>
+                </div>
 
+                <button
+                  onClick={() => setSunucuFormAcik(true)}
+                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                >
+                  {t.addServer}
+                </button>
+              </div>
+              {sunucuFormAcik && (
+                <div className="mb-6 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-5">
+                  <h3 className="text-lg font-bold mb-4">{t.newServer}</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder={t.serverNickname}
+                      value={sunucuTakmaAd}
+                      onChange={(e) => setSunucuTakmaAd(e.target.value)}
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder={t.srvIp}
+                      value={sunucuIp}
+                      onChange={(e) => setSunucuIp(e.target.value)}
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder={t.sshUser}
+                      value={sunucuKullanici}
+                      onChange={(e) => setSunucuKullanici(e.target.value)}
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+
+                    <input
+                      type="text"
+                      placeholder={t.sshPort}
+                      value={sunucuPort}
+                      onChange={(e) => setSunucuPort(e.target.value)}
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+
+                    <select
+                      value={baglantiTipi}
+                      onChange={(e) => setBaglantiTipi(e.target.value)}
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    >
+                      <option value="password">{t.connectWithPassword}</option>
+                      <option value="ssh_key">{t.connectWithKey}</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      placeholder={t.isolatedFolder}
+                      value={izoleKlasor}
+                      onChange={(e) => setIzoleKlasor(e.target.value)}
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+                  </div>
+
+                  {baglantiTipi === "password" ? (
+                    <input
+                      type="password"
+                      placeholder={t.srvPass}
+                      value={sunucuSifre}
+                      onChange={(e) => setSunucuSifre(e.target.value)}
+                      className="mt-4 w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+                  ) : (
+                    <textarea
+                      placeholder={t.sshPrivateKey}
+                      value={sshPrivateKey}
+                      onChange={(e) => setSshPrivateKey(e.target.value)}
+                      className="mt-4 w-full min-h-32 px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                    />
+                  )}
+
+                  <div className="flex justify-end gap-3 mt-5">
+                    <button
+                      onClick={() => setSunucuFormAcik(false)}
+                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors"
+                    >
+                      {t.cancel}
+                    </button>
+
+                    <button
+                      onClick={() => alert(t.saveLater)}
+                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
+                    >
+                      {t.save}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div
+            className={`${girisYapildi ? "hidden" : ""} bg-[#ebdbb2] dark:bg-[#3c3836] rounded-xl p-4 mb-8 border border-[#d5c4a1] dark:border-[#504945] shadow-sm flex flex-col gap-4`}
+          >
+            {isLogin ? (
+              <div className="flex flex-col md:flex-row gap-2">
+                <input
+                  type="text"
+                  placeholder={t.userPlaceholder}
+                  value={kullaniciAdi}
+                  onChange={(e) => setKullaniciAdi(e.target.value)}
+                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                />
+                <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
+                <input
+                  type="password"
+                  placeholder={t.passPlaceholder}
+                  value={sifre}
+                  onChange={(e) => setSifre(e.target.value)}
+                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                />
+                <button
+                  onClick={baglantiyiBaslat}
+                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                >
+                  {t.connectBtn}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
+                <input
+                  type="text"
+                  placeholder={t.userPlaceholder}
+                  value={kullaniciAdi}
+                  onChange={(e) => setKullaniciAdi(e.target.value)}
+                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                />
+                <input
+                  type="password"
+                  placeholder={t.passPlaceholder}
+                  value={sifre}
+                  onChange={(e) => setSifre(e.target.value)}
+                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                />
+                <button
+                  onClick={yeniKayitOlustur}
+                  className="bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] px-6 py-3 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                >
+                  {t.registerBtn}
+                </button>
+              </div>
+            )}
+            <div className="text-center mt-2">
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-xs font-semibold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline"
+              >
+                {isLogin ? t.switchToReg : t.switchToLogin}
+              </button>
+            </div>
+          </div>
           {dosyalar.length > 0 && (
             <div
               onDragOver={suruklemeUstte}
@@ -301,8 +539,7 @@ export default function AnaSayfa() {
               </button>
             </div>
           )}
-
-          <div>
+          <div className={seciliSunucu ? "" : "hidden"}>
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
