@@ -10,8 +10,6 @@ export default function AnaSayfa() {
   const [sifre, setSifre] = useState("");
   const [mevcutYol, setMevcutYol] = useState("/");
   const [karanlikMod, setKaranlikMod] = useState(true);
-
-  // Yükleme Alanı State'leri
   const [surukleniyor, setSurukleniyor] = useState(false);
   const dosyaGirdiRef = useRef(null);
 
@@ -85,8 +83,6 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       });
   };
-
-  // --- UPLOAD (YÜKLEME) MANTIĞI ---
   const sunucuyaDosyaYukle = (dosya) => {
     if (!dosya) return;
     setYukleniyor(true);
@@ -96,16 +92,15 @@ export default function AnaSayfa() {
     formData.append("kullaniciAdi", kullaniciAdi);
     formData.append("sifre", sifre);
     formData.append("yol", mevcutYol);
-    formData.append("dosya", dosya); // Fiziksel dosyanın kendisi
+    formData.append("dosya", dosya);
 
     fetch("http://localhost:8080/api/upload", {
       method: "POST",
-      // DİKKAT: FormData kullanırken "Content-Type" belirlemiyoruz, tarayıcı kendisi hallediyor!
       body: formData,
     })
       .then((cevap) => {
         if (cevap.ok) {
-          klasoruYenile(mevcutYol); // Yükleme bitince ekranı tazele
+          klasoruYenile(mevcutYol);
         } else {
           console.log("Yükleme başarısız!");
           setYukleniyor(false);
