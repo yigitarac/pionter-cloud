@@ -30,7 +30,6 @@ func main() {
 			pionter_kullanici VARCHAR(50) UNIQUE NOT NULL,
 			pionter_sifre VARCHAR(50) NOT NULL
 		);
-
 		CREATE TABLE IF NOT EXISTS sunucular (
 			id SERIAL PRIMARY KEY,
 			user_id INTEGER REFERENCES kullanicilar(id) ON DELETE CASCADE,
@@ -52,6 +51,8 @@ func main() {
 	http.HandleFunc("/api/download", dosyaIndir)
 	http.HandleFunc("/api/upload", dosyaYukle)
 	http.HandleFunc("/api/register", kullaniciKaydet)
+	http.HandleFunc("/api/servers", sunucuKaydet)
+	http.HandleFunc("/api/servers/list", sunuculariListele)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -61,7 +62,6 @@ type BaglantiBilgileri struct {
 	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
 }
-
 type DosyaBilgileri struct {
 	Ad       string `json:"ad"`
 	KlasorMu bool   `json:"klasorMu"`
@@ -82,10 +82,8 @@ func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
         WHERE k.pionter_kullanici = $1 AND k.pionter_sifre = $2
         LIMIT 1
     `, kullanici, sifre).Scan(&k.IP, &k.SunucuKullanici, &k.SunucuSifre, &k.IzoleKlasor)
-
 	return k, err
 }
-
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
@@ -110,7 +108,6 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	if bilgiler.Yol != "/" {
 		gercekYol = kimlik.IzoleKlasor + bilgiler.Yol
 	}
-
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
@@ -134,7 +131,6 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Klasör okunamadı (Belki de henüz oluşturulmadı?):", err)
 		return
 	}
-
 	dosyaListesi := []DosyaBilgileri{}
 	for _, dosya := range dosyalar {
 		yeniDosya := DosyaBilgileri{}
@@ -145,7 +141,6 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dosyaListesi)
 }
-
 func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
@@ -160,18 +155,15 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Gelen paketi okuyamadım:", err)
 		return
 	}
-
 	kimlik, err := kimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
 	}
-
 	gercekYol := kimlik.IzoleKlasor
 	if bilgiler.Yol != "/" {
 		gercekYol = kimlik.IzoleKlasor + bilgiler.Yol
 	}
-
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
@@ -189,7 +181,6 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer sftpClient.Close()
-
 	acilanDosya, err := sftpClient.Open(gercekYol)
 	if err != nil {
 		fmt.Println("Dosya açılamadı!", err)
@@ -198,7 +189,6 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	defer acilanDosya.Close()
 	io.Copy(w, acilanDosya)
 }
-
 func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
@@ -208,7 +198,6 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseMultipartForm(10 << 20)
-
 	kullaniciAdi := r.FormValue("kullaniciAdi")
 	sifre := r.FormValue("sifre")
 	yol := r.FormValue("yol")
@@ -218,19 +207,16 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer gelenDosya.Close()
-
 	kimlik, err := kimlikSorgula(kullaniciAdi, sifre)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
 	}
-
 	gercekYol := kimlik.IzoleKlasor
 	if yol != "/" {
 		gercekYol = kimlik.IzoleKlasor + yol
 	}
 	tamYol := gercekYol + "/" + baslik.Filename
-
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
@@ -262,6 +248,28 @@ type KayitBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 }
+type SunucuKayitBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+
+	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
+	SunucuIP        string `json:"sunucu_ip"`
+	SunucuPort      string `json:"sunucu_port"`
+	SunucuKullanici string `json:"sunucu_kullanici"`
+	BaglantiTipi    string `json:"baglanti_tipi"`
+	SunucuSifre     string `json:"sunucu_sifre"`
+	SSHPrivateKey   string `json:"ssh_private_key"`
+	IzoleKlasor     string `json:"izole_klasor"`
+}
+type SunucuListeBilgileri struct {
+	ID              int    `json:"id"`
+	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
+	SunucuIP        string `json:"sunucu_ip"`
+	SunucuPort      string `json:"sunucu_port"`
+	SunucuKullanici string `json:"sunucu_kullanici"`
+	BaglantiTipi    string `json:"baglanti_tipi"`
+	IzoleKlasor     string `json:"izole_klasor"`
+}
 
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -271,7 +279,6 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-
 	var veri KayitBilgileri
 	err := json.NewDecoder(r.Body).Decode(&veri)
 	if err != nil {
@@ -282,13 +289,165 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 		INSERT INTO kullanicilar (pionter_kullanici, pionter_sifre)
 		VALUES ($1, $2)`,
 		veri.PionterKullanici, veri.PionterSifre)
-
 	if err != nil {
 		fmt.Println("Kayıt hatası:", err)
 		http.Error(w, "Bu kullanıcı adı zaten alınmış", http.StatusConflict)
 		return
 	}
-
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(`{"mesaj": "Kayıt başarılı!"}`))
+}
+func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var veri SunucuKayitBilgileri
+	err := json.NewDecoder(r.Body).Decode(&veri)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	if veri.SunucuPort == "" {
+		veri.SunucuPort = "22"
+	}
+
+	var userID int
+	err = db.QueryRow(`
+		SELECT id
+		FROM kullanicilar
+		WHERE pionter_kullanici = $1 AND pionter_sifre = $2
+	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
+
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO sunucular (
+			user_id,
+			sunucu_takma_ad,
+			sunucu_ip,
+			sunucu_port,
+			sunucu_kullanici,
+			baglanti_tipi,
+			sunucu_sifre,
+			ssh_private_key,
+			izole_klasor
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`,
+		userID,
+		veri.SunucuTakmaAd,
+		veri.SunucuIP,
+		veri.SunucuPort,
+		veri.SunucuKullanici,
+		veri.BaglantiTipi,
+		veri.SunucuSifre,
+		veri.SSHPrivateKey,
+		veri.IzoleKlasor,
+	)
+
+	if err != nil {
+		fmt.Println("Sunucu kayıt hatası:", err)
+		http.Error(w, "Sunucu kaydedilemedi", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"mesaj": "Sunucu kaydedildi!"}`))
+}
+func sunuculariListele(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var veri KayitBilgileri
+	err := json.NewDecoder(r.Body).Decode(&veri)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	err = db.QueryRow(`
+		SELECT id
+		FROM kullanicilar
+		WHERE pionter_kullanici = $1 AND pionter_sifre = $2
+	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
+
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT
+			id,
+			sunucu_takma_ad,
+			sunucu_ip,
+			sunucu_port,
+			sunucu_kullanici,
+			baglanti_tipi,
+			izole_klasor
+		FROM sunucular
+		WHERE user_id = $1
+		ORDER BY id DESC
+	`, userID)
+
+	if err != nil {
+		fmt.Println("Sunucular listelenemedi:", err)
+		http.Error(w, "Sunucular listelenemedi", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	sunucular := []SunucuListeBilgileri{}
+
+	for rows.Next() {
+		var s SunucuListeBilgileri
+
+		err := rows.Scan(
+			&s.ID,
+			&s.SunucuTakmaAd,
+			&s.SunucuIP,
+			&s.SunucuPort,
+			&s.SunucuKullanici,
+			&s.BaglantiTipi,
+			&s.IzoleKlasor,
+		)
+
+		if err != nil {
+			fmt.Println("Sunucu satırı okunamadı:", err)
+			http.Error(w, "Sunucu satırı okunamadı", http.StatusInternalServerError)
+			return
+		}
+
+		sunucular = append(sunucular, s)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sunucular)
 }

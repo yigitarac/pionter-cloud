@@ -65,6 +65,8 @@ export default function AnaSayfa() {
       save: "Save",
       saveLater: "We will make the save action work in the next task.",
       loginMissing: "Please enter username and password!",
+      selectedServer: "Selected Server",
+      backToServers: "Back to Servers",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -105,6 +107,8 @@ export default function AnaSayfa() {
       save: "Kaydet",
       saveLater: "Kaydetme işlemini bir sonraki görevde yapacağız.",
       loginMissing: "Kullanıcı adı ve şifre gir!",
+      selectedServer: "Seçili Sunucu",
+      backToServers: "Sunuculara Dön",
     },
   };
 
@@ -168,7 +172,7 @@ export default function AnaSayfa() {
       return;
     }
 
-    setGirisYapildi(true);
+    sunuculariGetir();
   };
 
   const klasoreGir = (dosya) => {
@@ -271,6 +275,45 @@ export default function AnaSayfa() {
       sunucuyaDosyaYukle(e.target.files[0]);
     }
   };
+  const sunuculariGetir = () => {
+    fetch("http://localhost:8080/api/servers/list", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: kullaniciAdi,
+        pionter_sifre: sifre,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Sunucular getirilemedi");
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        const duzenlenmisSunucular = veri.map((sunucu) => ({
+          id: sunucu.id,
+          takmaAd: sunucu.sunucu_takma_ad,
+          ip: sunucu.sunucu_ip,
+          kullanici: sunucu.sunucu_kullanici,
+          port: sunucu.sunucu_port,
+          baglantiTipi: sunucu.baglanti_tipi,
+          izoleKlasor: sunucu.izole_klasor,
+        }));
+
+        setSunucular(duzenlenmisSunucular);
+        setGirisYapildi(true);
+      })
+      .catch((hata) => {
+        console.log("Sunucular getirilemedi:", hata);
+        alert(
+          dil === "tr"
+            ? "Giriş başarısız veya sunucular getirilemedi."
+            : "Login failed or servers could not be loaded.",
+        );
+      });
+  };
   const sunucuKaydet = () => {
     if (
       !sunucuTakmaAd ||
@@ -315,17 +358,46 @@ export default function AnaSayfa() {
       izoleKlasor: izoleKlasor,
     };
 
-    setSunucular([...sunucular, yeniSunucu]);
+    fetch("http://localhost:8080/api/servers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: kullaniciAdi,
+        pionter_sifre: sifre,
 
-    setSunucuTakmaAd("");
-    setSunucuIp("");
-    setSunucuKullanici("root");
-    setSunucuPort("22");
-    setSunucuSifre("");
-    setSshPrivateKey("");
-    setIzoleKlasor("/PionterCloud");
-    setBaglantiTipi("password");
-    setSunucuFormAcik(false);
+        sunucu_takma_ad: sunucuTakmaAd,
+        sunucu_ip: sunucuIp,
+        sunucu_port: sunucuPort,
+        sunucu_kullanici: sunucuKullanici,
+        baglanti_tipi: baglantiTipi,
+        sunucu_sifre: sunucuSifre,
+        ssh_private_key: sshPrivateKey,
+        izole_klasor: izoleKlasor,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Sunucu kaydedilemedi");
+        }
+
+        setSunucular([...sunucular, yeniSunucu]);
+
+        setSunucuTakmaAd("");
+        setSunucuIp("");
+        setSunucuKullanici("root");
+        setSunucuPort("22");
+        setSunucuSifre("");
+        setSshPrivateKey("");
+        setIzoleKlasor("/PionterCloud");
+        setBaglantiTipi("password");
+        setSunucuFormAcik(false);
+      })
+      .catch((hata) => {
+        console.log("Sunucu kayıt hatası:", hata);
+        alert(
+          dil === "tr" ? "Sunucu kaydedilemedi." : "Server could not be saved.",
+        );
+      });
   };
   return (
     <div className={karanlikMod ? "dark" : ""}>
@@ -507,7 +579,12 @@ export default function AnaSayfa() {
                   {sunucular.map((sunucu) => (
                     <div
                       key={sunucu.id}
-                      className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4"
+                      onClick={() => {
+                        setSeciliSunucu(sunucu);
+                        setMevcutYol("/");
+                        setDosyalar([]);
+                      }}
+                      className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4 cursor-pointer hover:scale-[1.01] transition-transform"
                     >
                       <h3 className="font-bold text-lg mb-1">
                         {sunucu.takmaAd}
@@ -623,6 +700,27 @@ export default function AnaSayfa() {
             </div>
           )}
           <div className={seciliSunucu ? "" : "hidden"}>
+            {seciliSunucu && (
+              <div className="mb-6 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-[#7c6f64] dark:text-[#a89984]">
+                      {t.selectedServer}
+                    </p>
+                    <h2 className="text-lg font-bold">
+                      {seciliSunucu.takmaAd}
+                    </h2>
+                  </div>
+
+                  <button
+                    onClick={() => setSeciliSunucu(null)}
+                    className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors"
+                  >
+                    {t.backToServers}
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
