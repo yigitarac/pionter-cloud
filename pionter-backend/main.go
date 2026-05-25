@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -376,9 +377,16 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 	}
-	gercekYol := kimlik.IzoleKlasor
-	if bilgiler.Yol != "/" {
-		gercekYol = kimlik.IzoleKlasor + bilgiler.Yol
+	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz yol",
+			Dosyalar: []DosyaBilgileri{},
+		})
+		return
 	}
 	yeniKlasorYolu := gercekYol + "/" + bilgiler.KlasorAdi
 	config := &ssh.ClientConfig{
@@ -621,4 +629,19 @@ func sunucuKimlikSorgula(kullanici string, sifre string, serverID int) (GizliKim
 	)
 
 	return k, err
+}
+func guvenliYolOlustur(izoleKlasor string, kullaniciYolu string) (string, error) {
+	if kullaniciYolu == "" {
+		kullaniciYolu = "/"
+	}
+	temizKullaniciYolu := path.Clean("/" + kullaniciYolu)
+	if strings.Contains(temizKullaniciYolu, "..") {
+		return "", fmt.Errorf("geçersiz yol")
+	}
+	temizIzoleKlasor := path.Clean(izoleKlasor)
+	if temizKullaniciYolu == "/" {
+		return temizIzoleKlasor, nil
+	}
+
+	return path.Join(temizIzoleKlasor, temizKullaniciYolu), nil
 }
