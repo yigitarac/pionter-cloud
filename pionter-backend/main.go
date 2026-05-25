@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
@@ -16,7 +18,14 @@ var db *sql.DB
 
 func main() {
 	var err error
-	db, err = sql.Open("pgx", "postgres://admin:supergizli@localhost:5432/piontercloud")
+	godotenv.Load()
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		panic("DATABASE_URL bulunamadı. .env dosyasını kontrol et.")
+	}
+
+	db, err = sql.Open("pgx", databaseURL)
 	if err != nil {
 		panic(err)
 	}
