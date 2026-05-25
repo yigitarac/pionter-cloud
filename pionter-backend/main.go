@@ -67,6 +67,11 @@ type DosyaBilgileri struct {
 	Ad       string `json:"ad"`
 	KlasorMu bool   `json:"klasorMu"`
 }
+type DosyaListeCevabi struct {
+	Basarili bool             `json:"basarili"`
+	Mesaj    string           `json:"mesaj"`
+	Dosyalar []DosyaBilgileri `json:"dosyalar"`
+}
 type GizliKimlik struct {
 	IP              string
 	Port            string
@@ -105,7 +110,13 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
 	if err != nil {
 		fmt.Println("Kullanıcı bulunamadı veya şifre yanlış:", err)
-		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş veya sunucu bulunamadı",
+			Dosyalar: []DosyaBilgileri{},
+		})
 		return
 	}
 	gercekYol := kimlik.IzoleKlasor
@@ -120,19 +131,40 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
 		fmt.Println("SSH Bağlantı Hatası:", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "SSH bağlantısı kurulamadı",
+			Dosyalar: []DosyaBilgileri{},
+		})
 		return
 	}
 	defer client.Close()
 	sftpClient, err := sftp.NewClient(client)
 	if err != nil {
 		fmt.Println("SFTP Hatası:", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "SFTP bağlantısı kurulamadı",
+			Dosyalar: []DosyaBilgileri{},
+		})
 		return
 	}
 	defer sftpClient.Close()
 	sftpClient.MkdirAll(gercekYol)
 	dosyalar, err := sftpClient.ReadDir(gercekYol)
 	if err != nil {
-		fmt.Println("Klasör okunamadı (Belki de henüz oluşturulmadı?):", err)
+		fmt.Println("Klasör okunamadı", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "Klasör okunamadı",
+			Dosyalar: []DosyaBilgileri{},
+		})
 		return
 	}
 	dosyaListesi := []DosyaBilgileri{}
@@ -143,7 +175,12 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		dosyaListesi = append(dosyaListesi, yeniDosya)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dosyaListesi)
+	cevap := DosyaListeCevabi{
+		Basarili: true,
+		Mesaj:    "Klasör Okundu",
+		Dosyalar: dosyaListesi,
+	}
+	json.NewEncoder(w).Encode(cevap)
 }
 func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")

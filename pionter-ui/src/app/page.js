@@ -688,7 +688,7 @@ export default function AnaSayfa() {
               </button>
             </div>
           </div>
-          {dosyalar.length > 0 && (
+          {seciliSunucu && (
             <div
               onDragOver={suruklemeUstte}
               onDragLeave={suruklemeAyrildi}
