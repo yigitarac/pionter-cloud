@@ -25,6 +25,7 @@ export default function AnaSayfa() {
   const [baglantiTipi, setBaglantiTipi] = useState("password");
   const [sshPrivateKey, setSshPrivateKey] = useState("");
   const [sunucular, setSunucular] = useState([]);
+  const [dosyaMesaji, setDosyaMesaji] = useState("");
 
   const sozluk = {
     en: {
@@ -177,11 +178,23 @@ export default function AnaSayfa() {
         return cevap.json();
       })
       .then((veri) => {
-        setDosyalar(veri || []);
+        if (veri.basarili) {
+          setDosyalar(veri.dosyalar || []);
+          setDosyaMesaji(veri.mesaj || "");
+        } else {
+          setDosyalar([]);
+          setDosyaMesaji(veri.mesaj || "Dosyalar getirilemedi.");
+        }
         setYukleniyor(false);
       })
       .catch((hata) => {
         console.log("Hata:", hata);
+        setDosyalar([]);
+        setDosyaMesaji(
+          dil === "tr"
+            ? "Dosyalar getirilemedi."
+            : "Files could not be loaded.",
+        );
         setYukleniyor(false);
         alert(
           dil === "tr"
@@ -608,6 +621,7 @@ export default function AnaSayfa() {
                         setSeciliSunucu(sunucu);
                         setMevcutYol("/");
                         setDosyalar([]);
+                        setDosyaMesaji("");
                         setYukleniyor(true);
                         klasoruYenile("/", sunucu);
                       }}
@@ -818,7 +832,7 @@ export default function AnaSayfa() {
                     d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"
                   />
                 </svg>
-                <p className="text-sm">{t.emptyFolder}</p>
+                <p className="text-sm">{dosyaMesaji || t.emptyFolder}</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

@@ -175,9 +175,13 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		dosyaListesi = append(dosyaListesi, yeniDosya)
 	}
 	w.Header().Set("Content-Type", "application/json")
+	mesaj := "Klasör okundu"
+	if len(dosyaListesi) == 0 {
+		mesaj = "Bu klasör boş"
+	}
 	cevap := DosyaListeCevabi{
 		Basarili: true,
-		Mesaj:    "Klasör Okundu",
+		Mesaj:    mesaj,
 		Dosyalar: dosyaListesi,
 	}
 	json.NewEncoder(w).Encode(cevap)
