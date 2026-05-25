@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
@@ -360,6 +361,10 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	}
 	if bilgiler.KlasorAdi == "" {
 		http.Error(w, "Klasör adı boş olamaz", http.StatusBadRequest)
+	}
+	if strings.Contains(bilgiler.KlasorAdi, "/") || strings.Contains(bilgiler.KlasorAdi, "\\") || strings.Contains(bilgiler.KlasorAdi, "..") {
+		http.Error(w, "Geçersiz klasör adı", http.StatusBadRequest)
+		return
 	}
 	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
 	if err != nil {
