@@ -149,13 +149,33 @@ export default function AnaSayfa() {
       });
   };
 
-  const klasoruYenile = (hedefYol) => {
+  const klasoruYenile = (hedefYol, sunucu = seciliSunucu) => {
+    if (!sunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin."
+          : "You must select a server first.",
+      );
+      return;
+    }
+    const gonderilecekVeri = {
+      kullaniciAdi: kullaniciAdi,
+      sifre: sifre,
+      yol: hedefYol,
+      server_id: sunucu.id,
+    };
     fetch("http://localhost:8080/api/files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kullaniciAdi, sifre, yol: hedefYol }),
+      body: JSON.stringify(gonderilecekVeri),
     })
-      .then((cevap) => cevap.json())
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Dosyalar getirilemedi");
+        }
+
+        return cevap.json();
+      })
       .then((veri) => {
         setDosyalar(veri || []);
         setYukleniyor(false);
@@ -163,6 +183,11 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log("Hata:", hata);
         setYukleniyor(false);
+        alert(
+          dil === "tr"
+            ? "Dosyalar getirilemedi."
+            : "Files could not be loaded.",
+        );
       });
   };
 
@@ -583,6 +608,8 @@ export default function AnaSayfa() {
                         setSeciliSunucu(sunucu);
                         setMevcutYol("/");
                         setDosyalar([]);
+                        setYukleniyor(true);
+                        klasoruYenile("/", sunucu);
                       }}
                       className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4 cursor-pointer hover:scale-[1.01] transition-transform"
                     >

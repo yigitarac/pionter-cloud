@@ -61,6 +61,7 @@ type BaglantiBilgileri struct {
 	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
+	ServerID     int    `json:"server_id"`
 }
 type DosyaBilgileri struct {
 	Ad       string `json:"ad"`
@@ -68,8 +69,11 @@ type DosyaBilgileri struct {
 }
 type GizliKimlik struct {
 	IP              string
+	Port            string
 	SunucuKullanici string
+	BaglantiTipi    string
 	SunucuSifre     string
+	SSHPrivateKey   string
 	IzoleKlasor     string
 }
 
@@ -98,7 +102,7 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Gelen paketi okuyamadım:", err)
 		return
 	}
-	kimlik, err := kimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre)
+	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
 	if err != nil {
 		fmt.Println("Kullanıcı bulunamadı veya şifre yanlış:", err)
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
@@ -113,7 +117,7 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	client, err := ssh.Dial("tcp", kimlik.IP+":22", config)
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
 		fmt.Println("SSH Bağlantı Hatası:", err)
 		return
@@ -450,4 +454,35 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sunucular)
+}
+func sunucuKimlikSorgula(kullanici string, sifre string, serverID int) (GizliKimlik, error) {
+	var k GizliKimlik
+
+	err := db.QueryRow(`
+		SELECT
+			s.sunucu_ip,
+			s.sunucu_port,
+			s.sunucu_kullanici,
+			s.baglanti_tipi,
+			COALESCE(s.sunucu_sifre, ''),
+			COALESCE(s.ssh_private_key, ''),
+			s.izole_klasor
+		FROM kullanicilar k
+		JOIN sunucular s ON k.id = s.user_id
+		WHERE
+			k.pionter_kullanici = $1
+			AND k.pionter_sifre = $2
+			AND s.id = $3
+		LIMIT 1
+	`, kullanici, sifre, serverID).Scan(
+		&k.IP,
+		&k.Port,
+		&k.SunucuKullanici,
+		&k.BaglantiTipi,
+		&k.SunucuSifre,
+		&k.SSHPrivateKey,
+		&k.IzoleKlasor,
+	)
+
+	return k, err
 }
