@@ -264,12 +264,21 @@ export default function AnaSayfa() {
 
   const sunucuyaDosyaYukle = (dosya) => {
     if (!dosya) return;
+    if (!seciliSunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin."
+          : "You must select a server first.",
+      );
+      return;
+    }
     setYukleniyor(true);
 
     const formData = new FormData();
     formData.append("kullaniciAdi", kullaniciAdi);
     formData.append("sifre", sifre);
     formData.append("yol", mevcutYol);
+    formData.append("server_id", seciliSunucu.id);
     formData.append("dosya", dosya);
 
     fetch("http://localhost:8080/api/upload", {

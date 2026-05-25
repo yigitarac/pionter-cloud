@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
@@ -255,13 +256,19 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	kullaniciAdi := r.FormValue("kullaniciAdi")
 	sifre := r.FormValue("sifre")
 	yol := r.FormValue("yol")
+	serverIDStr := r.FormValue("server_id")
+	serverID, err := strconv.Atoi(serverIDStr)
+	if err != nil {
+		http.Error(w, "Geçersiz server_id", http.StatusBadRequest)
+		return
+	}
 	gelenDosya, baslik, err := r.FormFile("dosya")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer gelenDosya.Close()
-	kimlik, err := kimlikSorgula(kullaniciAdi, sifre)
+	kimlik, err := sunucuKimlikSorgula(kullaniciAdi, sifre, serverID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
@@ -276,7 +283,7 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	client, err := ssh.Dial("tcp", kimlik.IP+":22", config)
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
 		fmt.Println(err)
 		return
