@@ -165,9 +165,16 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	gercekYol := kimlik.IzoleKlasor
-	if bilgiler.Yol != "/" {
-		gercekYol = kimlik.IzoleKlasor + bilgiler.Yol
+	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz yol",
+			Dosyalar: []DosyaBilgileri{},
+		})
+		return
 	}
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
@@ -251,9 +258,10 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
 	}
-	gercekYol := kimlik.IzoleKlasor
-	if bilgiler.Yol != "/" {
-		gercekYol = kimlik.IzoleKlasor + bilgiler.Yol
+	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
+		return
 	}
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
@@ -304,9 +312,11 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer gelenDosya.Close()
+
 	if strings.Contains(baslik.Filename, "/") ||
 		strings.Contains(baslik.Filename, "\\") ||
-		strings.Contains(baslik.Filename, "..") {
+		strings.Contains(baslik.Filename, "..") ||
+		strings.Contains(baslik.Filename, "⁄") {
 		http.Error(w, "Geçersiz dosya adı", http.StatusBadRequest)
 		return
 	}
@@ -315,11 +325,13 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
 	}
-	gercekYol := kimlik.IzoleKlasor
-	if yol != "/" {
-		gercekYol = kimlik.IzoleKlasor + yol
+	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, yol)
+	if err != nil {
+		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
+		return
 	}
-	tamYol := gercekYol + "/" + baslik.Filename
+
+	tamYol := path.Join(gercekYol, baslik.Filename)
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
@@ -368,14 +380,19 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	}
 	if bilgiler.KlasorAdi == "" {
 		http.Error(w, "Klasör adı boş olamaz", http.StatusBadRequest)
+		return
 	}
-	if strings.Contains(bilgiler.KlasorAdi, "/") || strings.Contains(bilgiler.KlasorAdi, "\\") || strings.Contains(bilgiler.KlasorAdi, "..") {
+	if strings.Contains(bilgiler.KlasorAdi, "/") ||
+		strings.Contains(bilgiler.KlasorAdi, "\\") ||
+		strings.Contains(bilgiler.KlasorAdi, "..") ||
+		strings.Contains(bilgiler.KlasorAdi, "⁄") {
 		http.Error(w, "Geçersiz klasör adı", http.StatusBadRequest)
 		return
 	}
 	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+		return
 	}
 	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
 	if err != nil {
@@ -388,7 +405,7 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	yeniKlasorYolu := gercekYol + "/" + bilgiler.KlasorAdi
+	yeniKlasorYolu := path.Join(gercekYol, bilgiler.KlasorAdi)
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},

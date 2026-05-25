@@ -291,12 +291,13 @@ export default function AnaSayfa() {
     if (
       dosya.name.includes("/") ||
       dosya.name.includes("\\") ||
-      dosya.name.includes("..")
+      dosya.name.includes("..") ||
+      dosya.name.includes("⁄")
     ) {
       alert(
         dil === "tr"
-          ? "Dosya adında /, \\ veya .. kullanılamaz."
-          : "File name cannot include /, \\ or ...",
+          ? "Dosya adında /, \\, ⁄ veya .. kullanılamaz."
+          : "File name cannot include '/', '\\', '⁄' or '..'.",
       );
       return;
     }
