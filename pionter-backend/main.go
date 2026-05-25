@@ -91,6 +91,39 @@ type GizliKimlik struct {
 	SSHPrivateKey   string
 	IzoleKlasor     string
 }
+type KayitBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+}
+type SunucuKayitBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+
+	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
+	SunucuIP        string `json:"sunucu_ip"`
+	SunucuPort      string `json:"sunucu_port"`
+	SunucuKullanici string `json:"sunucu_kullanici"`
+	BaglantiTipi    string `json:"baglanti_tipi"`
+	SunucuSifre     string `json:"sunucu_sifre"`
+	SSHPrivateKey   string `json:"ssh_private_key"`
+	IzoleKlasor     string `json:"izole_klasor"`
+}
+type SunucuListeBilgileri struct {
+	ID              int    `json:"id"`
+	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
+	SunucuIP        string `json:"sunucu_ip"`
+	SunucuPort      string `json:"sunucu_port"`
+	SunucuKullanici string `json:"sunucu_kullanici"`
+	BaglantiTipi    string `json:"baglanti_tipi"`
+	IzoleKlasor     string `json:"izole_klasor"`
+}
+type KlasorOlusturBilgileri struct {
+	KullaniciAdi string `json:"kullaniciAdi"`
+	Sifre        string `json:"sifre"`
+	Yol          string `json:"yol"`
+	ServerID     int    `json:"server_id"`
+	KlasorAdi    string `json:"klasor_adi"`
+}
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
@@ -210,7 +243,7 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Gelen paketi okuyamadım:", err)
 		return
 	}
-	kimlik, err := kimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre)
+	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
@@ -224,7 +257,7 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	client, err := ssh.Dial("tcp", kimlik.IP+":22", config)
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -304,34 +337,6 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	defer hedefDosya.Close()
 	io.Copy(hedefDosya, gelenDosya)
 }
-
-type KayitBilgileri struct {
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
-}
-type SunucuKayitBilgileri struct {
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
-
-	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
-	SunucuIP        string `json:"sunucu_ip"`
-	SunucuPort      string `json:"sunucu_port"`
-	SunucuKullanici string `json:"sunucu_kullanici"`
-	BaglantiTipi    string `json:"baglanti_tipi"`
-	SunucuSifre     string `json:"sunucu_sifre"`
-	SSHPrivateKey   string `json:"ssh_private_key"`
-	IzoleKlasor     string `json:"izole_klasor"`
-}
-type SunucuListeBilgileri struct {
-	ID              int    `json:"id"`
-	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
-	SunucuIP        string `json:"sunucu_ip"`
-	SunucuPort      string `json:"sunucu_port"`
-	SunucuKullanici string `json:"sunucu_kullanici"`
-	BaglantiTipi    string `json:"baglanti_tipi"`
-	IzoleKlasor     string `json:"izole_klasor"`
-}
-
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")

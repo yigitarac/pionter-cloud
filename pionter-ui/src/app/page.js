@@ -236,15 +236,34 @@ export default function AnaSayfa() {
   };
 
   const dosyayiIndir = (dosya) => {
+    if (!seciliSunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin"
+          : "You must select a server first",
+      );
+      return;
+    }
     setYukleniyor(true);
     let dosyaYolu =
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     fetch("http://localhost:8080/api/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kullaniciAdi, sifre, yol: dosyaYolu }),
+      body: JSON.stringify({
+        kullaniciAdi,
+        sifre,
+        yol: dosyaYolu,
+        server_id: seciliSunucu.id,
+      }),
     })
-      .then((cevap) => cevap.blob())
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Dosya indirilemedi");
+        }
+
+        return cevap.blob();
+      })
       .then((blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
