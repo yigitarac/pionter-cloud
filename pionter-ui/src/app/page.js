@@ -26,6 +26,7 @@ export default function AnaSayfa() {
   const [sshPrivateKey, setSshPrivateKey] = useState("");
   const [sunucular, setSunucular] = useState([]);
   const [dosyaMesaji, setDosyaMesaji] = useState("");
+  const [yeniKlasorAdi, setYeniKlasorAdi] = useState("");
 
   const sozluk = {
     en: {
