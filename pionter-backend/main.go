@@ -337,6 +337,68 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	defer hedefDosya.Close()
 	io.Copy(hedefDosya, gelenDosya)
 }
+func klasorOlustur(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var bilgiler KlasorOlusturBilgileri
+	err := json.NewDecoder(r.Body).Decode(&bilgiler)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+	if bilgiler.KlasorAdi == "" {
+		http.Error(w, "Klasör adı boş olamaz", http.StatusBadRequest)
+	}
+	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+	}
+	gercekYol := kimlik.IzoleKlasor
+	if bilgiler.Yol != "/" {
+		gercekYol = kimlik.IzoleKlasor + bilgiler.Yol
+	}
+	yeniKlasorYolu := gercekYol + "/" + bilgiler.KlasorAdi
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("SSH Bağlantı Hatası:", err)
+		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("SFTP Hatası:", err)
+		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer sftpClient.Close()
+
+	err = sftpClient.MkdirAll(yeniKlasorYolu)
+	if err != nil {
+		fmt.Println("Klasör oluşturulamadı:", err)
+		http.Error(w, "Klasör oluşturulamadı", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"`))
+}
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
