@@ -288,6 +288,18 @@ export default function AnaSayfa() {
 
   const sunucuyaDosyaYukle = (dosya) => {
     if (!dosya) return;
+    if (
+      dosya.name.includes("/") ||
+      dosya.name.includes("\\") ||
+      dosya.name.includes("..")
+    ) {
+      alert(
+        dil === "tr"
+          ? "Dosya adında /, \\ veya .. kullanılamaz."
+          : "File name cannot include /, \\ or ...",
+      );
+      return;
+    }
     if (!seciliSunucu) {
       alert(
         dil === "tr"

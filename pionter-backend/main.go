@@ -303,6 +303,12 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer gelenDosya.Close()
+	if strings.Contains(baslik.Filename, "/") ||
+		strings.Contains(baslik.Filename, "\\") ||
+		strings.Contains(baslik.Filename, "..") {
+		http.Error(w, "Geçersiz dosya adı", http.StatusBadRequest)
+		return
+	}
 	kimlik, err := sunucuKimlikSorgula(kullaniciAdi, sifre, serverID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
