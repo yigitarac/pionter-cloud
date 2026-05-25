@@ -69,6 +69,8 @@ export default function AnaSayfa() {
       loginMissing: "Please enter username and password!",
       selectedServer: "Selected Server",
       backToServers: "Back to Servers",
+      newFolderPlaceholder: "New folder name",
+      createFolder: "Create Folder",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -111,6 +113,8 @@ export default function AnaSayfa() {
       loginMissing: "Kullanıcı adı ve şifre gir!",
       selectedServer: "Seçili Sunucu",
       backToServers: "Sunuculara Dön",
+      newFolderPlaceholder: "Yeni klasör adı",
+      createFolder: "Klasör Oluştur",
     },
   };
 
@@ -318,7 +322,54 @@ export default function AnaSayfa() {
         setYukleniyor(false);
       });
   };
+  const klasorOlustur = () => {
+    if (!seciliSunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin."
+          : "You must select a server first.",
+      );
+      return;
+    }
 
+    if (!yeniKlasorAdi) {
+      alert(
+        dil === "tr"
+          ? "Klasör adı boş olamaz."
+          : "Folder name cannot be empty.",
+      );
+      return;
+    }
+
+    fetch("http://localhost:8080/api/folders/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kullaniciAdi,
+        sifre,
+        yol: mevcutYol,
+        server_id: seciliSunucu.id,
+        klasor_adi: yeniKlasorAdi,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Klasör oluşturulamadı");
+        }
+
+        setYeniKlasorAdi("");
+        setYukleniyor(true);
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        console.log("Klasör oluşturma hatası:", hata);
+        alert(
+          dil === "tr"
+            ? "Klasör oluşturulamadı."
+            : "Folder could not be created.",
+        );
+      });
+  };
   const suruklemeUstte = (e) => {
     e.preventDefault();
     setSurukleniyor(true);
@@ -791,6 +842,22 @@ export default function AnaSayfa() {
                 </div>
               </div>
             )}
+            <div className="mb-4 flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder={t.newFolderPlaceholder}
+                value={yeniKlasorAdi}
+                onChange={(e) => setYeniKlasorAdi(e.target.value)}
+                className="flex-1 px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+              />
+
+              <button
+                onClick={klasorOlustur}
+                className="px-4 py-2.5 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
+              >
+                {t.createFolder}
+              </button>
+            </div>
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
