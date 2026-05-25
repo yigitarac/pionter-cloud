@@ -340,7 +340,18 @@ export default function AnaSayfa() {
       );
       return;
     }
-
+    if (
+      yeniKlasorAdi.includes("/") ||
+      yeniKlasorAdi.includes("\\") ||
+      yeniKlasorAdi.includes("..")
+    ) {
+      alert(
+        dil === "tr"
+          ? "Klasör adında '/', '\\', veya '..' kullanamazsın."
+          : "Folder name cannot include '/', '\\' or '..'.",
+      );
+      return;
+    }
     fetch("http://localhost:8080/api/folders/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
