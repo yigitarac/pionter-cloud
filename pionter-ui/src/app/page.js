@@ -90,6 +90,12 @@ export default function AnaSayfa() {
       uploadFailed: "Upload failed.",
       folderCreateSuccess: "Folder created successfully.",
       folderCreateFailed: "Folder could not be created.",
+      selectServerFirst: "You must select a server first.",
+      invalidFileName: "File name cannot include /, \\, ⁄ or ...",
+      folderNameEmpty: "Folder name cannot be empty.",
+      invalidFolderName: "Folder name cannot include /, \\, ⁄ or ...",
+      invalidTargetPath: "Target path cannot include \\, ⁄ or ...",
+      alreadyInThisFolder: "This item is already in that folder.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -150,6 +156,12 @@ export default function AnaSayfa() {
       uploadFailed: "Dosya yükleme başarısız.",
       folderCreateSuccess: "Klasör başarıyla oluşturuldu.",
       folderCreateFailed: "Klasör oluşturulamadı.",
+      selectServerFirst: "Önce sunucu seçmelisin.",
+      invalidFileName: "Dosya adında /, \\, ⁄ veya .. kullanılamaz.",
+      folderNameEmpty: "Klasör adı boş olamaz.",
+      invalidFolderName: "Klasör adında /, \\, ⁄ veya .. kullanılamaz.",
+      invalidTargetPath: "Hedef yolda \\, ⁄ veya .. kullanılamaz.",
+      alreadyInThisFolder: "Bu öğe zaten o klasörde.",
     },
   };
 
@@ -342,19 +354,11 @@ export default function AnaSayfa() {
       dosya.name.includes("..") ||
       dosya.name.includes("⁄")
     ) {
-      alert(
-        dil === "tr"
-          ? "Dosya adında /, \\, ⁄ veya .. kullanılamaz."
-          : "File name cannot include '/', '\\', '⁄' or '..'.",
-      );
+      toastGoster(t.invalidFileName, "error");
       return;
     }
     if (!seciliSunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin."
-          : "You must select a server first.",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
     setYukleniyor(true);
@@ -388,32 +392,21 @@ export default function AnaSayfa() {
   };
   const klasorOlustur = () => {
     if (!seciliSunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin."
-          : "You must select a server first.",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
 
     if (!yeniKlasorAdi) {
-      alert(
-        dil === "tr"
-          ? "Klasör adı boş olamaz."
-          : "Folder name cannot be empty.",
-      );
+      toastGoster(t.folderNameEmpty, "error");
       return;
     }
     if (
       yeniKlasorAdi.includes("/") ||
       yeniKlasorAdi.includes("\\") ||
-      yeniKlasorAdi.includes("..")
+      yeniKlasorAdi.includes("..") ||
+      yeniKlasorAdi.includes("⁄")
     ) {
-      alert(
-        dil === "tr"
-          ? "Klasör adında '/', '\\', veya '..' kullanamazsın."
-          : "Folder name cannot include '/', '\\' or '..'.",
-      );
+      toastGoster(t.invalidFolderName, "error");
       return;
     }
     fetch("http://localhost:8080/api/folders/create", {
@@ -446,11 +439,7 @@ export default function AnaSayfa() {
 
   const dosyaVeyaKlasorSil = (dosya) => {
     if (!seciliSunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin"
-          : "You must select a server first",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
 
@@ -491,11 +480,7 @@ export default function AnaSayfa() {
 
   const dosyaVeyaKlasorYenidenAdlandir = (dosya) => {
     if (!seciliSunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin"
-          : "You must select a server first",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
 
@@ -511,11 +496,7 @@ export default function AnaSayfa() {
       yeniAd.includes("..") ||
       yeniAd.includes("⁄")
     ) {
-      alert(
-        dil === "tr"
-          ? "Dosya/klasör adında /, \\, ⁄ veya .. kullanılamaz."
-          : "File/folder name cannot include '/', '\\', '⁄' or '..'.",
-      );
+      toastGoster(t.invalidFileName, "error");
       return;
     }
 
@@ -559,11 +540,7 @@ export default function AnaSayfa() {
 
   const dosyaVeyaKlasorTasi = (dosya) => {
     if (!seciliSunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin."
-          : "You must select a server first.",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
 
@@ -578,11 +555,7 @@ export default function AnaSayfa() {
       hedefYolGirdisi.includes("\\") ||
       hedefYolGirdisi.includes("⁄")
     ) {
-      alert(
-        dil === "tr"
-          ? "Hedef yolda \\, ⁄ veya .. kullanılamaz."
-          : "Target path cannot include \\, ⁄ or ...",
-      );
+      toastGoster(t.invalidTargetPath, "error");
       return;
     }
 
@@ -591,11 +564,7 @@ export default function AnaSayfa() {
       : "/" + hedefYolGirdisi;
 
     if (hedefYol == mevcutYol) {
-      alert(
-        dil === "tr"
-          ? "Zaten bu klasördesin."
-          : "This item is already in that folder.",
-      );
+      toastGoster(t.alreadyInThisFolder, "error");
       return;
     }
 
@@ -1281,10 +1250,6 @@ export default function AnaSayfa() {
                   />
                 </svg>
                 <p className="text-sm">{dosyaMesaji || t.emptyFolder}</p>
-              </div>
-            ) : dosyalar.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
-                ...
               </div>
             ) : gosterilecekDosyalar.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
