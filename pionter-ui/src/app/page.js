@@ -121,6 +121,8 @@ export default function AnaSayfa() {
       sshKeyRequired: "Please enter the SSH private key.",
       serverSaveFailed: "Server could not be saved.",
       serverSaveSuccess: "Server saved successfully.",
+      invalidServerPort: "SSH port must be a number between 1 and 65535.",
+      invalidIsolatedFolder: "Isolated folder must start with /.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -202,6 +204,8 @@ export default function AnaSayfa() {
       sshKeyRequired: "Lütfen SSH private key gir.",
       serverSaveFailed: "Sunucu kaydedilemedi.",
       serverSaveSuccess: "Sunucu başarıyla kaydedildi.",
+      invalidServerPort: "SSH portu 1 ile 65535 arasında bir sayı olmalı.",
+      invalidIsolatedFolder: "İzole klasör / ile başlamalı.",
     },
   };
 
@@ -800,6 +804,16 @@ export default function AnaSayfa() {
       !temizIzoleKlasor
     ) {
       toastGoster(t.serverRequiredFields, "error");
+      return;
+    }
+    const portSayisi = Number(temizSunucuPort);
+
+    if (!Number.isInteger(portSayisi) || portSayisi < 1 || portSayisi > 65535) {
+      toastGoster(t.invalidServerPort, "error");
+      return;
+    }
+    if (!temizIzoleKlasor.startsWith("/")) {
+      toastGoster(t.invalidIsolatedFolder, "error");
       return;
     }
 
