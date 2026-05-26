@@ -40,6 +40,7 @@ export default function AnaSayfa() {
   const [hedefYolInput, setHedefYolInput] = useState("/");
   const [deleteModalAcik, setDeleteModalAcik] = useState(false);
   const [silinecekDosya, setSilinecekDosya] = useState(null);
+  const [yuklemeMesaji, setYuklemeMesaji] = useState("");
 
   const sozluk = {
     en: {
@@ -56,7 +57,7 @@ export default function AnaSayfa() {
       currentPath: "Current Path:",
       upFolder: "Up",
       loading: "Processing...",
-      emptyFolder: "This folder is empty or not connected yet.",
+      emptyFolder: "This folder is empty.",
       dragDrop: "Drag and drop files here",
       orSelect: "or select from your computer",
       selectBtn: "Select File",
@@ -123,6 +124,13 @@ export default function AnaSayfa() {
       serverSaveSuccess: "Server saved successfully.",
       invalidServerPort: "SSH port must be a number between 1 and 65535.",
       invalidIsolatedFolder: "Isolated folder must start with /.",
+      loadingFiles: "Loading files...",
+      uploadingFile: "Uploading file...",
+      creatingFolder: "Creating folder...",
+      deletingItem: "Deleting item...",
+      renamingItem: "Renaming item...",
+      movingItem: "Moving item...",
+      downloadingFile: "Downloading file...",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -138,7 +146,7 @@ export default function AnaSayfa() {
       currentPath: "Mevcut Konum:",
       upFolder: "Üst Klasör",
       loading: "İşlem yapılıyor...",
-      emptyFolder: "Bu klasör boş veya henüz bağlanılmadı.",
+      emptyFolder: "Bu klasör boş.",
       dragDrop: "Dosyaları buraya sürükleyin",
       orSelect: "veya bilgisayarınızdan seçin",
       selectBtn: "Dosya Seç",
@@ -206,6 +214,13 @@ export default function AnaSayfa() {
       serverSaveSuccess: "Sunucu başarıyla kaydedildi.",
       invalidServerPort: "SSH portu 1 ile 65535 arasında bir sayı olmalı.",
       invalidIsolatedFolder: "İzole klasör / ile başlamalı.",
+      loadingFiles: "Dosyalar yükleniyor...",
+      uploadingFile: "Dosya yükleniyor...",
+      creatingFolder: "Klasör oluşturuluyor...",
+      deletingItem: "Öğe siliniyor...",
+      renamingItem: "Yeniden adlandırılıyor...",
+      movingItem: "Öğe taşınıyor...",
+      downloadingFile: "Dosya indiriliyor...",
     },
   };
 
@@ -267,13 +282,26 @@ export default function AnaSayfa() {
       })
       .then((veri) => {
         if (veri.basarili) {
-          setDosyalar(veri.dosyalar || []);
-          setDosyaMesaji(veri.mesaj || "");
+          const gelenDosyalar = veri.dosyalar || [];
+
+          setDosyalar(gelenDosyalar);
+
+          if (gelenDosyalar.length === 0) {
+            setDosyaMesaji("");
+          } else {
+            setDosyaMesaji(veri.mesaj || "");
+          }
         } else {
           setDosyalar([]);
-          setDosyaMesaji(veri.mesaj || "Dosyalar getirilemedi.");
+          setDosyaMesaji(
+            dil === "tr"
+              ? "Dosyalar getirilemedi."
+              : "Files could not be loaded.",
+          );
         }
+
         setYukleniyor(false);
+        setYuklemeMesaji("");
       })
       .catch((hata) => {
         console.log("Hata:", hata);
@@ -308,6 +336,7 @@ export default function AnaSayfa() {
       return;
     }
     setYukleniyor(true);
+    setYuklemeMesaji(t.loadingFiles);
     let yeniYol =
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     setMevcutYol(yeniYol);
@@ -323,6 +352,7 @@ export default function AnaSayfa() {
     setMevcutYol(yeniYol);
     setAramaMetni("");
     setYukleniyor(true);
+    setYuklemeMesaji(t.loadingFiles);
     klasoruYenile(yeniYol);
   };
 
@@ -334,6 +364,7 @@ export default function AnaSayfa() {
     setDosyaMesaji("");
     setAcikMenuIndex(null);
     setYukleniyor(true);
+    setYuklemeMesaji(t.loadingFiles);
     klasoruYenile(hedefYol);
   };
 
@@ -346,6 +377,7 @@ export default function AnaSayfa() {
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
     setYukleniyor(false);
+    setYuklemeMesaji("");
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -365,6 +397,7 @@ export default function AnaSayfa() {
       return;
     }
     setYukleniyor(true);
+    setYuklemeMesaji(t.downloadingFile);
     let dosyaYolu =
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     fetch("http://localhost:8080/api/download", {
@@ -423,6 +456,7 @@ export default function AnaSayfa() {
       return;
     }
     setYukleniyor(true);
+    setYuklemeMesaji(t.uploadingFile);
 
     const formData = new FormData();
     formData.append("kullaniciAdi", kullaniciAdi);
@@ -471,6 +505,8 @@ export default function AnaSayfa() {
       toastGoster(t.invalidFolderName, "error");
       return;
     }
+    setYukleniyor(true);
+    setYuklemeMesaji(t.creatingFolder);
     fetch("http://localhost:8080/api/folders/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -494,7 +530,7 @@ export default function AnaSayfa() {
       })
       .catch((hata) => {
         console.log("Klasör oluşturma hatası:", hata);
-        setYukleniyor(false);
+        setYuklemeMesaji(t.loadingFiles);
         toastGoster(t.folderCreateFailed, "error");
       });
   };
@@ -519,6 +555,7 @@ export default function AnaSayfa() {
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
     setYukleniyor(true);
+    setYuklemeMesaji(t.deletingItem);
 
     fetch("http://localhost:8080/api/delete", {
       method: "POST",
@@ -588,6 +625,7 @@ export default function AnaSayfa() {
     }
 
     setYukleniyor(true);
+    setYuklemeMesaji(t.renamingItem);
     setRenameModalAcik(false);
 
     fetch("http://localhost:8080/api/rename", {
@@ -663,6 +701,7 @@ export default function AnaSayfa() {
     }
     setMoveModalAcik(false);
     setYukleniyor(true);
+    setYuklemeMesaji(t.movingItem);
 
     fetch("http://localhost:8080/api/move", {
       method: "POST",
@@ -1271,6 +1310,7 @@ export default function AnaSayfa() {
                         setDosyalar([]);
                         setDosyaMesaji("");
                         setYukleniyor(true);
+                        setYuklemeMesaji(t.loadingFiles);
                         klasoruYenile("/", sunucu);
                       }}
                       className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4 cursor-pointer hover:scale-[1.01] transition-transform"
@@ -1526,7 +1566,7 @@ export default function AnaSayfa() {
                   ></path>
                 </svg>
                 <p className="text-sm text-[#7c6f64] dark:text-[#a89984] animate-pulse">
-                  {t.loading}
+                  {yuklemeMesaji || t.loading}
                 </p>
               </div>
             ) : dosyalar.length === 0 ? (
