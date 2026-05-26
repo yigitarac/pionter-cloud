@@ -663,6 +663,12 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	kaynakGercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.KaynakYol)
+	if err != nil {
+		http.Error(w, "Geçersiz kaynak yol", http.StatusBadRequest)
+		return
+	}
+
 	hedefGercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.HedefYol)
 	if err != nil {
 		http.Error(w, "Geçersiz hedef yol", http.StatusBadRequest)
