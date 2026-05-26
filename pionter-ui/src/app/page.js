@@ -133,6 +133,7 @@ export default function AnaSayfa() {
       downloadingFile: "Downloading file...",
       savingServer: "Saving server...",
       loadingServers: "Loading servers...",
+      registeringAccount: "Creating account...",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -225,6 +226,7 @@ export default function AnaSayfa() {
       downloadingFile: "Dosya indiriliyor...",
       savingServer: "Sunucu kaydediliyor...",
       loadingServers: "Sunucular yükleniyor...",
+      registeringAccount: "Hesap oluşturuluyor...",
     },
   };
 
@@ -232,6 +234,7 @@ export default function AnaSayfa() {
 
   const yeniKayitOlustur = () => {
     if (yukleniyor) return;
+    setYuklemeMesaji(t.registeringAccount);
     if (!kullaniciAdi || !sifre) {
       toastGoster(t.loginMissing, "error");
       return;
@@ -326,6 +329,14 @@ export default function AnaSayfa() {
           "error",
         );
       });
+  };
+
+  const girisKayitModunuDegistir = () => {
+    if (yukleniyor) return;
+
+    setIsLogin(!isLogin);
+    setKullaniciAdi("");
+    setSifre("");
   };
 
   const baglantiyiBaslat = () => {
@@ -1463,14 +1474,15 @@ export default function AnaSayfa() {
                   disabled={yukleniyor}
                   className="bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] px-6 py-3 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {yukleniyor ? t.loading : t.registerBtn}
+                  {yukleniyor ? t.registeringAccount : t.registerBtn}
                 </button>
               </div>
             )}
             <div className="text-center mt-2">
               <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-xs font-semibold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline"
+                onClick={girisKayitModunuDegistir}
+                disabled={yukleniyor}
+                className="text-xs font-semibold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLogin ? t.switchToReg : t.switchToLogin}
               </button>
