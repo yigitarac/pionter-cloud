@@ -505,6 +505,7 @@ export default function AnaSayfa() {
 
     if (!temizYeniAd) {
       toastGoster(t.folderNameEmpty, "error");
+      return;
     }
 
     if (
@@ -847,7 +848,7 @@ export default function AnaSayfa() {
                 }
               }}
               placeholder={t.newNamePlaceholder}
-              className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+              className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
               autoFocus
             />
 
