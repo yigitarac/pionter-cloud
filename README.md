@@ -12,7 +12,6 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 - Add and list multiple servers
 - Connect to a selected server over SSH/SFTP
 - List files and folders
-- Folder-first alphabetical sorting
 - Upload files
 - Download files
 - Create folders
@@ -24,6 +23,7 @@ The idea is simple: users add their own server, choose an isolated folder, and m
   - safeguards against moving folders into themselves
 - Breadcrumb navigation
 - Search/filter files in the current folder
+- Folders-first alphabetical file listing
 - File metadata display
   - size
   - last modified date
