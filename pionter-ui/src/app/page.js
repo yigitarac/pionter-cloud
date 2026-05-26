@@ -131,6 +131,8 @@ export default function AnaSayfa() {
       renamingItem: "Renaming item...",
       movingItem: "Moving item...",
       downloadingFile: "Downloading file...",
+      savingServer: "Saving server...",
+      loadingServers: "Loading servers...",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -221,6 +223,8 @@ export default function AnaSayfa() {
       renamingItem: "Yeniden adlandırılıyor...",
       movingItem: "Öğe taşınıyor...",
       downloadingFile: "Dosya indiriliyor...",
+      savingServer: "Sunucu kaydediliyor...",
+      loadingServers: "Sunucular yükleniyor...",
     },
   };
 
@@ -795,7 +799,9 @@ export default function AnaSayfa() {
   const dosyaBirakildi = (e) => {
     e.preventDefault();
     setSurukleniyor(false);
+
     if (yukleniyor) return;
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       sunucuyaDosyaYukle(e.dataTransfer.files[0]);
     }
@@ -807,6 +813,9 @@ export default function AnaSayfa() {
     }
   };
   const sunuculariGetir = () => {
+    setYukleniyor(true);
+    setYuklemeMesaji(t.loadingServers);
+
     fetch("http://localhost:8080/api/servers/list", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -835,9 +844,13 @@ export default function AnaSayfa() {
 
         setSunucular(duzenlenmisSunucular);
         setGirisYapildi(true);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
       })
       .catch((hata) => {
         console.log("Sunucular getirilemedi:", hata);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(
           dil === "tr"
             ? "Giriş başarısız veya sunucular getirilemedi."
@@ -907,6 +920,8 @@ export default function AnaSayfa() {
       return;
     }
 
+    setYukleniyor(true);
+    setYuklemeMesaji(t.savingServer);
     fetch("http://localhost:8080/api/servers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -932,11 +947,16 @@ export default function AnaSayfa() {
         sunuculariGetir();
         toastGoster(t.serverSaveSuccess, "success");
 
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+
         sunucuFormunuTemizle();
         setSunucuFormAcik(false);
       })
       .catch((hata) => {
         console.log("Sunucu kayıt hatası:", hata);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.serverSaveFailed, "error");
       });
   };
@@ -1309,7 +1329,7 @@ export default function AnaSayfa() {
                       disabled={yukleniyor}
                       className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {t.save}
+                      {yukleniyor ? t.savingServer : t.save}
                     </button>
                   </div>
                 </div>
@@ -1374,9 +1394,10 @@ export default function AnaSayfa() {
                 />
                 <button
                   onClick={baglantiyiBaslat}
-                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                  disabled={yukleniyor}
+                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t.connectBtn}
+                  {yukleniyor ? t.loadingServers : t.connectBtn}
                 </button>
               </div>
             ) : (
@@ -1397,9 +1418,10 @@ export default function AnaSayfa() {
                 />
                 <button
                   onClick={yeniKayitOlustur}
-                  className="bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] px-6 py-3 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                  disabled={yukleniyor}
+                  className="bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] px-6 py-3 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t.registerBtn}
+                  {yukleniyor ? t.loading : t.registerBtn}
                 </button>
               </div>
             )}
