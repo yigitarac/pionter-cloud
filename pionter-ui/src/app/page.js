@@ -1008,7 +1008,7 @@ export default function AnaSayfa() {
                   <div
                     key={index}
                     onClick={() => klasoreGir(dosya)}
-                    className="group flex flex-col items-center p-4 rounded-xl hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] cursor-pointer transition-all duration-200"
+                    className="group relative flex flex-col items-center p-4 rounded-xl hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] cursor-pointer transition-all duration-200"
                   >
                     {dosya.klasorMu ? (
                       <svg
@@ -1030,6 +1030,15 @@ export default function AnaSayfa() {
                     <span className="text-sm font-medium text-center w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]">
                       {dosya.ad}
                     </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dosyaVeyaKlasorSil(dosya);
+                      }}
+                      className="mt-3 px-3 py-1 rounded-md text-xs font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors"
+                    >
+                      {t.deleteItem}
+                    </button>
                   </div>
                 ))}
               </div>
