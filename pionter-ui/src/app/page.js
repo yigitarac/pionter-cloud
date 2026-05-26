@@ -19,6 +19,7 @@ export default function AnaSayfa() {
   const [dil, setDil] = useState("en");
   const [surukleniyor, setSurukleniyor] = useState(false);
   const dosyaGirdiRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
   const [sunucuFormAcik, setSunucuFormAcik] = useState(false);
   const [sunucuTakmaAd, setSunucuTakmaAd] = useState("");
   const [sunucuPort, setSunucuPort] = useState("22");
@@ -115,6 +116,11 @@ export default function AnaSayfa() {
       deleteModalTitle: "Delete Item",
       deleteModalText: "Are you sure you want to delete this item?",
       confirmDelete: "Delete",
+      serverRequiredFields: "Please fill the required fields.",
+      serverPasswordRequired: "Please enter the server password.",
+      sshKeyRequired: "Please enter the SSH private key.",
+      serverSaveFailed: "Server could not be saved.",
+      serverSaveSuccess: "Server saved successfully.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -191,6 +197,11 @@ export default function AnaSayfa() {
       deleteModalTitle: "Sil",
       deleteModalText: "Bu öğeyi silmek istediğine emin misin?",
       confirmDelete: "Sil",
+      serverRequiredFields: "Lütfen zorunlu alanları doldur.",
+      serverPasswordRequired: "Lütfen sunucu şifresini gir.",
+      sshKeyRequired: "Lütfen SSH private key gir.",
+      serverSaveFailed: "Sunucu kaydedilemedi.",
+      serverSaveSuccess: "Sunucu başarıyla kaydedildi.",
     },
   };
 
@@ -679,8 +690,13 @@ export default function AnaSayfa() {
   const toastGoster = (mesaj, tip = "info") => {
     setToast({ mesaj, tip });
 
-    setTimeout(() => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    toastTimeoutRef.current = setTimeout(() => {
       setToast(null);
+      toastTimeoutRef.current = null;
     }, 3000);
   };
 
@@ -755,29 +771,17 @@ export default function AnaSayfa() {
       !sunucuPort ||
       !izoleKlasor
     ) {
-      alert(
-        dil === "tr"
-          ? "Lütfen zorunlu alanları doldur."
-          : "Please fill the required fields.",
-      );
+      toastGoster(t.serverRequiredFields, "error");
       return;
     }
 
     if (baglantiTipi === "password" && !sunucuSifre) {
-      alert(
-        dil === "tr"
-          ? "Lütfen sunucu şifresini gir."
-          : "Please enter the server password.",
-      );
+      toastGoster(t.serverPasswordRequired, "error");
       return;
     }
 
     if (baglantiTipi === "ssh_key" && !sshPrivateKey) {
-      alert(
-        dil === "tr"
-          ? "Lütfen SSH private key gir."
-          : "Please enter the SSH private key.",
-      );
+      toastGoster(t.sshKeyRequired, "error");
       return;
     }
 
@@ -804,12 +808,7 @@ export default function AnaSayfa() {
         }
 
         sunuculariGetir();
-        toastGoster(
-          dil === "tr"
-            ? "Sunucu başarıyla kaydedildi."
-            : "Server saved successfully.",
-          "success",
-        );
+        toastGoster(t.serverSaveSuccess, "success");
 
         setSunucuTakmaAd("");
         setSunucuIp("");
@@ -823,10 +822,7 @@ export default function AnaSayfa() {
       })
       .catch((hata) => {
         console.log("Sunucu kayıt hatası:", hata);
-        toastGoster(
-          dil === "tr" ? "Sunucu kaydedilemedi." : "Server could not be saved.",
-          "error",
-        );
+        toastGoster(t.serverSaveFailed, "error");
       });
   };
   const yolParcalari = mevcutYol.split("/").filter(Boolean);
