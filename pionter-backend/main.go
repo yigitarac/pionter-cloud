@@ -145,6 +145,14 @@ type YenidenAdlandirBilgileri struct {
 	EskiAd       string `json:"eski_ad"`
 	YeniAd       string `json:"yeni_ad"`
 }
+type TasiBilgileri struct {
+	KullaniciAdi string `json:"kullaniciAdi"`
+	Sifre        string `json:"sifre"`
+	ServerID     int    `json:"server_id"`
+	KaynakYol    string `json:"kaynak_yol"`
+	HedefYol     string `json:"hedef_yol"`
+	DosyaAdi     string `json:"dosya_adi"`
+}
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
