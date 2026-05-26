@@ -37,7 +37,6 @@ export default function AnaSayfa() {
   const [yeniAd, setYeniAd] = useState("");
   const [moveModalAcik, setMoveModalAcik] = useState(false);
   const [tasinacakDosya, setTasinacakDosya] = useState(null);
-  const [hedefYolInput, setHedefYolInput] = useState("/");
   const [deleteModalAcik, setDeleteModalAcik] = useState(false);
   const [silinecekDosya, setSilinecekDosya] = useState(null);
   const [yuklemeMesaji, setYuklemeMesaji] = useState("");
@@ -45,6 +44,7 @@ export default function AnaSayfa() {
   const [hedefKlasorlerYukleniyor, setHedefKlasorlerYukleniyor] =
     useState(false);
   const [hedefKlasorGezintiYolu, setHedefKlasorGezintiYolu] = useState("/");
+  const hedefKlasorCacheRef = useRef({});
 
   const sozluk = {
     en: {
@@ -430,8 +430,8 @@ export default function AnaSayfa() {
 
     setMoveModalAcik(false);
     setTasinacakDosya(null);
-    setHedefYolInput("/");
     setHedefKlasorler([]);
+    hedefKlasorCacheRef.current = {};
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
@@ -454,7 +454,9 @@ export default function AnaSayfa() {
 
     setMoveModalAcik(false);
     setTasinacakDosya(null);
-    setHedefYolInput("/");
+    setHedefKlasorGezintiYolu("/");
+    setHedefKlasorler([]);
+    hedefKlasorCacheRef.current = {};
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
@@ -607,6 +609,7 @@ export default function AnaSayfa() {
         setYeniKlasorAdi("");
         toastGoster(t.folderCreateSuccess, "success");
         setYukleniyor(true);
+        hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
@@ -739,6 +742,7 @@ export default function AnaSayfa() {
 
         setYenidenAdlandirilacakDosya(null);
         setYeniAd("");
+        hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
@@ -751,6 +755,11 @@ export default function AnaSayfa() {
 
   const hedefKlasorleriGetir = (hedefYol = "/") => {
     if (!seciliSunucu) return;
+
+    if (hedefKlasorCacheRef.current[hedefYol]) {
+      setHedefKlasorler(hedefKlasorCacheRef.current[hedefYol]);
+      return;
+    }
 
     setHedefKlasorlerYukleniyor(true);
 
@@ -776,6 +785,8 @@ export default function AnaSayfa() {
           (dosya) => dosya.klasorMu,
         );
 
+        hedefKlasorCacheRef.current[hedefYol] = sadeceKlasorler;
+
         setHedefKlasorler(sadeceKlasorler);
         setHedefKlasorlerYukleniyor(false);
       })
@@ -796,7 +807,6 @@ export default function AnaSayfa() {
     if (hedefKlasorlerYukleniyor) return;
 
     setHedefKlasorGezintiYolu(klasorYolu);
-    setHedefYolInput(klasorYolu);
     hedefKlasorleriGetir(klasorYolu);
   };
 
@@ -812,7 +822,6 @@ export default function AnaSayfa() {
     }
 
     setHedefKlasorGezintiYolu(ustYol);
-    setHedefYolInput(ustYol);
     hedefKlasorleriGetir(ustYol);
   };
 
@@ -822,7 +831,6 @@ export default function AnaSayfa() {
       return;
     }
     setTasinacakDosya(dosya);
-    setHedefYolInput("/");
     setHedefKlasorGezintiYolu("/");
     setHedefKlasorler([]);
     setMoveModalAcik(true);
@@ -883,7 +891,7 @@ export default function AnaSayfa() {
         );
 
         setTasinacakDosya(null);
-        setHedefYolInput("/");
+        hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
@@ -1195,7 +1203,6 @@ export default function AnaSayfa() {
           onClick={() => {
             setMoveModalAcik(false);
             setTasinacakDosya(null);
-            setHedefYolInput("/");
             setHedefKlasorler([]);
             setHedefKlasorGezintiYolu("/");
           }}
@@ -1303,7 +1310,6 @@ export default function AnaSayfa() {
                 onClick={() => {
                   setMoveModalAcik(false);
                   setTasinacakDosya(null);
-                  setHedefYolInput("/");
                   setHedefKlasorler([]);
                   setHedefKlasorGezintiYolu("/");
                 }}
