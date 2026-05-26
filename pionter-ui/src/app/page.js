@@ -1991,7 +1991,7 @@ export default function AnaSayfa() {
                   <div
                     key={index}
                     onClick={() => klasoreGir(dosya)}
-                    className="group relative flex flex-col items-center p-4 rounded-xl hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] cursor-pointer transition-all duration-200"
+                    className="group relative flex flex-col items-center min-w-0 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4 transition-all hover:border-[#458588] dark:hover:border-[#83a598] hover:shadow-md cursor-pointer"
                   >
                     {dosya.klasorMu ? (
                       <svg
@@ -2010,7 +2010,10 @@ export default function AnaSayfa() {
                         <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                       </svg>
                     )}
-                    <span className="text-sm font-medium text-center w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]">
+                    <span
+                      title={dosya.ad}
+                      className="block text-sm font-medium text-center w-full max-w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]"
+                    >
                       {dosya.ad}
                     </span>
                     <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
@@ -2030,7 +2033,7 @@ export default function AnaSayfa() {
                             acikMenuIndex === index ? null : index,
                           );
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all cursor-pointer"
                       >
                         <svg
                           className="w-4 h-4"
