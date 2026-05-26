@@ -432,9 +432,9 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Klasör oluşturulamadı", http.StatusInternalServerError)
 		return
 	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"`))
+	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"}`))
 }
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -651,11 +651,18 @@ func guvenliYolOlustur(izoleKlasor string, kullaniciYolu string) (string, error)
 	if kullaniciYolu == "" {
 		kullaniciYolu = "/"
 	}
-	temizKullaniciYolu := path.Clean("/" + kullaniciYolu)
-	if strings.Contains(temizKullaniciYolu, "..") {
+
+	if strings.Contains(kullaniciYolu, "..") || strings.Contains(kullaniciYolu, "\\") || strings.Contains(kullaniciYolu, "⁄") {
 		return "", fmt.Errorf("geçersiz yol")
 	}
+
 	temizIzoleKlasor := path.Clean(izoleKlasor)
+
+	if !strings.HasPrefix(temizIzoleKlasor, "/") {
+		return "", fmt.Errorf("izole klasör yolu mutlak olmalı")
+	}
+	temizKullaniciYolu := path.Clean("/" + kullaniciYolu)
+
 	if temizKullaniciYolu == "/" {
 		return temizIzoleKlasor, nil
 	}
