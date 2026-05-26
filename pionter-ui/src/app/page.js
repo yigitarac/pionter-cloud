@@ -78,6 +78,9 @@ export default function AnaSayfa() {
       renameItem: "Rename",
       renamePrompt: "Enter the new name:",
       renameFailed: "Rename failed.",
+      moveItem: "Move",
+      movePrompt: "Enter target folder path:",
+      moveFailed: "Move failed.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -128,6 +131,9 @@ export default function AnaSayfa() {
       renameItem: "Yeniden Adlandır",
       renamePrompt: "Yeni adı gir:",
       renameFailed: "Yeniden adlandırma başarısız.",
+      moveItem: "Taşı",
+      movePrompt: "Hedef klasör yolunu gir:",
+      moveFailed: "Taşıma başarısız.",
     },
   };
 
