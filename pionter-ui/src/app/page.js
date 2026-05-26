@@ -519,6 +519,77 @@ export default function AnaSayfa() {
       });
   };
 
+  const dosyaVeyaKlasorTasi = (dosya) => {
+    if (!seciliSunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin."
+          : "You must select a server first.",
+      );
+      return;
+    }
+
+    const hedefYolGirdisi = window.prompt(t.movePrompt, "/");
+
+    if (!hedefYolGirdisi) {
+      return;
+    }
+
+    if (
+      hedefYolGirdisi.includes("..") ||
+      hedefYolGirdisi.includes("\\") ||
+      hedefYolGirdisi.includes("⁄")
+    ) {
+      alert(
+        dil === "tr"
+          ? "Hedef yolda \\, ⁄ veya .. kullanılamaz."
+          : "Target path cannot include \\, ⁄ or ...",
+      );
+      return;
+    }
+
+    const hedefYol = hedefYolGirdisi.startsWith("/")
+      ? hedefYolGirdisi
+      : "/" + hedefYolGirdisi;
+
+    if (hedefYol == mevcutYol) {
+      alert(
+        dil === "tr"
+          ? "Zaten bu klasördesin."
+          : "This item is already in that folder.",
+      );
+      return;
+    }
+
+    setAcikMenuIndex(null);
+    setYukleniyor(true);
+
+    fetch("http://localhost:8080/api/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kullaniciAdi,
+        sifre,
+        server_id: seciliSunucu.id,
+        kaynak_yol: mevcutYol,
+        hedef_yol: hedefYol,
+        dosya_adi: dosya.ad,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Taşıma başarısız");
+        }
+
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        console.log("Taşıma hatası:", hata);
+        setYukleniyor(false);
+        alert(t.moveFailed);
+      });
+  };
+
   const suruklemeUstte = (e) => {
     e.preventDefault();
     setSurukleniyor(true);
@@ -1144,7 +1215,15 @@ export default function AnaSayfa() {
                           >
                             {t.renameItem}
                           </button>
-
+                          <button
+                            onClick={() => {
+                              setAcikMenuIndex(null);
+                              dosyaVeyaKlasorTasi(dosya);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                          >
+                            {t.moveItem}
+                          </button>
                           <button
                             onClick={() => {
                               setAcikMenuIndex(null);
