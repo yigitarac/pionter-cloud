@@ -136,6 +136,14 @@ type SilmeBilgileri struct {
 	DosyaAdi     string `json:"dosya_adi"`
 	KlasorMu     bool   `json:"klasor_mu"`
 }
+type YenidenAdlandirBilgileri struct {
+	KullaniciAdi string `json:"kullaniciAdi"`
+	sifre        string `json:"sifre"`
+	Yol          string `json:"yol"`
+	ServerID     int    `json:"server_id"`
+	EskiAd       string `json:"eski_ad"`
+	YeniAd       string `json:"yeni_ad"`
+}
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
