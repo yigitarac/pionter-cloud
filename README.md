@@ -19,6 +19,9 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 - Delete files and empty folders
 - Rename files and folders
 - Move files and folders
+  - nested target folder picker
+  - breadcrumb navigation in move modal
+  - safeguards against moving folders into themselves
 - Breadcrumb navigation
 - Search/filter files in the current folder
 - File metadata display
@@ -107,7 +110,6 @@ Before production use, the following areas need to be improved:
 
 Planned improvements:
 
-- Better move target selection UI
 - Right-click context menu
 - Multi-file selection
 - Recursive folder delete with confirmation
@@ -117,6 +119,7 @@ Planned improvements:
 - Drag and drop files/folders into folders
 - Deployment guide
 - Authentication and production security improvements
+- Performance improvements for large folders
 
 ## License
 
