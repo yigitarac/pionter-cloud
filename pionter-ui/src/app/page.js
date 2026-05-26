@@ -400,6 +400,48 @@ export default function AnaSayfa() {
         );
       });
   };
+
+  const dosyaVeyaKlasorSil = (dosya) => {
+    if (!seciliSunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin"
+          : "You must select a server first",
+      );
+      return;
+    }
+
+    const onay = window.confirm(`${dosya.ad} - ${t.deleteConfirm}`);
+    if (!onay) return;
+
+    setYukleniyor(true);
+
+    fetch("http://localhost:8080/api/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: json.stringify({
+        kullaniciAdi,
+        sifre,
+        yol: mevcutYol,
+        server_id: seciliSunucu.id,
+        dosya_adi: dosya.ad,
+        klasor_mu: dosya.klasorMu,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Silme başarısız");
+        }
+
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        console.log("Silme hatası:", hata);
+        setYukleniyor(false);
+        alert(t.deleteFailed);
+      });
+  };
+
   const suruklemeUstte = (e) => {
     e.preventDefault();
     setSurukleniyor(true);
