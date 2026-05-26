@@ -29,6 +29,7 @@ export default function AnaSayfa() {
   const [yeniKlasorAdi, setYeniKlasorAdi] = useState("");
   const [acikMenuIndex, setAcikMenuIndex] = useState(null);
   const [aramaMetni, setAramaMetni] = useState("");
+  const [toast, setToast] = useState(null);
 
   const sozluk = {
     en: {
@@ -466,13 +467,16 @@ export default function AnaSayfa() {
         if (!cevap.ok) {
           throw new Error("Silme başarısız");
         }
-
+        toastGoster(
+          dil === "tr" ? "Silme başarılı." : "Deleted successfully.",
+          "success",
+        );
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
         console.log("Silme hatası:", hata);
         setYukleniyor(false);
-        alert(t.deleteFailed);
+        toastGoster(t.deleteFailed, "error");
       });
   };
 
@@ -529,13 +533,18 @@ export default function AnaSayfa() {
         if (!cevap.ok) {
           throw new Error("Yeniden adlandırma başarısız");
         }
-
+        toastGoster(
+          dil === "tr"
+            ? "Yeniden adlandırma başarılı."
+            : "Renamed successfully.",
+          "success",
+        );
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
         console.log("Yeniden adlandırma hatası:", hata);
         setYukleniyor(false);
-        alert(t.renameFailed);
+        toastGoster(t.renameFailed, "error");
       });
   };
 
@@ -600,13 +609,16 @@ export default function AnaSayfa() {
         if (!cevap.ok) {
           throw new Error("Taşıma başarısız");
         }
-
+        toastGoster(
+          dil === "tr" ? "Taşıma başarılı." : "Moved successfully.",
+          "success",
+        );
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
         console.log("Taşıma hatası:", hata);
         setYukleniyor(false);
-        alert(t.moveFailed);
+        toastGoster(t.moveFailed, "error");
       });
   };
 
@@ -626,6 +638,14 @@ export default function AnaSayfa() {
     }
 
     return (boyut / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+  };
+
+  const toastGoster = (mesaj, tip = "info") => {
+    setToast({ mesaj, tip });
+
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
   };
 
   const suruklemeUstte = (e) => {
@@ -781,6 +801,21 @@ export default function AnaSayfa() {
   );
   return (
     <div className={karanlikMod ? "dark" : ""}>
+      {toast && (
+        <div className="fixed right-4 top-4 z-50">
+          <div
+            className={`rounded-lg px-4 py-3 shadow-lg text-sm font-semibold border ${
+              toast.tip === "success"
+                ? "bg-[#98971a] text-[#fbf1c7] border-[#79740e]"
+                : toast.tip === "error"
+                  ? "bg-[#cc241d] text-[#fbf1c7] border-[#9d0006]"
+                  : "bg-[#458588] text-[#fbf1c7] border-[#076678]"
+            }`}
+          >
+            {toast.mesaj}
+          </div>
+        </div>
+      )}
       <div
         onClick={() => setAcikMenuIndex(null)}
         className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200"
