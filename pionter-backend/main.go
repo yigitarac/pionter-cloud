@@ -67,6 +67,7 @@ func main() {
 	http.HandleFunc("/api/servers/list", sunuculariListele)
 	http.HandleFunc("/api/folders/create", klasorOlustur)
 	http.HandleFunc("/api/delete", dosyaVeyaKlasorSil)
+	http.HandleFunc("/api/rename", dosyaVeyaKlasorYenidenAdlandir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
