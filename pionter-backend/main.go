@@ -678,6 +678,11 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 	eskiYol := path.Join(kaynakGercekYol, bilgiler.DosyaAdi)
 	yeniYol := path.Join(hedefGercekYol, bilgiler.DosyaAdi)
 
+	if hedefGercekYol == eskiYol || strings.HasPrefix(hedefGercekYol, eskiYol+"/") {
+		http.Error(w, "Bir klasör kendi içine taşınamaz", http.StatusBadRequest)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
