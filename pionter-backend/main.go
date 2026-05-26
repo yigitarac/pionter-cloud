@@ -630,7 +630,7 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
 		return
