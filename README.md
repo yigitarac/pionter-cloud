@@ -9,6 +9,8 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 ## Current Features
 
 - User registration and login flow
+  - register with username, email and password
+  - login with username or email
 - Add and list multiple servers
 - Connect to a selected server over SSH/SFTP
 - List files and folders
