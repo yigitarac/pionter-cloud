@@ -81,8 +81,10 @@ type BaglantiBilgileri struct {
 	ServerID     int    `json:"server_id"`
 }
 type DosyaBilgileri struct {
-	Ad       string `json:"ad"`
-	KlasorMu bool   `json:"klasorMu"`
+	Ad           string `json:"ad"`
+	KlasorMu     bool   `json:"klasorMu"`
+	Boyut        int64  `json:"boyut"`
+	Degistirilme string `json:"degistirilme"`
 }
 type DosyaListeCevabi struct {
 	Basarili bool             `json:"basarili"`
