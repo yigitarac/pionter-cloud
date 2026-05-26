@@ -333,6 +333,28 @@ export default function AnaSayfa() {
     klasoruYenile(hedefYol);
   };
 
+  const sunucularaDon = () => {
+    setSeciliSunucu(null);
+    setMevcutYol("/");
+    setDosyalar([]);
+    setDosyaMesaji("");
+    setAramaMetni("");
+    setYeniKlasorAdi("");
+    setAcikMenuIndex(null);
+    setYukleniyor(false);
+
+    setRenameModalAcik(false);
+    setYenidenAdlandirilacakDosya(null);
+    setYeniAd("");
+
+    setMoveModalAcik(false);
+    setTasinacakDosya(null);
+    setHedefYolInput("/");
+
+    setDeleteModalAcik(false);
+    setSilinecekDosya(null);
+  };
+
   const dosyayiIndir = (dosya) => {
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
@@ -1342,7 +1364,7 @@ export default function AnaSayfa() {
                   </div>
 
                   <button
-                    onClick={() => setSeciliSunucu(null)}
+                    onClick={sunucularaDon}
                     className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors"
                   >
                     {t.backToServers}
