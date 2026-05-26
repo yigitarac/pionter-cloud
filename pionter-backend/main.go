@@ -255,6 +255,9 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		yeniDosya := DosyaBilgileri{}
 		yeniDosya.Ad = dosya.Name()
 		yeniDosya.KlasorMu = dosya.IsDir()
+		yeniDosya.Boyut = dosya.Size()
+		yeniDosya.Degistirilme = dosya.ModTime().Format("2006-01-02 15:04")
+
 		dosyaListesi = append(dosyaListesi, yeniDosya)
 	}
 	sort.Slice(dosyaListesi, func(i, j int) bool {
