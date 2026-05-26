@@ -787,12 +787,17 @@ export default function AnaSayfa() {
       });
   };
   const sunucuKaydet = () => {
+    const temizSunucuTakmaAd = sunucuTakmaAd.trim();
+    const temizSunucuIp = sunucuIp.trim();
+    const temizSunucuKullanici = sunucuKullanici.trim();
+    const temizSunucuPort = sunucuPort.trim();
+    const temizIzoleKlasor = izoleKlasor.trim();
     if (
-      !sunucuTakmaAd ||
-      !sunucuIp ||
-      !sunucuKullanici ||
-      !sunucuPort ||
-      !izoleKlasor
+      !temizSunucuTakmaAd ||
+      !temizSunucuIp ||
+      !temizSunucuKullanici ||
+      !temizSunucuPort ||
+      !temizIzoleKlasor
     ) {
       toastGoster(t.serverRequiredFields, "error");
       return;
@@ -803,7 +808,7 @@ export default function AnaSayfa() {
       return;
     }
 
-    if (baglantiTipi === "ssh_key" && !sshPrivateKey) {
+    if (baglantiTipi === "ssh_key" && !sshPrivateKey.trim()) {
       toastGoster(t.sshKeyRequired, "error");
       return;
     }
@@ -815,14 +820,14 @@ export default function AnaSayfa() {
         pionter_kullanici: kullaniciAdi,
         pionter_sifre: sifre,
 
-        sunucu_takma_ad: sunucuTakmaAd,
-        sunucu_ip: sunucuIp,
-        sunucu_port: sunucuPort,
-        sunucu_kullanici: sunucuKullanici,
+        sunucu_takma_ad: temizSunucuTakmaAd,
+        sunucu_ip: temizSunucuIp,
+        sunucu_port: temizSunucuPort,
+        sunucu_kullanici: temizSunucuKullanici,
         baglanti_tipi: baglantiTipi,
         sunucu_sifre: sunucuSifre,
         ssh_private_key: sshPrivateKey,
-        izole_klasor: izoleKlasor,
+        izole_klasor: temizIzoleKlasor,
       }),
     })
       .then((cevap) => {
