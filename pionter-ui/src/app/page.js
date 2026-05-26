@@ -253,6 +253,7 @@ export default function AnaSayfa() {
     let yeniYol =
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     setMevcutYol(yeniYol);
+    setAramaMetni("");
     klasoruYenile(yeniYol);
   };
 
@@ -262,6 +263,7 @@ export default function AnaSayfa() {
     let yeniYol = mevcutYol.substring(0, index);
     if (yeniYol === "") yeniYol = "/";
     setMevcutYol(yeniYol);
+    setAramaMetni("");
     setYukleniyor(true);
     klasoruYenile(yeniYol);
   };
@@ -270,6 +272,7 @@ export default function AnaSayfa() {
     if (hedefYol === mevcutYol) return;
 
     setMevcutYol(hedefYol);
+    setAramaMetni("");
     setDosyaMesaji("");
     setAcikMenuIndex(null);
     setYukleniyor(true);
@@ -773,6 +776,9 @@ export default function AnaSayfa() {
       });
   };
   const yolParcalari = mevcutYol.split("/").filter(Boolean);
+  const gosterilecekDosyalar = dosyalar.filter((dosya) =>
+    dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
+  );
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <div
@@ -1117,6 +1123,15 @@ export default function AnaSayfa() {
                 {t.createFolder}
               </button>
             </div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder={t.searchPlaceholder}
+                value={aramaMetni}
+                onChange={(e) => setAramaMetni(e.target.value)}
+                className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+              />
+            </div>
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
@@ -1223,9 +1238,17 @@ export default function AnaSayfa() {
                 </svg>
                 <p className="text-sm">{dosyaMesaji || t.emptyFolder}</p>
               </div>
+            ) : dosyalar.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
+                ...
+              </div>
+            ) : gosterilecekDosyalar.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
+                <p className="text-sm">{t.noSearchResults}</p>
+              </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {dosyalar.map((dosya, index) => (
+                {gosterilecekDosyalar.map((dosya, index) => (
                   <div
                     key={index}
                     onClick={() => klasoreGir(dosya)}
