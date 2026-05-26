@@ -74,6 +74,9 @@ export default function AnaSayfa() {
       deleteItem: "Delete",
       deleteConfirm: "Are you sure you want to delete this item?",
       deleteFailed: "Delete failed.",
+      renameItem: "Rename",
+      renamePrompt: "Enter the new name:",
+      renameFailed: "Rename failed.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -121,6 +124,9 @@ export default function AnaSayfa() {
       deleteItem: "Sil",
       deleteConfirm: "Bu öğeyi silmek istediğine emin misin?",
       deleteFailed: "Silme başarısız.",
+      renameItem: "Yeniden Adlandır",
+      renamePrompt: "Yeni adı gir:",
+      renameFailed: "Yeniden adlandırma başarısız.",
     },
   };
 
