@@ -48,7 +48,8 @@ export default function AnaSayfa() {
 
   const sozluk = {
     en: {
-      userPlaceholder: "Pionter Username",
+      loginIdentifierPlaceholder: "Username or email",
+      registerUsernamePlaceholder: "Username",
       passPlaceholder: "Password",
       connectBtn: "Login",
       registerBtn: "Register Account",
@@ -140,13 +141,14 @@ export default function AnaSayfa() {
         "Add your server and manage your files through a clean web interface.",
       loginTitle: "Welcome back",
       registerTitle: "Create your account",
-      loginInfo: "Login with your Pionter username and password.",
+      loginInfo: "Login with your username or email and password.",
       registerInfo: "Create a Pionter account to start adding your servers.",
       confirmMoveHere: "Move Here",
       currentMoveTarget: "Current target",
     },
     tr: {
-      userPlaceholder: "Pionter Kullanıcı Adı",
+      loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
+      registerUsernamePlaceholder: "Kullanıcı adı",
       passPlaceholder: "Şifre",
       connectBtn: "Giriş Yap",
       registerBtn: "Hesap Oluştur",
@@ -239,7 +241,7 @@ export default function AnaSayfa() {
         "Sunucunu ekle ve dosyalarını sade bir web arayüzüyle yönet.",
       loginTitle: "Tekrar hoş geldin",
       registerTitle: "Hesabını oluştur",
-      loginInfo: "Pionter kullanıcı adın ve şifrenle giriş yap.",
+      loginInfo: "Kullanıcı adın veya e-postan ve şifrenle giriş yap.",
       registerInfo:
         "Sunucularını eklemeye başlamak için Pionter hesabı oluştur.",
       confirmMoveHere: "Buraya Taşı",
@@ -1717,7 +1719,11 @@ export default function AnaSayfa() {
                     <div className="flex flex-col gap-4">
                       <input
                         type="text"
-                        placeholder={t.userPlaceholder}
+                        placeholder={
+                          isLogin
+                            ? t.loginIdentifierPlaceholder
+                            : t.registerUsernamePlaceholder
+                        }
                         value={kullaniciAdi}
                         onChange={(e) => setKullaniciAdi(e.target.value)}
                         onKeyDown={(e) => {
