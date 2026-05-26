@@ -127,6 +127,14 @@ type KlasorOlusturBilgileri struct {
 	ServerID     int    `json:"server_id"`
 	KlasorAdi    string `json:"klasor_adi"`
 }
+type SilmeBilgileri struct {
+	KullaniciAdi string `json:"kullanicAdi"`
+	Sifre        string `json:"sifre"`
+	Yol          string `json:"yol"`
+	ServerID     int    `json:"server_id"`
+	DosyaAdi     string `json:"dosya_adi"`
+	KlasorMu     bool   `json:"klasorMu"`
+}
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
