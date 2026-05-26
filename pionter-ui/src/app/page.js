@@ -34,6 +34,9 @@ export default function AnaSayfa() {
   const [yenidenAdlandirilacakDosya, setYenidenAdlandirilacakDosya] =
     useState(null);
   const [yeniAd, setYeniAd] = useState("");
+  const [moveModalAcik, setMoveModalAcik] = useState(false);
+  const [tasinacakDosya, setTasinacakDosya] = useState(null);
+  const [hedefYolInput, setHedefYolInput] = useState("/");
 
   const sozluk = {
     en: {
@@ -103,6 +106,10 @@ export default function AnaSayfa() {
       renameModalTitle: "Rename Item",
       newNamePlaceholder: "New name",
       confirmRename: "Rename",
+      moveModalTitle: "Move Item",
+      targetPathPlaceholder: "Target folder path, e.g. /Documents",
+      confirmMove: "Move",
+      targetPathEmpty: "Target folder path cannot be empty.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -172,6 +179,10 @@ export default function AnaSayfa() {
       renameModalTitle: "Yeniden Adlandır",
       newNamePlaceholder: "Yeni ad",
       confirmRename: "Yeniden Adlandır",
+      moveModalTitle: "Taşı",
+      targetPathPlaceholder: "Hedef klasör yolu, örn: /Belgeler",
+      confirmMove: "Taşı",
+      targetPathEmpty: "Hedef klasör yolu boş olamaz.",
     },
   };
 
@@ -567,32 +578,38 @@ export default function AnaSayfa() {
       toastGoster(t.selectServerFirst, "error");
       return;
     }
+    setTasinacakDosya(dosya);
+    setHedefYolInput("/");
+    setMoveModalAcik(true);
+    setAcikMenuIndex(null);
+  };
+  const tasimayiOnayla = () => {
+    if (!tasinacakDosya) return;
 
-    const hedefYolGirdisi = window.prompt(t.movePrompt, "/");
+    const temizHedefYol = hedefYolInput.trim();
 
-    if (!hedefYolGirdisi) {
+    if (!temizHedefYol) {
+      toastGoster(t.targetPathEmpty, "error");
       return;
     }
 
     if (
-      hedefYolGirdisi.includes("..") ||
-      hedefYolGirdisi.includes("\\") ||
-      hedefYolGirdisi.includes("⁄")
+      temizHedefYol.includes("..") ||
+      temizHedefYol.includes("\\") ||
+      temizHedefYol.includes("⁄")
     ) {
       toastGoster(t.invalidTargetPath, "error");
       return;
     }
 
-    const hedefYol = hedefYolGirdisi.startsWith("/")
-      ? hedefYolGirdisi
-      : "/" + hedefYolGirdisi;
-
-    if (hedefYol == mevcutYol) {
+    const hedefYol = temizHedefYol.startsWith("/")
+      ? temizHedefYol
+      : "/" + temizHedefYol;
+    if (hedefYol === mevcutYol) {
       toastGoster(t.alreadyInThisFolder, "error");
       return;
     }
-
-    setAcikMenuIndex(null);
+    setMoveModalAcik(false);
     setYukleniyor(true);
 
     fetch("http://localhost:8080/api/move", {
@@ -604,17 +621,21 @@ export default function AnaSayfa() {
         server_id: seciliSunucu.id,
         kaynak_yol: mevcutYol,
         hedef_yol: hedefYol,
-        dosya_adi: dosya.ad,
+        dosya_adi: tasinacakDosya.ad,
       }),
     })
       .then((cevap) => {
         if (!cevap.ok) {
           throw new Error("Taşıma başarısız");
         }
+
         toastGoster(
           dil === "tr" ? "Taşıma başarılı." : "Moved successfully.",
           "success",
         );
+
+        setTasinacakDosya(null);
+        setHedefYolInput("/");
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
@@ -623,7 +644,6 @@ export default function AnaSayfa() {
         toastGoster(t.moveFailed, "error");
       });
   };
-
   const dosyaBoyutuYaz = (boyut) => {
     if (!boyut || boyut === 0) return "0 B";
 
@@ -869,6 +889,68 @@ export default function AnaSayfa() {
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
               >
                 {t.confirmRename}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {moveModalAcik && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+          >
+            <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.moveModalTitle}
+            </h2>
+
+            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-4 truncate">
+              {t.moveItem}: {tasinacakDosya?.ad}
+            </p>
+
+            <input
+              type="text"
+              value={hedefYolInput}
+              onChange={(e) => setHedefYolInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  tasimayiOnayla();
+                }
+
+                if (e.key === "Escape") {
+                  setMoveModalAcik(false);
+                  setTasinacakDosya(null);
+                  setHedefYolInput("/");
+                }
+              }}
+              placeholder={t.targetPathPlaceholder}
+              className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              autoFocus
+            />
+
+            <p className="mt-2 text-xs text-[#7c6f64] dark:text-[#a89984]">
+              {dil === "tr"
+                ? "Örnek: / veya /Belgeler veya /Belgeler/Resimler"
+                : "Example: / or /Documents or /Documents/Images"}
+            </p>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setMoveModalAcik(false);
+                  setTasinacakDosya(null);
+                  setHedefYolInput("/");
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                onClick={tasimayiOnayla}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
+              >
+                {t.confirmMove}
               </button>
             </div>
           </div>
