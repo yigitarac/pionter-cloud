@@ -30,6 +30,10 @@ export default function AnaSayfa() {
   const [acikMenuIndex, setAcikMenuIndex] = useState(null);
   const [aramaMetni, setAramaMetni] = useState("");
   const [toast, setToast] = useState(null);
+  const [renameModalAcik, setRenameModalAcik] = useState(false);
+  const [yenidenAdlandirilacakDosya, setYenidenAdlandirilacakDosya] =
+    useState(null);
+  const [yeniAd, setYeniAd] = useState("");
 
   const sozluk = {
     en: {
@@ -96,6 +100,9 @@ export default function AnaSayfa() {
       invalidFolderName: "Folder name cannot include /, \\, ⁄ or ...",
       invalidTargetPath: "Target path cannot include \\, ⁄ or ...",
       alreadyInThisFolder: "This item is already in that folder.",
+      renameModalTitle: "Rename Item",
+      newNamePlaceholder: "New name",
+      confirmRename: "Rename",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -162,6 +169,9 @@ export default function AnaSayfa() {
       invalidFolderName: "Klasör adında /, \\, ⁄ veya .. kullanılamaz.",
       invalidTargetPath: "Hedef yolda \\, ⁄ veya .. kullanılamaz.",
       alreadyInThisFolder: "Bu öğe zaten o klasörde.",
+      renameModalTitle: "Yeniden Adlandır",
+      newNamePlaceholder: "Yeni ad",
+      confirmRename: "Yeniden Adlandır",
     },
   };
 
@@ -483,29 +493,38 @@ export default function AnaSayfa() {
       toastGoster(t.selectServerFirst, "error");
       return;
     }
+    setYenidenAdlandirilacakDosya(dosya);
+    setYeniAd(dosya.ad);
+    setRenameModalAcik(true);
+    setAcikMenuIndex(null);
+  };
+  const yenidenAdlandirmayiOnayla = () => {
+    if (!yenidenAdlandirilacakDosya) return;
 
-    const yeniAd = window.prompt(t.renamePrompt, dosya.ad);
+    const temizYeniAd = yeniAd.trim();
 
-    if (!yeniAd) {
-      return;
+    if (!temizYeniAd) {
+      toastGoster(t.folderNameEmpty, "error");
     }
 
     if (
-      yeniAd.includes("/") ||
-      yeniAd.includes("\\") ||
-      yeniAd.includes("..") ||
-      yeniAd.includes("⁄")
+      temizYeniAd.includes("/") ||
+      temizYeniAd.includes("\\") ||
+      temizYeniAd.includes("..") ||
+      temizYeniAd.includes("⁄")
     ) {
       toastGoster(t.invalidFileName, "error");
       return;
     }
-
-    if (yeniAd == dosya.ad) {
+    if (temizYeniAd === yenidenAdlandirilacakDosya.ad) {
+      setRenameModalAcik(false);
+      setYenidenAdlandirilacakDosya(null);
+      setYeniAd("");
       return;
     }
 
     setYukleniyor(true);
-    setAcikMenuIndex(null);
+    setRenameModalAcik(false);
 
     fetch("http://localhost:8080/api/rename", {
       method: "POST",
@@ -515,20 +534,24 @@ export default function AnaSayfa() {
         sifre,
         yol: mevcutYol,
         server_id: seciliSunucu.id,
-        eski_ad: dosya.ad,
-        yeni_ad: yeniAd,
+        eski_ad: yenidenAdlandirilacakDosya.ad,
+        yeni_ad: temizYeniAd,
       }),
     })
       .then((cevap) => {
         if (!cevap.ok) {
           throw new Error("Yeniden adlandırma başarısız");
         }
+
         toastGoster(
           dil === "tr"
             ? "Yeniden adlandırma başarılı."
             : "Renamed successfully.",
           "success",
         );
+
+        setYenidenAdlandirilacakDosya(null);
+        setYeniAd("");
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
@@ -791,6 +814,62 @@ export default function AnaSayfa() {
             }`}
           >
             {toast.mesaj}
+          </div>
+        </div>
+      )}
+      {renameModalAcik && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+          >
+            <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.renameModalTitle}
+            </h2>
+
+            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-4 truncate">
+              {yenidenAdlandirilacakDosya?.ad}
+            </p>
+
+            <input
+              type="text"
+              value={yeniAd}
+              onChange={(e) => setYeniAd(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  yenidenAdlandirmayiOnayla();
+                }
+
+                if (e.key === "Escape") {
+                  setRenameModalAcik(false);
+                  setYenidenAdlandirilacakDosya(null);
+                  setYeniAd("");
+                }
+              }}
+              placeholder={t.newNamePlaceholder}
+              className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+              autoFocus
+            />
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setRenameModalAcik(false);
+                  setYenidenAdlandirilacakDosya(null);
+                  setYeniAd("");
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                onClick={yenidenAdlandirmayiOnayla}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
+              >
+                {t.confirmRename}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1142,7 +1221,7 @@ export default function AnaSayfa() {
                 placeholder={t.searchPlaceholder}
                 value={aramaMetni}
                 onChange={(e) => setAramaMetni(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
               />
             </div>
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
