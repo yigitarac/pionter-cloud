@@ -444,6 +444,84 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"}`))
 }
+func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var bilgiler SilmeBilgileri
+	err := json.NewDecoder(r.Body).Decode(&bilgiler)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	if !guvenliAdMi(bilgiler.DosyaAdi) {
+		http.Error(w, "Geçersiz dosya veya klasör adı", http.StatusBadRequest)
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+	}
+
+	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
+	}
+
+	silinecekYol := path.Join(gercekYol, bilgiler.DosyaAdi)
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("SSH Bağlantı Hatası:", err)
+		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("SFTP Hatası:", err)
+		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer sftpClient.Close()
+
+	if bilgiler.KlasorMu {
+		err = sftpClient.RemoveDirectory(silinecekYol)
+	} else {
+		err = sftpClient.Remove(silinecekYol)
+	}
+
+	if err != nil {
+		fmt.Println("Silme Hatası:", err)
+		http.Error(w, "Dosya veya klasör silinemedi", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Silme başarılı"}`))
+}
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
