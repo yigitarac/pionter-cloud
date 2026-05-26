@@ -27,6 +27,7 @@ export default function AnaSayfa() {
   const [sunucular, setSunucular] = useState([]);
   const [dosyaMesaji, setDosyaMesaji] = useState("");
   const [yeniKlasorAdi, setYeniKlasorAdi] = useState("");
+  const [acikMenuIndex, setAcikMenuIndex] = useState(null);
 
   const sozluk = {
     en: {
