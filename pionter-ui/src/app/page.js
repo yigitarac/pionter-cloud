@@ -44,6 +44,7 @@ export default function AnaSayfa() {
   const [hedefKlasorler, setHedefKlasorler] = useState([]);
   const [hedefKlasorlerYukleniyor, setHedefKlasorlerYukleniyor] =
     useState(false);
+  const [hedefKlasorGezintiYolu, setHedefKlasorGezintiYolu] = useState("/");
 
   const sozluk = {
     en: {
@@ -144,6 +145,8 @@ export default function AnaSayfa() {
       registerTitle: "Create your account",
       loginInfo: "Login with your Pionter username and password.",
       registerInfo: "Create a Pionter account to start adding your servers.",
+      confirmMoveHere: "Move Here",
+      currentMoveTarget: "Current target",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -245,6 +248,8 @@ export default function AnaSayfa() {
       loginInfo: "Pionter kullanıcı adın ve şifrenle giriş yap.",
       registerInfo:
         "Sunucularını eklemeye başlamak için Pionter hesabı oluştur.",
+      confirmMoveHere: "Buraya Taşı",
+      currentMoveTarget: "Geçerli hedef",
     },
   };
 
@@ -417,6 +422,7 @@ export default function AnaSayfa() {
     setAcikMenuIndex(null);
     setYukleniyor(false);
     setYuklemeMesaji("");
+    setHedefKlasorGezintiYolu("/");
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -786,6 +792,30 @@ export default function AnaSayfa() {
       });
   };
 
+  const hedefKlasoreGir = (klasorYolu) => {
+    if (hedefKlasorlerYukleniyor) return;
+
+    setHedefKlasorGezintiYolu(klasorYolu);
+    setHedefYolInput(klasorYolu);
+    hedefKlasorleriGetir(klasorYolu);
+  };
+
+  const hedefUstKlasoreDon = () => {
+    if (hedefKlasorlerYukleniyor) return;
+    if (hedefKlasorGezintiYolu === "/") return;
+
+    const sonSlashIndex = hedefKlasorGezintiYolu.lastIndexOf("/");
+    let ustYol = hedefKlasorGezintiYolu.substring(0, sonSlashIndex);
+
+    if (ustYol === "") {
+      ustYol = "/";
+    }
+
+    setHedefKlasorGezintiYolu(ustYol);
+    setHedefYolInput(ustYol);
+    hedefKlasorleriGetir(ustYol);
+  };
+
   const dosyaVeyaKlasorTasi = (dosya) => {
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
@@ -793,6 +823,7 @@ export default function AnaSayfa() {
     }
     setTasinacakDosya(dosya);
     setHedefYolInput("/");
+    setHedefKlasorGezintiYolu("/");
     setHedefKlasorler([]);
     setMoveModalAcik(true);
     setAcikMenuIndex(null);
@@ -802,7 +833,7 @@ export default function AnaSayfa() {
     if (yukleniyor) return;
     if (!tasinacakDosya) return;
 
-    const temizHedefYol = hedefYolInput.trim();
+    const temizHedefYol = hedefKlasorGezintiYolu.trim();
 
     if (!temizHedefYol) {
       toastGoster(t.targetPathEmpty, "error");
@@ -861,6 +892,13 @@ export default function AnaSayfa() {
         setYuklemeMesaji("");
         toastGoster(t.moveFailed, "error");
       });
+  };
+  const yoluKullaniciyaGoster = (yol) => {
+    if (!yol || yol === "/") {
+      return t.homeFolder;
+    }
+
+    return t.homeFolder + yol;
   };
   const dosyaBoyutuYaz = (boyut) => {
     if (!boyut || boyut === 0) return "0 B";
@@ -1159,6 +1197,7 @@ export default function AnaSayfa() {
             setTasinacakDosya(null);
             setHedefYolInput("/");
             setHedefKlasorler([]);
+            setHedefKlasorGezintiYolu("/");
           }}
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
         >
@@ -1174,36 +1213,39 @@ export default function AnaSayfa() {
               {t.moveItem}: {tasinacakDosya?.ad}
             </p>
 
-            <input
-              type="text"
-              value={hedefYolInput}
-              onChange={(e) => setHedefYolInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  tasimayiOnayla();
-                }
-
-                if (e.key === "Escape") {
-                  setMoveModalAcik(false);
-                  setTasinacakDosya(null);
-                  setHedefYolInput("/");
-                  setHedefKlasorler([]);
-                }
-              }}
-              placeholder={t.targetPathPlaceholder}
-              className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-              autoFocus
-            />
-
-            <p className="mt-2 text-xs text-[#7c6f64] dark:text-[#a89984]">
-              {dil === "tr"
-                ? "Örnek: / veya /Belgeler veya /Belgeler/Resimler"
-                : "Example: / or /Documents or /Documents/Images"}
-            </p>
-            <div className="mt-4 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-3">
-              <p className="mb-2 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
-                {dil === "tr" ? "Klasör seç:" : "Choose folder:"}
+            <div className="rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] px-4 py-3">
+              <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984] mb-1">
+                {t.currentMoveTarget}
               </p>
+
+              <p className="text-sm font-bold truncate text-[#3c3836] dark:text-[#ebdbb2]">
+                {yoluKullaniciyaGoster(hedefKlasorGezintiYolu)}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                    {dil === "tr" ? "Klasör seç:" : "Choose folder:"}
+                  </p>
+
+                  <p className="mt-1 truncate text-xs text-[#928374] dark:text-[#a89984]">
+                    {yoluKullaniciyaGoster(hedefKlasorGezintiYolu)}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={hedefUstKlasoreDon}
+                  disabled={
+                    hedefKlasorGezintiYolu === "/" || hedefKlasorlerYukleniyor
+                  }
+                  className="shrink-0 rounded-md px-3 py-1.5 text-xs font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {dil === "tr" ? "Üst" : "Up"}
+                </button>
+              </div>
 
               {hedefKlasorlerYukleniyor ? (
                 <p className="text-xs text-[#928374] dark:text-[#a89984]">
@@ -1214,19 +1256,22 @@ export default function AnaSayfa() {
               ) : hedefKlasorler.length === 0 ? (
                 <p className="text-xs text-[#928374] dark:text-[#a89984]">
                   {dil === "tr"
-                    ? "Bu konumda klasör yok."
-                    : "No folders in this location."}
+                    ? "Bu konumda alt klasör yok."
+                    : "No subfolders in this location."}
                 </p>
               ) : (
-                <div className="max-h-40 overflow-y-auto space-y-1">
+                <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar pr-1">
                   {hedefKlasorler.map((klasor) => {
-                    const klasorYolu = "/" + klasor.ad;
+                    const klasorYolu =
+                      hedefKlasorGezintiYolu === "/"
+                        ? "/" + klasor.ad
+                        : hedefKlasorGezintiYolu + "/" + klasor.ad;
 
                     return (
                       <button
                         key={klasor.ad}
                         type="button"
-                        onClick={() => setHedefYolInput(klasorYolu)}
+                        onClick={() => hedefKlasoreGir(klasorYolu)}
                         className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors flex items-center gap-2"
                       >
                         <svg
@@ -1252,6 +1297,7 @@ export default function AnaSayfa() {
                   setTasinacakDosya(null);
                   setHedefYolInput("/");
                   setHedefKlasorler([]);
+                  setHedefKlasorGezintiYolu("/");
                 }}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
               >
@@ -1263,7 +1309,7 @@ export default function AnaSayfa() {
                 disabled={yukleniyor}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t.confirmMove}
+                {t.confirmMoveHere}
               </button>
             </div>
           </div>
