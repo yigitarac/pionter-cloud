@@ -394,6 +394,7 @@ export default function AnaSayfa() {
   };
 
   const dosyayiIndir = (dosya) => {
+    if (yukleniyor) return;
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
       return;
@@ -445,6 +446,7 @@ export default function AnaSayfa() {
   };
 
   const sunucuyaDosyaYukle = (dosya) => {
+    if (yukleniyor) return;
     if (!dosya) return;
     if (
       dosya.name.includes("/") ||
@@ -492,6 +494,7 @@ export default function AnaSayfa() {
       });
   };
   const klasorOlustur = () => {
+    if (yukleniyor) return;
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
       return;
@@ -554,6 +557,7 @@ export default function AnaSayfa() {
   };
 
   const silmeyiOnayla = () => {
+    if (yukleniyor) return;
     if (!silinecekDosya) return;
 
     const silinecekDosyaAdi = silinecekDosya.ad;
@@ -607,6 +611,7 @@ export default function AnaSayfa() {
     setAcikMenuIndex(null);
   };
   const yenidenAdlandirmayiOnayla = () => {
+    if (yukleniyor) return;
     if (!yenidenAdlandirilacakDosya) return;
 
     const temizYeniAd = yeniAd.trim();
@@ -683,6 +688,7 @@ export default function AnaSayfa() {
     setAcikMenuIndex(null);
   };
   const tasimayiOnayla = () => {
+    if (yukleniyor) return;
     if (!tasinacakDosya) return;
 
     const temizHedefYol = hedefYolInput.trim();
@@ -789,6 +795,7 @@ export default function AnaSayfa() {
   const dosyaBirakildi = (e) => {
     e.preventDefault();
     setSurukleniyor(false);
+    if (yukleniyor) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       sunucuyaDosyaYukle(e.dataTransfer.files[0]);
     }
@@ -863,6 +870,7 @@ export default function AnaSayfa() {
   };
 
   const sunucuKaydet = () => {
+    if (yukleniyor) return;
     const temizSunucuTakmaAd = sunucuTakmaAd.trim();
     const temizSunucuIp = sunucuIp.trim();
     const temizSunucuKullanici = sunucuKullanici.trim();
