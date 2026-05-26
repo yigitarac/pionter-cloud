@@ -422,6 +422,7 @@ export default function AnaSayfa() {
     if (!onay) return;
 
     setYukleniyor(true);
+    setAcikMenuIndex(null);
 
     fetch("http://localhost:8080/api/delete", {
       method: "POST",
@@ -484,6 +485,7 @@ export default function AnaSayfa() {
     }
 
     setYukleniyor(true);
+    setAcikMenuIndex(null);
 
     fetch("http://localhost:8080/api/rename", {
       method: "POST",
@@ -660,7 +662,10 @@ export default function AnaSayfa() {
   };
   return (
     <div className={karanlikMod ? "dark" : ""}>
-      <div className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200">
+      <div
+        onClick={() => setAcikMenuIndex(null)}
+        className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200"
+      >
         <header className="sticky top-0 z-10 bg-[#fbf1c7] dark:bg-[#282828] border-b border-[#d5c4a1] dark:border-[#3c3836] px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <svg
@@ -1099,50 +1104,53 @@ export default function AnaSayfa() {
                     <span className="text-sm font-medium text-center w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]">
                       {dosya.ad}
                     </span>
-                    <button
-                      title={t.deleteItem}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dosyaVeyaKlasorSil(dosya);
-                      }}
-                      className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-all"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <div className="absolute right-2 top-2">
+                      <button
+                        title="Menu"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAcikMenuIndex(
+                            acikMenuIndex === index ? null : index,
+                          );
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      title={t.renameItem}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dosyaVeyaKlasorYenidenAdlandir(dosya);
-                      }}
-                      className="absolute right-2 top-11 opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] transition-all"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
-                        />
-                      </svg>
-                    </button>
+                        <svg
+                          className="w-4 h-4"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                        </svg>
+                      </button>
+
+                      {acikMenuIndex === index && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] shadow-lg overflow-hidden"
+                        >
+                          <button
+                            onClick={() => {
+                              setAcikMenuIndex(null);
+                              dosyaVeyaKlasorYenidenAdlandir(dosya);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                          >
+                            {t.renameItem}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAcikMenuIndex(null);
+                              dosyaVeyaKlasorSil(dosya);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-[#cc241d] hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                          >
+                            {t.deleteItem}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
