@@ -28,6 +28,7 @@ export default function AnaSayfa() {
   const [dosyaMesaji, setDosyaMesaji] = useState("");
   const [yeniKlasorAdi, setYeniKlasorAdi] = useState("");
   const [acikMenuIndex, setAcikMenuIndex] = useState(null);
+  const [aramaMetni, setAramaMetni] = useState("");
 
   const sozluk = {
     en: {
@@ -82,6 +83,8 @@ export default function AnaSayfa() {
       movePrompt: "Enter target folder path:",
       moveFailed: "Move failed.",
       homeFolder: "Home",
+      searchPlaceholder: "Search in current folder...",
+      noSearchResults: "No matching files or folders found.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -135,7 +138,9 @@ export default function AnaSayfa() {
       moveItem: "Taşı",
       movePrompt: "Hedef klasör yolunu gir:",
       moveFailed: "Taşıma başarısız.",
-      homeFolder: "Ana Klasör",
+      homeFolder: "Home",
+      searchPlaceholder: "Mevcut klasörde ara...",
+      noSearchResults: "Eşleşen dosya veya klasör bulunamadı.",
     },
   };
 
