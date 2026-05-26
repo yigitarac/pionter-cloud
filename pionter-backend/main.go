@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -254,6 +255,12 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		yeniDosya.KlasorMu = dosya.IsDir()
 		dosyaListesi = append(dosyaListesi, yeniDosya)
 	}
+	sort.Slice(dosyaListesi, func(i, j int) bool {
+		if dosyaListesi[i].KlasorMu != dosyaListesi[j].KlasorMu {
+			return dosyaListesi[i].KlasorMu
+		}
+		return strings.ToLower(dosyaListesi[i].Ad) < strings.ToLower(dosyaListesi[j].Ad)
+	})
 	w.Header().Set("Content-Type", "application/json")
 	mesaj := "Klasör okundu"
 	if len(dosyaListesi) == 0 {
