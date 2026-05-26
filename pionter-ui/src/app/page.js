@@ -231,6 +231,7 @@ export default function AnaSayfa() {
   const t = sozluk[dil];
 
   const yeniKayitOlustur = () => {
+    if (yukleniyor) return;
     if (!kullaniciAdi || !sifre) {
       toastGoster(t.loginMissing, "error");
       return;
@@ -328,6 +329,7 @@ export default function AnaSayfa() {
   };
 
   const baglantiyiBaslat = () => {
+    if (yukleniyor) return;
     if (!kullaniciAdi || !sifre) {
       toastGoster(t.loginMissing, "error");
       return;
@@ -395,6 +397,34 @@ export default function AnaSayfa() {
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
+  };
+
+  const sunucuSec = (sunucu) => {
+    if (yukleniyor) return;
+
+    setSeciliSunucu(sunucu);
+    setMevcutYol("/");
+    setDosyalar([]);
+    setDosyaMesaji("");
+    setAramaMetni("");
+    setYeniKlasorAdi("");
+    setAcikMenuIndex(null);
+
+    setRenameModalAcik(false);
+    setYenidenAdlandirilacakDosya(null);
+    setYeniAd("");
+
+    setMoveModalAcik(false);
+    setTasinacakDosya(null);
+    setHedefYolInput("/");
+
+    setDeleteModalAcik(false);
+    setSilinecekDosya(null);
+
+    setYukleniyor(true);
+    setYuklemeMesaji(t.loadingFiles);
+
+    klasoruYenile("/", sunucu);
   };
 
   const dosyayiIndir = (dosya) => {
@@ -1346,15 +1376,7 @@ export default function AnaSayfa() {
                   {sunucular.map((sunucu) => (
                     <div
                       key={sunucu.id}
-                      onClick={() => {
-                        setSeciliSunucu(sunucu);
-                        setMevcutYol("/");
-                        setDosyalar([]);
-                        setDosyaMesaji("");
-                        setYukleniyor(true);
-                        setYuklemeMesaji(t.loadingFiles);
-                        klasoruYenile("/", sunucu);
-                      }}
+                      onClick={() => sunucuSec(sunucu)}
                       className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4 cursor-pointer hover:scale-[1.01] transition-transform"
                     >
                       <h3 className="font-bold text-lg mb-1">
@@ -1382,6 +1404,11 @@ export default function AnaSayfa() {
                   placeholder={t.userPlaceholder}
                   value={kullaniciAdi}
                   onChange={(e) => setKullaniciAdi(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      baglantiyiBaslat();
+                    }
+                  }}
                   className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
@@ -1390,6 +1417,11 @@ export default function AnaSayfa() {
                   placeholder={t.passPlaceholder}
                   value={sifre}
                   onChange={(e) => setSifre(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      baglantiyiBaslat();
+                    }
+                  }}
                   className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <button
@@ -1407,6 +1439,11 @@ export default function AnaSayfa() {
                   placeholder={t.userPlaceholder}
                   value={kullaniciAdi}
                   onChange={(e) => setKullaniciAdi(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      yeniKayitOlustur();
+                    }
+                  }}
                   className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <input
@@ -1414,6 +1451,11 @@ export default function AnaSayfa() {
                   placeholder={t.passPlaceholder}
                   value={sifre}
                   onChange={(e) => setSifre(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      yeniKayitOlustur();
+                    }
+                  }}
                   className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <button
