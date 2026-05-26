@@ -198,11 +198,7 @@ export default function AnaSayfa() {
 
   const yeniKayitOlustur = () => {
     if (!kullaniciAdi || !sifre) {
-      alert(
-        dil === "tr"
-          ? "Lütfen kullanıcı adı ve şifre girin!"
-          : "Please enter username and password!",
-      );
+      toastGoster(t.loginMissing, "error");
       return;
     }
 
@@ -218,10 +214,10 @@ export default function AnaSayfa() {
       .then((cevap) => {
         setYukleniyor(false);
         if (cevap.ok) {
-          alert(t.regSuccess);
+          toastGoster(t.regSuccess, "success");
           setIsLogin(true);
         } else {
-          alert(t.regFail);
+          toastGoster(t.regFail, "error");
         }
       })
       .catch((hata) => {
@@ -233,11 +229,7 @@ export default function AnaSayfa() {
 
   const klasoruYenile = (hedefYol, sunucu = seciliSunucu) => {
     if (!sunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin."
-          : "You must select a server first.",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
     const gonderilecekVeri = {
@@ -277,17 +269,18 @@ export default function AnaSayfa() {
             : "Files could not be loaded.",
         );
         setYukleniyor(false);
-        alert(
+        toastGoster(
           dil === "tr"
             ? "Dosyalar getirilemedi."
             : "Files could not be loaded.",
+          "error",
         );
       });
   };
 
   const baglantiyiBaslat = () => {
     if (!kullaniciAdi || !sifre) {
-      alert(t.loginMissing);
+      toastGoster(t.loginMissing, "error");
       return;
     }
 
@@ -331,11 +324,7 @@ export default function AnaSayfa() {
 
   const dosyayiIndir = (dosya) => {
     if (!seciliSunucu) {
-      alert(
-        dil === "tr"
-          ? "Önce sunucu seçmelisin"
-          : "You must select a server first",
-      );
+      toastGoster(t.selectServerFirst, "error");
       return;
     }
     setYukleniyor(true);
@@ -372,6 +361,12 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log(hata);
         setYukleniyor(false);
+        toastGoster(
+          dil === "tr"
+            ? "Dosya indirilemedi."
+            : "File could not be downloaded.",
+          "error",
+        );
       });
   };
 
@@ -744,10 +739,11 @@ export default function AnaSayfa() {
       })
       .catch((hata) => {
         console.log("Sunucular getirilemedi:", hata);
-        alert(
+        toastGoster(
           dil === "tr"
             ? "Giriş başarısız veya sunucular getirilemedi."
             : "Login failed or servers could not be loaded.",
+          "error",
         );
       });
   };
