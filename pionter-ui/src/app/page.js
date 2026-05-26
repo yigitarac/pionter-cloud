@@ -41,6 +41,9 @@ export default function AnaSayfa() {
   const [deleteModalAcik, setDeleteModalAcik] = useState(false);
   const [silinecekDosya, setSilinecekDosya] = useState(null);
   const [yuklemeMesaji, setYuklemeMesaji] = useState("");
+  const [hedefKlasorler, setHedefKlasorler] = useState([]);
+  const [hedefKlasorlerYukleniyor, setHedefKlasorlerYukleniyor] =
+    useState(false);
 
   const sozluk = {
     en: {
@@ -249,13 +252,15 @@ export default function AnaSayfa() {
 
   const yeniKayitOlustur = () => {
     if (yukleniyor) return;
-    setYuklemeMesaji(t.registeringAccount);
+
     if (!kullaniciAdi || !sifre) {
       toastGoster(t.loginMissing, "error");
       return;
     }
 
     setYukleniyor(true);
+    setYuklemeMesaji(t.registeringAccount);
+
     fetch("http://localhost:8080/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -420,6 +425,7 @@ export default function AnaSayfa() {
     setMoveModalAcik(false);
     setTasinacakDosya(null);
     setHedefYolInput("/");
+    setHedefKlasorler([]);
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
@@ -737,6 +743,49 @@ export default function AnaSayfa() {
       });
   };
 
+  const hedefKlasorleriGetir = (hedefYol = "/") => {
+    if (!seciliSunucu) return;
+
+    setHedefKlasorlerYukleniyor(true);
+
+    fetch("http://localhost:8080/api/files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kullaniciAdi,
+        sifre,
+        yol: hedefYol,
+        server_id: seciliSunucu.id,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Hedef klasörler getirilemedi");
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        const sadeceKlasorler = (veri.dosyalar || []).filter(
+          (dosya) => dosya.klasorMu,
+        );
+
+        setHedefKlasorler(sadeceKlasorler);
+        setHedefKlasorlerYukleniyor(false);
+      })
+      .catch((hata) => {
+        console.log("Hedef klasörler getirilemedi:", hata);
+        setHedefKlasorler([]);
+        setHedefKlasorlerYukleniyor(false);
+        toastGoster(
+          dil === "tr"
+            ? "Hedef klasörler getirilemedi."
+            : "Target folders could not be loaded.",
+          "error",
+        );
+      });
+  };
+
   const dosyaVeyaKlasorTasi = (dosya) => {
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
@@ -744,8 +793,10 @@ export default function AnaSayfa() {
     }
     setTasinacakDosya(dosya);
     setHedefYolInput("/");
+    setHedefKlasorler([]);
     setMoveModalAcik(true);
     setAcikMenuIndex(null);
+    hedefKlasorleriGetir("/");
   };
   const tasimayiOnayla = () => {
     if (yukleniyor) return;
@@ -1107,6 +1158,7 @@ export default function AnaSayfa() {
             setMoveModalAcik(false);
             setTasinacakDosya(null);
             setHedefYolInput("/");
+            setHedefKlasorler([]);
           }}
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
         >
@@ -1135,6 +1187,7 @@ export default function AnaSayfa() {
                   setMoveModalAcik(false);
                   setTasinacakDosya(null);
                   setHedefYolInput("/");
+                  setHedefKlasorler([]);
                 }
               }}
               placeholder={t.targetPathPlaceholder}
@@ -1147,6 +1200,50 @@ export default function AnaSayfa() {
                 ? "Örnek: / veya /Belgeler veya /Belgeler/Resimler"
                 : "Example: / or /Documents or /Documents/Images"}
             </p>
+            <div className="mt-4 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-3">
+              <p className="mb-2 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                {dil === "tr" ? "Klasör seç:" : "Choose folder:"}
+              </p>
+
+              {hedefKlasorlerYukleniyor ? (
+                <p className="text-xs text-[#928374] dark:text-[#a89984]">
+                  {dil === "tr"
+                    ? "Klasörler yükleniyor..."
+                    : "Loading folders..."}
+                </p>
+              ) : hedefKlasorler.length === 0 ? (
+                <p className="text-xs text-[#928374] dark:text-[#a89984]">
+                  {dil === "tr"
+                    ? "Bu konumda klasör yok."
+                    : "No folders in this location."}
+                </p>
+              ) : (
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {hedefKlasorler.map((klasor) => {
+                    const klasorYolu = "/" + klasor.ad;
+
+                    return (
+                      <button
+                        key={klasor.ad}
+                        type="button"
+                        onClick={() => setHedefYolInput(klasorYolu)}
+                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors flex items-center gap-2"
+                      >
+                        <svg
+                          className="w-5 h-5 text-[#458588] dark:text-[#83a598] shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                        </svg>
+
+                        <span className="truncate">{klasor.ad}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <div className="mt-5 flex justify-end gap-3">
               <button
@@ -1154,6 +1251,7 @@ export default function AnaSayfa() {
                   setMoveModalAcik(false);
                   setTasinacakDosya(null);
                   setHedefYolInput("/");
+                  setHedefKlasorler([]);
                 }}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
               >
