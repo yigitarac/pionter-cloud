@@ -419,7 +419,7 @@ export default function AnaSayfa() {
     fetch("http://localhost:8080/api/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: json.stringify({
+      body: JSON.stringify({
         kullaniciAdi,
         sifre,
         yol: mevcutYol,

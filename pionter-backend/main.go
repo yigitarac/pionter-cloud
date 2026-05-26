@@ -129,12 +129,12 @@ type KlasorOlusturBilgileri struct {
 	KlasorAdi    string `json:"klasor_adi"`
 }
 type SilmeBilgileri struct {
-	KullaniciAdi string `json:"kullanicAdi"`
+	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
 	ServerID     int    `json:"server_id"`
 	DosyaAdi     string `json:"dosya_adi"`
-	KlasorMu     bool   `json:"klasorMu"`
+	KlasorMu     bool   `json:"klasor_mu"`
 }
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
@@ -476,11 +476,13 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+		return
 	}
 
 	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
 	if err != nil {
 		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
+		return
 	}
 
 	silinecekYol := path.Join(gercekYol, bilgiler.DosyaAdi)
