@@ -46,7 +46,7 @@ export default function AnaSayfa() {
     en: {
       userPlaceholder: "Pionter Username",
       passPlaceholder: "Password",
-      connectBtn: "Login & Connect",
+      connectBtn: "Login",
       registerBtn: "Register Account",
       switchToReg: "Need an account? Register here.",
       switchToLogin: "Already have an account? Login here.",
@@ -134,11 +134,18 @@ export default function AnaSayfa() {
       savingServer: "Saving server...",
       loadingServers: "Loading servers...",
       registeringAccount: "Creating account...",
+      authTitle: "Your own cloud, on your own server.",
+      authSubtitle:
+        "Add your server and manage your files through a clean web interface.",
+      loginTitle: "Welcome back",
+      registerTitle: "Create your account",
+      loginInfo: "Login with your Pionter username and password.",
+      registerInfo: "Create a Pionter account to start adding your servers.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
       passPlaceholder: "Şifre",
-      connectBtn: "Giriş Yap ve Bağlan",
+      connectBtn: "Giriş Yap",
       registerBtn: "Hesap Oluştur",
       switchToReg: "Hesabın yok mu? Buradan kayıt ol.",
       switchToLogin: "Zaten hesabın var mı? Buradan giriş yap.",
@@ -227,6 +234,14 @@ export default function AnaSayfa() {
       savingServer: "Sunucu kaydediliyor...",
       loadingServers: "Sunucular yükleniyor...",
       registeringAccount: "Hesap oluşturuluyor...",
+      authTitle: "Kendi sunucun, kendi bulutun.",
+      authSubtitle:
+        "Sunucunu ekle ve dosyalarını sade bir web arayüzüyle yönet.",
+      loginTitle: "Tekrar hoş geldin",
+      registerTitle: "Hesabını oluştur",
+      loginInfo: "Pionter kullanıcı adın ve şifrenle giriş yap.",
+      registerInfo:
+        "Sunucularını eklemeye başlamak için Pionter hesabı oluştur.",
     },
   };
 
@@ -1405,89 +1420,110 @@ export default function AnaSayfa() {
               )}
             </div>
           )}
-          <div
-            className={`${girisYapildi ? "hidden" : ""} bg-[#ebdbb2] dark:bg-[#3c3836] rounded-xl p-4 mb-8 border border-[#d5c4a1] dark:border-[#504945] shadow-sm flex flex-col gap-4`}
-          >
-            {isLogin ? (
-              <div className="flex flex-col md:flex-row gap-2">
-                <input
-                  type="text"
-                  placeholder={t.userPlaceholder}
-                  value={kullaniciAdi}
-                  onChange={(e) => setKullaniciAdi(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      baglantiyiBaslat();
-                    }
-                  }}
-                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-                />
-                <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
-                <input
-                  type="password"
-                  placeholder={t.passPlaceholder}
-                  value={sifre}
-                  onChange={(e) => setSifre(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      baglantiyiBaslat();
-                    }
-                  }}
-                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-                />
-                <button
-                  onClick={baglantiyiBaslat}
-                  disabled={yukleniyor}
-                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {yukleniyor ? t.loadingServers : t.connectBtn}
-                </button>
+          {!girisYapildi && (
+            <div className="min-h-[70vh] flex items-center justify-center">
+              <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="text-center lg:text-left">
+                  <div className="inline-flex items-center gap-3 mb-5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#458588] dark:bg-[#83a598] flex items-center justify-center shadow-sm">
+                      <svg
+                        className="w-7 h-7 text-[#fbf1c7] dark:text-[#282828]"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
+                      </svg>
+                    </div>
+
+                    <h2 className="text-3xl font-black tracking-tight">
+                      Pionter
+                      <span className="text-[#458588] dark:text-[#83a598]">
+                        Cloud
+                      </span>
+                    </h2>
+                  </div>
+
+                  <h1 className="text-4xl lg:text-5xl font-black tracking-tight mb-4 text-[#3c3836] dark:text-[#ebdbb2]">
+                    {t.authTitle}
+                  </h1>
+
+                  <p className="text-base lg:text-lg text-[#7c6f64] dark:text-[#a89984] max-w-xl mx-auto lg:mx-0">
+                    {t.authSubtitle}
+                  </p>
+                </div>
+
+                <div className="w-full max-w-md mx-auto">
+                  <div className="rounded-2xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-6 shadow-lg">
+                    <div className="mb-6">
+                      <h2 className="text-2xl font-black mb-2">
+                        {isLogin ? t.loginTitle : t.registerTitle}
+                      </h2>
+
+                      <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
+                        {isLogin ? t.loginInfo : t.registerInfo}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                      <input
+                        type="text"
+                        placeholder={t.userPlaceholder}
+                        value={kullaniciAdi}
+                        onChange={(e) => setKullaniciAdi(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            isLogin ? baglantiyiBaslat() : yeniKayitOlustur();
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                      />
+
+                      <input
+                        type="password"
+                        placeholder={t.passPlaceholder}
+                        value={sifre}
+                        onChange={(e) => setSifre(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            isLogin ? baglantiyiBaslat() : yeniKayitOlustur();
+                          }
+                        }}
+                        className="w-full px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                      />
+
+                      <button
+                        onClick={isLogin ? baglantiyiBaslat : yeniKayitOlustur}
+                        disabled={yukleniyor}
+                        className={`w-full px-5 py-3 rounded-lg text-sm font-black transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isLogin
+                            ? "bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828]"
+                            : "bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7]"
+                        }`}
+                      >
+                        {yukleniyor
+                          ? isLogin
+                            ? t.loadingServers
+                            : t.registeringAccount
+                          : isLogin
+                            ? t.connectBtn
+                            : t.registerBtn}
+                      </button>
+                    </div>
+
+                    <div className="mt-6 pt-5 border-t border-[#d5c4a1] dark:border-[#504945] text-center">
+                      <button
+                        onClick={girisKayitModunuDegistir}
+                        disabled={yukleniyor}
+                        className="text-sm font-bold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLogin ? t.switchToReg : t.switchToLogin}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
-                <input
-                  type="text"
-                  placeholder={t.userPlaceholder}
-                  value={kullaniciAdi}
-                  onChange={(e) => setKullaniciAdi(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      yeniKayitOlustur();
-                    }
-                  }}
-                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-                />
-                <input
-                  type="password"
-                  placeholder={t.passPlaceholder}
-                  value={sifre}
-                  onChange={(e) => setSifre(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      yeniKayitOlustur();
-                    }
-                  }}
-                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-                />
-                <button
-                  onClick={yeniKayitOlustur}
-                  disabled={yukleniyor}
-                  className="bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] px-6 py-3 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {yukleniyor ? t.registeringAccount : t.registerBtn}
-                </button>
-              </div>
-            )}
-            <div className="text-center mt-2">
-              <button
-                onClick={girisKayitModunuDegistir}
-                disabled={yukleniyor}
-                className="text-xs font-semibold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLogin ? t.switchToReg : t.switchToLogin}
-              </button>
             </div>
-          </div>
+          )}
           {seciliSunucu && (
             <div
               onDragOver={suruklemeUstte}
