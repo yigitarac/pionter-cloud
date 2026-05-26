@@ -96,7 +96,6 @@ export default function AnaSayfa() {
       renamePrompt: "Enter the new name:",
       renameFailed: "Rename failed.",
       moveItem: "Move",
-      movePrompt: "Enter target folder path:",
       moveFailed: "Move failed.",
       homeFolder: "Home",
       searchPlaceholder: "Search in current folder...",
@@ -115,8 +114,6 @@ export default function AnaSayfa() {
       newNamePlaceholder: "New name",
       confirmRename: "Rename",
       moveModalTitle: "Move Item",
-      targetPathPlaceholder: "Target folder path, e.g. /Documents",
-      confirmMove: "Move",
       targetPathEmpty: "Target folder path cannot be empty.",
       deleteModalTitle: "Delete Item",
       deleteModalText: "Are you sure you want to delete this item?",
@@ -198,7 +195,6 @@ export default function AnaSayfa() {
       renamePrompt: "Yeni adı gir:",
       renameFailed: "Yeniden adlandırma başarısız.",
       moveItem: "Taşı",
-      movePrompt: "Hedef klasör yolunu gir:",
       moveFailed: "Taşıma başarısız.",
       homeFolder: "Home",
       searchPlaceholder: "Mevcut klasörde ara...",
@@ -217,8 +213,6 @@ export default function AnaSayfa() {
       newNamePlaceholder: "Yeni ad",
       confirmRename: "Yeniden Adlandır",
       moveModalTitle: "Taşı",
-      targetPathPlaceholder: "Hedef klasör yolu, örn: /Belgeler",
-      confirmMove: "Taşı",
       targetPathEmpty: "Hedef klasör yolu boş olamaz.",
       deleteModalTitle: "Sil",
       deleteModalText: "Bu öğeyi silmek istediğine emin misin?",
@@ -868,6 +862,19 @@ export default function AnaSayfa() {
       toastGoster(t.alreadyInThisFolder, "error");
       return;
     }
+    if (
+      tasinacakDosya.klasorMu &&
+      (hedefYol === tasinacakDosyaYolu ||
+        hedefYol.startsWith(tasinacakDosyaYolu + "/"))
+    ) {
+      toastGoster(
+        dil === "tr"
+          ? "Bir klasör kendi içine taşınamaz."
+          : "A folder cannot be moved into itself.",
+        "error",
+      );
+      return;
+    }
     setMoveModalAcik(false);
     setYukleniyor(true);
     setYuklemeMesaji(t.movingItem);
@@ -905,13 +912,7 @@ export default function AnaSayfa() {
         toastGoster(t.moveFailed, "error");
       });
   };
-  const yoluKullaniciyaGoster = (yol) => {
-    if (!yol || yol === "/") {
-      return t.homeFolder;
-    }
 
-    return t.homeFolder + yol;
-  };
   const dosyaBoyutuYaz = (boyut) => {
     if (!boyut || boyut === 0) return "0 B";
 
@@ -1123,6 +1124,24 @@ export default function AnaSayfa() {
     .filter(Boolean);
   const moveHedefiMevcutKlasorMu =
     moveModalAcik && hedefKlasorGezintiYolu === mevcutYol;
+  const tasinacakDosyaYolu = tasinacakDosya
+    ? mevcutYol === "/"
+      ? "/" + tasinacakDosya.ad
+      : mevcutYol + "/" + tasinacakDosya.ad
+    : "";
+
+  const moveHedefiTasinanKlasorunIcindeMi =
+    moveModalAcik &&
+    tasinacakDosya?.klasorMu &&
+    (hedefKlasorGezintiYolu === tasinacakDosyaYolu ||
+      hedefKlasorGezintiYolu.startsWith(tasinacakDosyaYolu + "/"));
+  const hedefKlasorlerGosterilecek = hedefKlasorler.filter((klasor) => {
+    if (!tasinacakDosya?.klasorMu) return true;
+
+    if (hedefKlasorGezintiYolu !== mevcutYol) return true;
+
+    return klasor.ad !== tasinacakDosya.ad;
+  });
   const gosterilecekDosyalar = dosyalar.filter((dosya) =>
     dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
   );
@@ -1312,7 +1331,7 @@ export default function AnaSayfa() {
                     ? "Klasörler yükleniyor..."
                     : "Loading folders..."}
                 </p>
-              ) : hedefKlasorler.length === 0 ? (
+              ) : hedefKlasorlerGosterilecek.length === 0 ? (
                 <p className="text-xs text-[#928374] dark:text-[#a89984]">
                   {dil === "tr"
                     ? "Bu klasörde alt klasör yok. Buraya taşıyabilirsin."
@@ -1320,7 +1339,7 @@ export default function AnaSayfa() {
                 </p>
               ) : (
                 <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                  {hedefKlasorler.map((klasor) => {
+                  {hedefKlasorlerGosterilecek.map((klasor) => {
                     const klasorYolu =
                       hedefKlasorGezintiYolu === "/"
                         ? "/" + klasor.ad
@@ -1357,6 +1376,14 @@ export default function AnaSayfa() {
               </p>
             )}
 
+            {moveHedefiTasinanKlasorunIcindeMi && (
+              <p className="mt-3 text-xs text-[#928374] dark:text-[#a89984]">
+                {dil === "tr"
+                  ? "Bir klasör kendi içine veya kendi alt klasörüne taşınamaz."
+                  : "A folder cannot be moved into itself or one of its subfolders."}
+              </p>
+            )}
+
             <div className="mt-5 flex justify-end gap-3">
               <button
                 onClick={() => {
@@ -1372,7 +1399,11 @@ export default function AnaSayfa() {
 
               <button
                 onClick={tasimayiOnayla}
-                disabled={yukleniyor || moveHedefiMevcutKlasorMu}
+                disabled={
+                  yukleniyor ||
+                  moveHedefiMevcutKlasorMu ||
+                  moveHedefiTasinanKlasorunIcindeMi
+                }
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.confirmMoveHere}
