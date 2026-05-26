@@ -37,6 +37,8 @@ export default function AnaSayfa() {
   const [moveModalAcik, setMoveModalAcik] = useState(false);
   const [tasinacakDosya, setTasinacakDosya] = useState(null);
   const [hedefYolInput, setHedefYolInput] = useState("/");
+  const [deleteModalAcik, setDeleteModalAcik] = useState(false);
+  const [silinecekDosya, setSilinecekDosya] = useState(null);
 
   const sozluk = {
     en: {
@@ -110,6 +112,9 @@ export default function AnaSayfa() {
       targetPathPlaceholder: "Target folder path, e.g. /Documents",
       confirmMove: "Move",
       targetPathEmpty: "Target folder path cannot be empty.",
+      deleteModalTitle: "Delete Item",
+      deleteModalText: "Are you sure you want to delete this item?",
+      confirmDelete: "Delete",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -183,6 +188,9 @@ export default function AnaSayfa() {
       targetPathPlaceholder: "Hedef klasör yolu, örn: /Belgeler",
       confirmMove: "Taşı",
       targetPathEmpty: "Hedef klasör yolu boş olamaz.",
+      deleteModalTitle: "Sil",
+      deleteModalText: "Bu öğeyi silmek istediğine emin misin?",
+      confirmDelete: "Sil",
     },
   };
 
@@ -464,11 +472,20 @@ export default function AnaSayfa() {
       return;
     }
 
-    const onay = window.confirm(`${dosya.ad} - ${t.deleteConfirm}`);
-    if (!onay) return;
-
-    setYukleniyor(true);
+    setSilinecekDosya(dosya);
+    setDeleteModalAcik(true);
     setAcikMenuIndex(null);
+  };
+
+  const silmeyiOnayla = () => {
+    if (!silinecekDosya) return;
+
+    const silinecekDosyaAdi = silinecekDosya.ad;
+    const silinecekKlasorMu = silinecekDosya.klasorMu;
+
+    setDeleteModalAcik(false);
+    setSilinecekDosya(null);
+    setYukleniyor(true);
 
     fetch("http://localhost:8080/api/delete", {
       method: "POST",
@@ -478,18 +495,20 @@ export default function AnaSayfa() {
         sifre,
         yol: mevcutYol,
         server_id: seciliSunucu.id,
-        dosya_adi: dosya.ad,
-        klasor_mu: dosya.klasorMu,
+        dosya_adi: silinecekDosyaAdi,
+        klasor_mu: silinecekKlasorMu,
       }),
     })
       .then((cevap) => {
         if (!cevap.ok) {
           throw new Error("Silme başarısız");
         }
+
         toastGoster(
           dil === "tr" ? "Silme başarılı." : "Deleted successfully.",
           "success",
         );
+
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
@@ -951,6 +970,45 @@ export default function AnaSayfa() {
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors"
               >
                 {t.confirmMove}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteModalAcik && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+          >
+            <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.deleteModalTitle}
+            </h2>
+
+            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-2">
+              {t.deleteModalText}
+            </p>
+
+            <p className="text-sm font-bold mb-5 truncate text-[#cc241d]">
+              {silinecekDosya?.ad}
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setDeleteModalAcik(false);
+                  setSilinecekDosya(null);
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                onClick={silmeyiOnayla}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors"
+              >
+                {t.confirmDelete}
               </button>
             </div>
           </div>
