@@ -1,4 +1,3 @@
-
 # PionterCloud
 
 PionterCloud is a bring-your-own-server cloud file manager built with Go, Next.js, PostgreSQL, SSH and SFTP.
@@ -56,3 +55,61 @@ pionter-backend/
 
 pionter-ui/
   src/app/page.js
+```
+
+## Environment Variables
+
+Create a `.env` file inside the backend folder.
+
+Example:
+
+```env
+DATABASE_URL=postgres://admin:password@localhost:5432/piontercloud
+```
+
+Do not commit your real `.env` file.
+
+## Development Status
+
+This project is being built as a learning-focused full-stack project.
+
+Main goals:
+
+- Learn backend development with Go
+- Learn frontend development with Next.js
+- Learn database usage with PostgreSQL
+- Learn SSH/SFTP file operations
+- Build a real-world cloud/file-manager style application
+
+## Security Notes
+
+This project is not ready for production yet.
+
+Before production use, the following areas need to be improved:
+
+- Password hashing
+- Real session/token based authentication
+- Secure storage for server passwords and SSH keys
+- SSH host key verification
+- Better validation and error handling
+- Rate limiting
+- HTTPS deployment
+
+## Roadmap
+
+Planned improvements:
+
+- Toast notifications instead of browser alerts
+- Custom modal dialogs
+- Better move target selection UI
+- Right-click context menu
+- Multi-file selection
+- Recursive folder delete with confirmation
+- File preview
+- Better upload progress UI
+- Deployment guide
+- Production security improvements
+
+## License
+
+This project does not have a license yet.
