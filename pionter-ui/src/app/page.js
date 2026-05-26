@@ -430,16 +430,17 @@ export default function AnaSayfa() {
       toastGoster(t.selectServerFirst, "error");
       return;
     }
+    const temizKlasorAdi = yeniKlasorAdi.trim();
 
-    if (!yeniKlasorAdi) {
+    if (!temizKlasorAdi) {
       toastGoster(t.folderNameEmpty, "error");
       return;
     }
     if (
-      yeniKlasorAdi.includes("/") ||
-      yeniKlasorAdi.includes("\\") ||
-      yeniKlasorAdi.includes("..") ||
-      yeniKlasorAdi.includes("⁄")
+      temizKlasorAdi.includes("/") ||
+      temizKlasorAdi.includes("\\") ||
+      temizKlasorAdi.includes("..") ||
+      temizKlasorAdi.includes("⁄")
     ) {
       toastGoster(t.invalidFolderName, "error");
       return;
@@ -452,7 +453,7 @@ export default function AnaSayfa() {
         sifre,
         yol: mevcutYol,
         server_id: seciliSunucu.id,
-        klasor_adi: yeniKlasorAdi,
+        klasor_adi: temizKlasorAdi,
       }),
     })
       .then((cevap) => {
@@ -1355,6 +1356,11 @@ export default function AnaSayfa() {
                 placeholder={t.newFolderPlaceholder}
                 value={yeniKlasorAdi}
                 onChange={(e) => setYeniKlasorAdi(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    klasorOlustur();
+                  }
+                }}
                 className="flex-1 px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
               />
 
