@@ -234,7 +234,7 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log("Kayıt Hatası:", hata);
         setYukleniyor(false);
-        alert(t.regFail);
+        toastGoster(t.regFail, "error");
       });
   };
 
