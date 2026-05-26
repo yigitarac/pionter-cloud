@@ -71,7 +71,7 @@ export default function AnaSayfa() {
       orSelect: "or select from your computer",
       selectBtn: "Select File",
       regSuccess: "Registration successful! You can now login.",
-      regFail: "Registration failed. Username might be taken.",
+      regFail: "Registration failed. Username or email might be taken.",
       myServers: "My Servers",
       serversDraftInfo:
         "We are not saving real servers yet. For now, we are building the screen draft.",
@@ -173,7 +173,7 @@ export default function AnaSayfa() {
       orSelect: "veya bilgisayarınızdan seçin",
       selectBtn: "Dosya Seç",
       regSuccess: "Kayıt başarılı! Şimdi giriş yapabilirsiniz.",
-      regFail: "Kayıt başarısız. Kullanıcı adı alınmış olabilir.",
+      regFail: "Kayıt başarısız. Kullanıcı adı veya e-posta alınmış olabilir.",
       myServers: "Sunucularım",
       serversDraftInfo:
         "Henüz gerçek sunucu kaydı yapmıyoruz. Şimdilik ekran taslağını kuruyoruz.",
