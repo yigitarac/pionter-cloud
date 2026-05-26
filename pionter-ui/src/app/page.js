@@ -261,12 +261,13 @@ export default function AnaSayfa() {
   const yeniKayitOlustur = () => {
     if (yukleniyor) return;
 
-    if (!kullaniciAdi || !sifre) {
+    const temizKullaniciAdi = kullaniciAdi.trim();
+    const temizEposta = eposta.trim();
+
+    if (!temizKullaniciAdi || !sifre) {
       toastGoster(t.loginMissing, "error");
       return;
     }
-
-    const temizEposta = eposta.trim();
 
     if (!temizEposta) {
       toastGoster(t.emailMissing, "error");
@@ -285,7 +286,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
+        pionter_kullanici: temizKullaniciAdi,
         pionter_email: temizEposta,
         pionter_sifre: sifre,
       }),
@@ -383,12 +384,16 @@ export default function AnaSayfa() {
 
   const baglantiyiBaslat = () => {
     if (yukleniyor) return;
-    if (!kullaniciAdi || !sifre) {
+
+    const temizKullaniciAdi = kullaniciAdi.trim();
+
+    if (!temizKullaniciAdi || !sifre) {
       toastGoster(t.loginMissing, "error");
       return;
     }
 
-    sunuculariGetir();
+    setKullaniciAdi(temizKullaniciAdi);
+    sunuculariGetir(temizKullaniciAdi);
   };
 
   const klasoreGir = (dosya) => {
@@ -993,7 +998,7 @@ export default function AnaSayfa() {
       sunucuyaDosyaYukle(e.target.files[0]);
     }
   };
-  const sunuculariGetir = () => {
+  const sunuculariGetir = (girisKimligi = kullaniciAdi) => {
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingServers);
 
@@ -1001,7 +1006,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
+        pionter_kullanici: girisKimligi,
         pionter_sifre: sifre,
       }),
     })

@@ -168,6 +168,9 @@ type TasiBilgileri struct {
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
+
+	kullanici = strings.TrimSpace(kullanici)
+
 	err := db.QueryRow(`
         SELECT s.sunucu_ip, s.sunucu_kullanici, s.sunucu_sifre, s.izole_klasor
         FROM kullanicilar k
@@ -816,6 +819,8 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+
 	if veri.SunucuPort == "" {
 		veri.SunucuPort = "22"
 	}
@@ -890,6 +895,8 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+
 	var userID int
 	err = db.QueryRow(`
 		SELECT id
@@ -954,6 +961,8 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 }
 func sunucuKimlikSorgula(kullanici string, sifre string, serverID int) (GizliKimlik, error) {
 	var k GizliKimlik
+
+	kullanici = strings.TrimSpace(kullanici)
 
 	err := db.QueryRow(`
 		SELECT
