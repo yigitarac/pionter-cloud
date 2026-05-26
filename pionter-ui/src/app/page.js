@@ -261,6 +261,16 @@ export default function AnaSayfa() {
     klasoruYenile(yeniYol);
   };
 
+  const yolaGit = (hedefYol) => {
+    if (hedefYol === mevcutYol) return;
+
+    setMevcutYol(hedefYol);
+    setDosyaMesaji("");
+    setAcikMenuIndex(null);
+    setYukleniyor(true);
+    klasoruYenile(hedefYol);
+  };
+
   const dosyayiIndir = (dosya) => {
     if (!seciliSunucu) {
       alert(
@@ -739,6 +749,7 @@ export default function AnaSayfa() {
         );
       });
   };
+  const yolParcalari = mevcutYol.split("/").filter(Boolean);
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <div
@@ -1106,9 +1117,43 @@ export default function AnaSayfa() {
                   </svg>
                 </button>
                 <span className="opacity-70 mr-2">{t.currentPath}</span>
-                <span className="truncate max-w-[200px] md:max-w-md lg:max-w-xl font-bold">
-                  {mevcutYol}
-                </span>
+
+                <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                  <button
+                    onClick={() => yolaGit("/")}
+                    className={`font-bold hover:text-[#458588] dark:hover:text-[#83a598] transition-colors ${
+                      mevcutYol === "/"
+                        ? "text-[#458588] dark:text-[#83a598]"
+                        : ""
+                    }`}
+                  >
+                    {t.homeFolder}
+                  </button>
+
+                  {yolParcalari.map((parca, index) => {
+                    const hedefYol =
+                      "/" + yolParcalari.slice(0, index + 1).join("/");
+
+                    return (
+                      <div
+                        key={hedefYol}
+                        className="flex items-center gap-1 min-w-0"
+                      >
+                        <span className="opacity-50">/</span>
+                        <button
+                          onClick={() => yolaGit(hedefYol)}
+                          className={`font-bold truncate max-w-[140px] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors ${
+                            hedefYol === mevcutYol
+                              ? "text-[#458588] dark:text-[#83a598]"
+                              : ""
+                          }`}
+                        >
+                          {parca}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
