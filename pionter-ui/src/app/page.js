@@ -1142,9 +1142,18 @@ export default function AnaSayfa() {
 
     return klasor.ad !== tasinacakDosya.ad;
   });
-  const gosterilecekDosyalar = dosyalar.filter((dosya) =>
-    dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
-  );
+  const gosterilecekDosyalar = dosyalar
+    .filter((dosya) =>
+      dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
+    )
+    .sort((a, b) => {
+      if (a.klasorMu && !b.klasorMu) return -1;
+      if (!a.klasorMu && b.klasorMu) return 1;
+
+      return a.ad.localeCompare(b.ad, dil === "tr" ? "tr" : "en", {
+        sensitivity: "base",
+      });
+    });
   return (
     <div className={karanlikMod ? "dark" : ""}>
       {toast && (
