@@ -664,7 +664,7 @@ export default function AnaSayfa() {
           dil === "tr" ? "Silme başarılı." : "Deleted successfully.",
           "success",
         );
-
+        hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
