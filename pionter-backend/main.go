@@ -41,6 +41,7 @@ func main() {
 		CREATE TABLE IF NOT EXISTS kullanicilar (
 			id SERIAL PRIMARY KEY,
 			pionter_kullanici VARCHAR(50) UNIQUE NOT NULL,
+			pionter_email TEXT,
 			pionter_sifre VARCHAR(50) NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS sunucular (
@@ -55,6 +56,12 @@ func main() {
 			ssh_private_key TEXT,
 			izole_klasor VARCHAR(200) NOT NULL
 		);
+		ALTER TABLE kullanicilar
+		ADD COLUMN IF NOT EXISTS pionter_email TEXT;
+
+		CREATE UNIQUE INDEX IF NOT EXISTS kullanicilar_pionter_email_unique
+		ON kullanicilar (pionter_email)
+		WHERE pionter_email IS NOT NULL;
 `)
 	if err != nil {
 		panic("Tablo oluşturulamadı: " + err.Error())
@@ -757,13 +764,29 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
 		return
 	}
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+	veri.PionterEmail = strings.TrimSpace(veri.PionterEmail)
+
+	if veri.PionterKullanici == "" || veri.PionterEmail == "" || veri.PionterSifre == "" {
+		http.Error(w, "Kullanıcı adı, email ve şifre zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.Contains(veri.PionterEmail, "@") || !strings.Contains(veri.PionterEmail, ".") {
+		http.Error(w, "Geçersiz e-posta adresi", http.StatusBadRequest)
+		return
+	}
+
 	_, err = db.Exec(`
-		INSERT INTO kullanicilar (pionter_kullanici, pionter_sifre)
-		VALUES ($1, $2)`,
-		veri.PionterKullanici, veri.PionterSifre)
+		INSERT INTO kullanicilar (pionter_kullanici, pionter_email, pionter_sifre)
+		VALUES ($1, $2, $3)`,
+		veri.PionterKullanici,
+		veri.PionterEmail,
+		veri.PionterSifre,
+	)
 	if err != nil {
 		fmt.Println("Kayıt hatası:", err)
-		http.Error(w, "Bu kullanıcı adı zaten alınmış", http.StatusConflict)
+		http.Error(w, "Bu kullanıcı adı veya eposta zaten alınmış", http.StatusConflict)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
