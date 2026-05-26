@@ -858,7 +858,14 @@ export default function AnaSayfa() {
         </div>
       )}
       {renameModalAcik && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+        <div
+          onClick={() => {
+            setRenameModalAcik(false);
+            setYenidenAdlandirilacakDosya(null);
+            setYeniAd("");
+          }}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
@@ -914,7 +921,14 @@ export default function AnaSayfa() {
         </div>
       )}
       {moveModalAcik && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+        <div
+          onClick={() => {
+            setMoveModalAcik(false);
+            setTasinacakDosya(null);
+            setHedefYolInput("/");
+          }}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
@@ -976,7 +990,13 @@ export default function AnaSayfa() {
         </div>
       )}
       {deleteModalAcik && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+        <div
+          onClick={() => {
+            setDeleteModalAcik(false);
+            setSilinecekDosya(null);
+          }}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
