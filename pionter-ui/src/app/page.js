@@ -448,6 +448,68 @@ export default function AnaSayfa() {
       });
   };
 
+  const dosyaVeyaKlasorYenidenAdlandir = (dosya) => {
+    if (!seciliSunucu) {
+      alert(
+        dil === "tr"
+          ? "Önce sunucu seçmelisin"
+          : "You must select a server first",
+      );
+      return;
+    }
+
+    const yeniAd = window.prompt(t.renamePrompt, dosya.ad);
+
+    if (!yeniAd) {
+      return;
+    }
+
+    if (
+      yeniAd.includes("/") ||
+      yeniAd.includes("\\") ||
+      yeniAd.includes("..") ||
+      yeniAd.includes("⁄")
+    ) {
+      alert(
+        dil === "tr"
+          ? "Dosya/klasör adında /, \\, ⁄ veya .. kullanılamaz."
+          : "File/folder name cannot include '/', '\\', '⁄' or '..'.",
+      );
+      return;
+    }
+
+    if (yeniAd == dosya.ad) {
+      return;
+    }
+
+    setYukleniyor(true);
+
+    fetch("http://localhost:8080/api/rename", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kullaniciAdi,
+        sifre,
+        yol: mevcutYol,
+        server_id: seciliSunucu.id,
+        eski_ad: dosya.ad,
+        yeni_ad: yeniAd,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Yeniden adlandırma başarısız");
+        }
+
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        console.log("Yeniden adlandırma hatası:", hata);
+        setYukleniyor(false);
+        alert(t.renameFailed);
+      });
+  };
+
   const suruklemeUstte = (e) => {
     e.preventDefault();
     setSurukleniyor(true);
