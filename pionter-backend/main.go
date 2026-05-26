@@ -677,3 +677,12 @@ func guvenliYolOlustur(izoleKlasor string, kullaniciYolu string) (string, error)
 
 	return path.Join(temizIzoleKlasor, temizKullaniciYolu), nil
 }
+func guvenliAdMi(ad string) bool {
+	if ad == "" {
+		return false
+	}
+	if strings.Contains(ad, "/") || strings.Contains(ad, "\\") || strings.Contains(ad, "..") || strings.Contains(ad, "⁄") {
+		return false
+	}
+	return true
+}
