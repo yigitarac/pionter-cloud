@@ -81,6 +81,7 @@ export default function AnaSayfa() {
       moveItem: "Move",
       movePrompt: "Enter target folder path:",
       moveFailed: "Move failed.",
+      homeFolder: "Home",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -134,6 +135,7 @@ export default function AnaSayfa() {
       moveItem: "Taşı",
       movePrompt: "Hedef klasör yolunu gir:",
       moveFailed: "Taşıma başarısız.",
+      homeFolder: "Ana Klasör",
     },
   };
 
