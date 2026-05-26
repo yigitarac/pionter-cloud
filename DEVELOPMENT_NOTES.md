@@ -37,18 +37,6 @@ Possible future components:
 - `FileCard`
 - `Breadcrumb`
 
-## Auth Screen Refactor
-
-The login/register screen needs a proper centered auth card layout.
-
-Planned improvements:
-
-- Center the auth form vertically and horizontally
-- Add a stronger PionterCloud branding area
-- Improve login/register button placement
-- Improve form spacing and width
-- Prepare the UI for future username/email login support
-
 ## File Manager Refactor
 
 The file manager area should eventually be split into:
@@ -111,3 +99,34 @@ Before production, the following must be improved:
 - Better backend validation
 - Rate limiting
 - HTTPS deployment
+
+## Auth Notes
+
+Current auth behavior:
+
+- Users register with:
+  - username
+  - email
+  - password
+- Users can login with:
+  - username + password
+  - email + password
+- Email addresses are normalized to lowercase during registration.
+- Login checks email case-insensitively.
+- Frontend and backend trim username/email input before authentication.
+
+Current limitations:
+
+- Passwords are currently stored in plain text.
+- There is no real session or token system yet.
+- The frontend sends username/email and password with each backend request.
+- This is acceptable for the current learning/development stage, but must be replaced before production use.
+
+Future auth/security improvements:
+
+- Hash passwords before saving them.
+- Add real session/token based authentication.
+- Stop sending the password with every file/server request.
+- Add logout/session expiration behavior.
+- Improve backend error responses for auth failures.
+- Consider email verification later.
