@@ -372,15 +372,18 @@ export default function AnaSayfa() {
     })
       .then((cevap) => {
         if (cevap.ok) {
+          toastGoster(t.uploadSuccess, "success");
           klasoruYenile(mevcutYol);
         } else {
           console.log("Yükleme başarısız!");
           setYukleniyor(false);
+          toastGoster(t.uploadFailed, "error");
         }
       })
       .catch((hata) => {
         console.log("Yükleme Hatası:", hata);
         setYukleniyor(false);
+        toastGoster(t.uploadFailed, "error");
       });
   };
   const klasorOlustur = () => {
@@ -430,16 +433,14 @@ export default function AnaSayfa() {
         }
 
         setYeniKlasorAdi("");
+        toastGoster(t.folderCreateSuccess, "success");
         setYukleniyor(true);
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
         console.log("Klasör oluşturma hatası:", hata);
-        alert(
-          dil === "tr"
-            ? "Klasör oluşturulamadı."
-            : "Folder could not be created.",
-        );
+        setYukleniyor(false);
+        toastGoster(t.folderCreateFailed, "error");
       });
   };
 
