@@ -1300,7 +1300,7 @@ export default function AnaSayfa() {
                   placeholder={t.userPlaceholder}
                   value={kullaniciAdi}
                   onChange={(e) => setKullaniciAdi(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <div className="hidden md:block w-px bg-[#d5c4a1] dark:bg-[#504945] my-2"></div>
                 <input
@@ -1308,7 +1308,7 @@ export default function AnaSayfa() {
                   placeholder={t.passPlaceholder}
                   value={sifre}
                   onChange={(e) => setSifre(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                  className="flex-1 px-4 py-2.5 bg-transparent border-none focus:ring-0 text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <button
                   onClick={baglantiyiBaslat}
@@ -1324,14 +1324,14 @@ export default function AnaSayfa() {
                   placeholder={t.userPlaceholder}
                   value={kullaniciAdi}
                   onChange={(e) => setKullaniciAdi(e.target.value)}
-                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <input
                   type="password"
                   placeholder={t.passPlaceholder}
                   value={sifre}
                   onChange={(e) => setSifre(e.target.value)}
-                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                  className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                 />
                 <button
                   onClick={yeniKayitOlustur}
