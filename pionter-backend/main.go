@@ -59,8 +59,8 @@ func main() {
 		ALTER TABLE kullanicilar
 		ADD COLUMN IF NOT EXISTS pionter_email TEXT;
 
-		CREATE UNIQUE INDEX IF NOT EXISTS kullanicilar_pionter_email_unique
-		ON kullanicilar (pionter_email)
+		CREATE UNIQUE INDEX IF NOT EXISTS kullanicilar_pionter_email_lower_unique
+		ON kullanicilar (LOWER(pionter_email))
 		WHERE pionter_email IS NOT NULL;
 `)
 	if err != nil {
@@ -767,7 +767,7 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
-	veri.PionterEmail = strings.TrimSpace(veri.PionterEmail)
+	veri.PionterEmail = strings.ToLower(strings.TrimSpace(veri.PionterEmail))
 
 	if veri.PionterKullanici == "" || veri.PionterEmail == "" || veri.PionterSifre == "" {
 		http.Error(w, "Kullanıcı adı, email ve şifre zorunlu", http.StatusBadRequest)
