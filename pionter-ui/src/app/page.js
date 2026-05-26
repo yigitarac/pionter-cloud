@@ -1120,6 +1120,28 @@ export default function AnaSayfa() {
                         />
                       </svg>
                     </button>
+                    <button
+                      title={t.renameItem}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dosyaVeyaKlasorYenidenAdlandir(dosya);
+                      }}
+                      className="absolute right-2 top-11 opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7] transition-all"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>

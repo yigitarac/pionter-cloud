@@ -139,7 +139,7 @@ type SilmeBilgileri struct {
 }
 type YenidenAdlandirBilgileri struct {
 	KullaniciAdi string `json:"kullaniciAdi"`
-	sifre        string `json:"sifre"`
+	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
 	ServerID     int    `json:"server_id"`
 	EskiAd       string `json:"eski_ad"`
@@ -565,7 +565,7 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.sifre, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
