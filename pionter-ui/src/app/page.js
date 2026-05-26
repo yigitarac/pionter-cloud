@@ -1203,35 +1203,43 @@ export default function AnaSayfa() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+            className="w-full max-w-lg rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
           >
-            <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
-              {t.moveModalTitle}
-            </h2>
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-[#3c3836] dark:text-[#ebdbb2]">
+                {t.moveModalTitle}
+              </h2>
 
-            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-4 truncate">
-              {t.moveItem}: {tasinacakDosya?.ad}
-            </p>
+              <p className="mt-1 text-sm text-[#7c6f64] dark:text-[#a89984] truncate">
+                {tasinacakDosya?.ad}
+              </p>
+            </div>
 
             <div className="rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] px-4 py-3">
               <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984] mb-1">
                 {t.currentMoveTarget}
               </p>
 
-              <p className="text-sm font-bold truncate text-[#3c3836] dark:text-[#ebdbb2]">
-                {yoluKullaniciyaGoster(hedefKlasorGezintiYolu)}
-              </p>
+              <div className="flex items-center gap-2 min-w-0">
+                <svg
+                  className="w-5 h-5 text-[#458588] dark:text-[#83a598] shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                </svg>
+
+                <p className="text-sm font-bold truncate text-[#3c3836] dark:text-[#ebdbb2]">
+                  {yoluKullaniciyaGoster(hedefKlasorGezintiYolu)}
+                </p>
+              </div>
             </div>
 
             <div className="mt-4 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
-                    {dil === "tr" ? "Klasör seç:" : "Choose folder:"}
-                  </p>
-
-                  <p className="mt-1 truncate text-xs text-[#928374] dark:text-[#a89984]">
-                    {yoluKullaniciyaGoster(hedefKlasorGezintiYolu)}
+                    {dil === "tr" ? "Alt klasörler" : "Subfolders"}
                   </p>
                 </div>
 
@@ -1243,7 +1251,7 @@ export default function AnaSayfa() {
                   }
                   className="shrink-0 rounded-md px-3 py-1.5 text-xs font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {dil === "tr" ? "Üst" : "Up"}
+                  {dil === "tr" ? "Geri" : "Back"}
                 </button>
               </div>
 
@@ -1256,8 +1264,8 @@ export default function AnaSayfa() {
               ) : hedefKlasorler.length === 0 ? (
                 <p className="text-xs text-[#928374] dark:text-[#a89984]">
                   {dil === "tr"
-                    ? "Bu konumda alt klasör yok."
-                    : "No subfolders in this location."}
+                    ? "Bu klasörde alt klasör yok. Buraya taşıyabilirsin."
+                    : "No subfolders here. You can move the item here."}
                 </p>
               ) : (
                 <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar pr-1">
