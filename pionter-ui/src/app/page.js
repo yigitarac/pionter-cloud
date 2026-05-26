@@ -1219,7 +1219,7 @@ export default function AnaSayfa() {
                   setYenidenAdlandirilacakDosya(null);
                   setYeniAd("");
                 }}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>
@@ -1227,7 +1227,7 @@ export default function AnaSayfa() {
               <button
                 onClick={yenidenAdlandirmayiOnayla}
                 disabled={yukleniyor}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.confirmRename}
               </button>
@@ -1401,7 +1401,7 @@ export default function AnaSayfa() {
                   setHedefKlasorler([]);
                   setHedefKlasorGezintiYolu("/");
                 }}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>
@@ -1413,7 +1413,7 @@ export default function AnaSayfa() {
                   moveHedefiMevcutKlasorMu ||
                   moveHedefiTasinanKlasorunIcindeMi
                 }
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.confirmMoveHere}
               </button>
@@ -1451,7 +1451,7 @@ export default function AnaSayfa() {
                   setDeleteModalAcik(false);
                   setSilinecekDosya(null);
                 }}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>
@@ -1459,7 +1459,7 @@ export default function AnaSayfa() {
               <button
                 onClick={silmeyiOnayla}
                 disabled={yukleniyor}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.confirmDelete}
               </button>
@@ -1489,13 +1489,13 @@ export default function AnaSayfa() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setDil(dil === "en" ? "tr" : "en")}
-              className="px-3 py-1.5 rounded-lg font-bold text-sm bg-[#ebdbb2] dark:bg-[#3c3836] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors"
+              className="px-3 py-1.5 rounded-lg font-bold text-sm bg-[#ebdbb2] dark:bg-[#3c3836] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors cursor-pointer"
             >
               {dil === "en" ? "TR" : "EN"}
             </button>
             <button
               onClick={() => setKaranlikMod(!karanlikMod)}
-              className="p-2 rounded-full hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+              className="p-2 rounded-full hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors cursor-pointer"
             >
               {karanlikMod ? (
                 <svg
@@ -1542,7 +1542,7 @@ export default function AnaSayfa() {
 
                 <button
                   onClick={() => setSunucuFormAcik(true)}
-                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer"
                 >
                   {t.addServer}
                 </button>
@@ -1625,7 +1625,7 @@ export default function AnaSayfa() {
                         sunucuFormunuTemizle();
                         setSunucuFormAcik(false);
                       }}
-                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors"
+                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors cursor-pointer"
                     >
                       {t.cancel}
                     </button>
@@ -1633,7 +1633,7 @@ export default function AnaSayfa() {
                     <button
                       onClick={sunucuKaydet}
                       disabled={yukleniyor}
-                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {yukleniyor ? t.savingServer : t.save}
                     </button>
@@ -1744,7 +1744,7 @@ export default function AnaSayfa() {
                       <button
                         onClick={isLogin ? baglantiyiBaslat : yeniKayitOlustur}
                         disabled={yukleniyor}
-                        className={`w-full px-5 py-3 rounded-lg text-sm font-black transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`w-full px-5 py-3 rounded-lg text-sm font-black transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                           isLogin
                             ? "bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828]"
                             : "bg-[#d79921] hover:bg-[#b57614] text-[#fbf1c7]"
@@ -1764,7 +1764,7 @@ export default function AnaSayfa() {
                       <button
                         onClick={girisKayitModunuDegistir}
                         disabled={yukleniyor}
-                        className="text-sm font-bold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-sm font-bold text-[#7c6f64] dark:text-[#a89984] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isLogin ? t.switchToReg : t.switchToLogin}
                       </button>
@@ -1828,7 +1828,7 @@ export default function AnaSayfa() {
 
                   <button
                     onClick={sunucularaDon}
-                    className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors"
+                    className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors cursor-pointer"
                   >
                     {t.backToServers}
                   </button>
@@ -1852,7 +1852,7 @@ export default function AnaSayfa() {
               <button
                 onClick={klasorOlustur}
                 disabled={yukleniyor}
-                className="px-4 py-2.5 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.createFolder}
               </button>
