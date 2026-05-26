@@ -102,6 +102,7 @@ type GizliKimlik struct {
 }
 type KayitBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
+	PionterEmail     string `json:"pionter_email"`
 	PionterSifre     string `json:"pionter_sifre"`
 }
 type SunucuKayitBilgileri struct {
