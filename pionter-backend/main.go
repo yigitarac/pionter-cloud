@@ -172,7 +172,9 @@ func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
         SELECT s.sunucu_ip, s.sunucu_kullanici, s.sunucu_sifre, s.izole_klasor
         FROM kullanicilar k
         JOIN sunucular s ON k.id = s.user_id
-        WHERE k.pionter_kullanici = $1 AND k.pionter_sifre = $2
+        WHERE
+        	(k.pionter_kullanici = $1 OR LOWER(k.pionter_email) = LOWER($1))
+         	AND k.pionter_sifre = $2
         LIMIT 1
     `, kullanici, sifre).Scan(&k.IP, &k.SunucuKullanici, &k.SunucuSifre, &k.IzoleKlasor)
 	return k, err
@@ -822,7 +824,9 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
-		WHERE pionter_kullanici = $1 AND pionter_sifre = $2
+		WHERE
+	 		(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
+			AND pionter_sifre = $2
 	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
 
 	if err != nil {
@@ -890,7 +894,9 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
-		WHERE pionter_kullanici = $1 AND pionter_sifre = $2
+		WHERE
+			(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
+			AND pionter_sifre = $2
 	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
 
 	if err != nil {
@@ -961,7 +967,7 @@ func sunucuKimlikSorgula(kullanici string, sifre string, serverID int) (GizliKim
 		FROM kullanicilar k
 		JOIN sunucular s ON k.id = s.user_id
 		WHERE
-			k.pionter_kullanici = $1
+			(k.pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
 			AND k.pionter_sifre = $2
 			AND s.id = $3
 		LIMIT 1
