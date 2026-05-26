@@ -602,6 +602,24 @@ export default function AnaSayfa() {
       });
   };
 
+  const dosyaBoyutuYaz = (boyut) => {
+    if (!boyut || boyut === 0) return "0 B";
+
+    if (boyut < 1024) {
+      return boyut + " B";
+    }
+
+    if (boyut < 1024 * 1024) {
+      return (boyut / 1024).toFixed(1) + " KB";
+    }
+
+    if (boyut < 1024 * 1024 * 1024) {
+      return (boyut / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    return (boyut / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+  };
+
   const suruklemeUstte = (e) => {
     e.preventDefault();
     setSurukleniyor(true);
@@ -1228,6 +1246,14 @@ export default function AnaSayfa() {
                     <span className="text-sm font-medium text-center w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]">
                       {dosya.ad}
                     </span>
+                    <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
+                      <p>
+                        {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
+                      </p>
+                      <p className="truncate max-w-full">
+                        {dosya.degistirilme}
+                      </p>
+                    </div>
                     <div className="absolute right-2 top-2">
                       <button
                         title="Menu"
