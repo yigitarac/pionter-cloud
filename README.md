@@ -12,6 +12,7 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 - Add and list multiple servers
 - Connect to a selected server over SSH/SFTP
 - List files and folders
+- Folder-first alphabetical sorting
 - Upload files
 - Download files
 - Create folders
@@ -23,6 +24,13 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 - File metadata display
   - size
   - last modified date
+- Toast notification system
+- Custom modal dialogs for:
+  - rename
+  - move
+  - delete confirmation
+- Improved form validation feedback
+- Click outside to close menus and modals
 - Dark/light mode
 - Turkish/English language switch
 
@@ -99,16 +107,16 @@ Before production use, the following areas need to be improved:
 
 Planned improvements:
 
-- Toast notifications instead of browser alerts
-- Custom modal dialogs
 - Better move target selection UI
 - Right-click context menu
 - Multi-file selection
 - Recursive folder delete with confirmation
 - File preview
-- Better upload progress UI
+- Upload progress indicator
+- Better loading states and optimistic UI
+- Drag and drop files/folders into folders
 - Deployment guide
-- Production security improvements
+- Authentication and production security improvements
 
 ## License
 
