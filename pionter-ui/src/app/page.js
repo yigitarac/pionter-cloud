@@ -1031,13 +1031,26 @@ export default function AnaSayfa() {
                       {dosya.ad}
                     </span>
                     <button
+                      title={t.deleteItem}
                       onClick={(e) => {
                         e.stopPropagation();
                         dosyaVeyaKlasorSil(dosya);
                       }}
-                      className="mt-3 px-3 py-1 rounded-md text-xs font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors"
+                      className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-all"
                     >
-                      {t.deleteItem}
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"
+                        />
+                      </svg>
                     </button>
                   </div>
                 ))}
