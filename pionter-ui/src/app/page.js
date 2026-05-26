@@ -243,6 +243,7 @@ export default function AnaSayfa() {
     })
       .then((cevap) => {
         setYukleniyor(false);
+        setYuklemeMesaji("");
         if (cevap.ok) {
           toastGoster(t.regSuccess, "success");
           setIsLogin(true);
@@ -253,6 +254,7 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log("Kayıt Hatası:", hata);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.regFail, "error");
       });
   };
@@ -427,10 +429,12 @@ export default function AnaSayfa() {
         a.remove();
         window.URL.revokeObjectURL(url);
         setYukleniyor(false);
+        setYuklemeMesaji("");
       })
       .catch((hata) => {
         console.log(hata);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(
           dil === "tr"
             ? "Dosya indirilemedi."
@@ -476,12 +480,14 @@ export default function AnaSayfa() {
         } else {
           console.log("Yükleme başarısız!");
           setYukleniyor(false);
+          setYuklemeMesaji("");
           toastGoster(t.uploadFailed, "error");
         }
       })
       .catch((hata) => {
         console.log("Yükleme Hatası:", hata);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.uploadFailed, "error");
       });
   };
@@ -530,7 +536,8 @@ export default function AnaSayfa() {
       })
       .catch((hata) => {
         console.log("Klasör oluşturma hatası:", hata);
-        setYuklemeMesaji(t.loadingFiles);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.folderCreateFailed, "error");
       });
   };
@@ -584,6 +591,7 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log("Silme hatası:", hata);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.deleteFailed, "error");
       });
   };
@@ -659,6 +667,7 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log("Yeniden adlandırma hatası:", hata);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.renameFailed, "error");
       });
   };
@@ -732,6 +741,7 @@ export default function AnaSayfa() {
       .catch((hata) => {
         console.log("Taşıma hatası:", hata);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(t.moveFailed, "error");
       });
   };
