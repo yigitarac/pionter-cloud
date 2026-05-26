@@ -790,6 +790,7 @@ export default function AnaSayfa() {
         );
       });
   };
+
   const sunucuFormunuTemizle = () => {
     setSunucuTakmaAd("");
     setSunucuIp("");
@@ -800,6 +801,18 @@ export default function AnaSayfa() {
     setIzoleKlasor("/PionterCloud");
     setBaglantiTipi("password");
   };
+
+  const baglantiTipiniDegistir = (yeniBaglantiTipi) => {
+    setBaglantiTipi(yeniBaglantiTipi);
+
+    if (yeniBaglantiTipi === "password") {
+      setSshPrivateKey("");
+    }
+    if (yeniBaglantiTipi === "ssh_key") {
+      setSunucuSifre("");
+    }
+  };
+
   const sunucuKaydet = () => {
     const temizSunucuTakmaAd = sunucuTakmaAd.trim();
     const temizSunucuIp = sunucuIp.trim();
@@ -849,8 +862,8 @@ export default function AnaSayfa() {
         sunucu_port: temizSunucuPort,
         sunucu_kullanici: temizSunucuKullanici,
         baglanti_tipi: baglantiTipi,
-        sunucu_sifre: sunucuSifre,
-        ssh_private_key: sshPrivateKey,
+        sunucu_sifre: baglantiTipi === "password" ? sunucuSifre : "",
+        ssh_private_key: baglantiTipi === "ssh_key" ? sshPrivateKey : "",
         izole_klasor: temizIzoleKlasor,
       }),
     })
@@ -1187,7 +1200,7 @@ export default function AnaSayfa() {
 
                     <select
                       value={baglantiTipi}
-                      onChange={(e) => setBaglantiTipi(e.target.value)}
+                      onChange={(e) => baglantiTipiniDegistir(e.target.value)}
                       className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
                     >
                       <option value="password">{t.connectWithPassword}</option>
