@@ -1121,6 +1121,8 @@ export default function AnaSayfa() {
   const hedefKlasorYolParcalari = hedefKlasorGezintiYolu
     .split("/")
     .filter(Boolean);
+  const moveHedefiMevcutKlasorMu =
+    moveModalAcik && hedefKlasorGezintiYolu === mevcutYol;
   const gosterilecekDosyalar = dosyalar.filter((dosya) =>
     dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
   );
@@ -1347,6 +1349,14 @@ export default function AnaSayfa() {
               )}
             </div>
 
+            {moveHedefiMevcutKlasorMu && (
+              <p className="mt-3 text-xs text-[#928374] dark:text-[#a89984]">
+                {dil === "tr"
+                  ? "Bu öğe zaten bu klasörde."
+                  : "This item is already in this folder."}
+              </p>
+            )}
+
             <div className="mt-5 flex justify-end gap-3">
               <button
                 onClick={() => {
@@ -1362,7 +1372,7 @@ export default function AnaSayfa() {
 
               <button
                 onClick={tasimayiOnayla}
-                disabled={yukleniyor}
+                disabled={yukleniyor || moveHedefiMevcutKlasorMu}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.confirmMoveHere}
