@@ -8,6 +8,7 @@ export default function AnaSayfa() {
   const [isLogin, setIsLogin] = useState(true);
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
+  const [eposta, setEposta] = useState("");
   const [mevcutYol, setMevcutYol] = useState("/");
   const [sunucuIp, setSunucuIp] = useState("");
   const [sunucuKullanici, setSunucuKullanici] = useState("root");
@@ -53,6 +54,9 @@ export default function AnaSayfa() {
       passPlaceholder: "Password",
       connectBtn: "Login",
       registerBtn: "Register Account",
+      emailPlaceholder: "Email",
+      emailMissing: "Please enter an email address.",
+      invalidEmail: "Please enter a valid email address.",
       switchToReg: "Need an account? Register here.",
       switchToLogin: "Already have an account? Login here.",
       srvIp: "Server IP",
@@ -152,6 +156,9 @@ export default function AnaSayfa() {
       passPlaceholder: "Şifre",
       connectBtn: "Giriş Yap",
       registerBtn: "Hesap Oluştur",
+      emailPlaceholder: "E-posta",
+      emailMissing: "Lütfen e-posta adresi gir.",
+      invalidEmail: "Lütfen geçerli bir e-posta adresi gir.",
       switchToReg: "Hesabın yok mu? Buradan kayıt ol.",
       switchToLogin: "Zaten hesabın var mı? Buradan giriş yap.",
       srvIp: "Sunucu IP",
@@ -259,6 +266,18 @@ export default function AnaSayfa() {
       return;
     }
 
+    const temizEposta = eposta.trim();
+
+    if (!temizEposta) {
+      toastGoster(t.emailMissing, "error");
+      return;
+    }
+
+    if (!temizEposta.includes("@") || !temizEposta.includes(".")) {
+      toastGoster(t.invalidEmail, "error");
+      return;
+    }
+
     setYukleniyor(true);
     setYuklemeMesaji(t.registeringAccount);
 
@@ -267,6 +286,7 @@ export default function AnaSayfa() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pionter_kullanici: kullaniciAdi,
+        pionter_email: temizEposta,
         pionter_sifre: sifre,
       }),
     })
@@ -357,6 +377,7 @@ export default function AnaSayfa() {
 
     setIsLogin(!isLogin);
     setKullaniciAdi("");
+    setEposta("");
     setSifre("");
   };
 
@@ -1733,6 +1754,21 @@ export default function AnaSayfa() {
                         }}
                         className="w-full px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                       />
+
+                      {!isLogin && (
+                        <input
+                          type="email"
+                          placeholder={t.emailPlaceholder}
+                          value={eposta}
+                          onChange={(e) => setEposta(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              yeniKayitOlustur();
+                            }
+                          }}
+                          className="px-4 py-3 bg-[#fbf1c7] dark:bg-[#282828] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                        />
+                      )}
 
                       <input
                         type="password"
