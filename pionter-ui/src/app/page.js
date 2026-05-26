@@ -781,16 +781,6 @@ export default function AnaSayfa() {
       return;
     }
 
-    const yeniSunucu = {
-      id: Date.now(),
-      takmaAd: sunucuTakmaAd,
-      ip: sunucuIp,
-      kullanici: sunucuKullanici,
-      port: sunucuPort,
-      baglantiTipi: baglantiTipi,
-      izoleKlasor: izoleKlasor,
-    };
-
     fetch("http://localhost:8080/api/servers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -813,7 +803,13 @@ export default function AnaSayfa() {
           throw new Error("Sunucu kaydedilemedi");
         }
 
-        setSunucular([...sunucular, yeniSunucu]);
+        sunuculariGetir();
+        toastGoster(
+          dil === "tr"
+            ? "Sunucu başarıyla kaydedildi."
+            : "Server saved successfully.",
+          "success",
+        );
 
         setSunucuTakmaAd("");
         setSunucuIp("");
@@ -827,8 +823,9 @@ export default function AnaSayfa() {
       })
       .catch((hata) => {
         console.log("Sunucu kayıt hatası:", hata);
-        alert(
+        toastGoster(
           dil === "tr" ? "Sunucu kaydedilemedi." : "Server could not be saved.",
+          "error",
         );
       });
   };
