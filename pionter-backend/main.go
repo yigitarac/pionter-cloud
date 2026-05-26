@@ -626,6 +626,98 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mesaj": "Yeniden adlandırma başarılı"}`))
 }
+func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-", "Content-Type")
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var bilgiler TasiBilgileri
+	err := json.NewDecoder(r.Body).Decode(&bilgiler)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	if !guvenliAdMi(bilgiler.DosyaAdi) {
+		http.Error(w, "Geçersiz dosya veya klasör adı", http.StatusBadRequest)
+		return
+	}
+
+	if bilgiler.KaynakYol == bilgiler.HedefYol {
+		http.Error(w, "Kaynak ve hedef klasör aynı olamaz", http.StatusBadRequest)
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusBadRequest)
+		return
+	}
+
+	hedefGercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.HedefYol)
+	if err != nil {
+		http.Error(w, "Geçersiz hedef yol", http.StatusBadRequest)
+		return
+	}
+
+	eskiYol := path.Join(kaynakGercekYol, bilgiler.DosyaAdi)
+	yeniYol := path.Join(hedefGercekYol, bilgiler.DosyaAdi)
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("SSH Bağlantı Hatası:", err)
+		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("SFTP Hatası:", err)
+		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer sftpClient.Close()
+
+	hedefBilgi, err := sftpClient.Stat(hedefGercekYol)
+	if err != nil {
+		http.Error(w, "Hedef klasör bulunamadı", http.StatusBadRequest)
+		return
+	}
+
+	if !hedefBilgi.IsDir() {
+		http.Error(w, "Hedef yol bir klasör değil", http.StatusBadRequest)
+		return
+	}
+	_, err = sftpClient.Stat(yeniYol)
+	if err == nil {
+		http.Error(w, "Hedefte aynı isimde dosya veya klasör var", http.StatusConflict)
+		return
+	}
+	err = sftpClient.Rename(eskiYol, yeniYol)
+	if err != nil {
+		fmt.Println("Taşıma hatası:", err)
+		http.Error(w, "Dosya veya klasör taşınamadı", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Taşıma başarılı"}`))
+}
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
