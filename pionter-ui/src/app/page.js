@@ -86,6 +86,10 @@ export default function AnaSayfa() {
       homeFolder: "Home",
       searchPlaceholder: "Search in current folder...",
       noSearchResults: "No matching files or folders found.",
+      uploadSuccess: "File uploaded successfully.",
+      uploadFailed: "Upload failed.",
+      folderCreateSuccess: "Folder created successfully.",
+      folderCreateFailed: "Folder could not be created.",
     },
     tr: {
       userPlaceholder: "Pionter Kullanıcı Adı",
@@ -142,6 +146,10 @@ export default function AnaSayfa() {
       homeFolder: "Home",
       searchPlaceholder: "Mevcut klasörde ara...",
       noSearchResults: "Eşleşen dosya veya klasör bulunamadı.",
+      uploadSuccess: "Dosya başarıyla yüklendi.",
+      uploadFailed: "Dosya yükleme başarısız.",
+      folderCreateSuccess: "Klasör başarıyla oluşturuldu.",
+      folderCreateFailed: "Klasör oluşturulamadı.",
     },
   };
 
