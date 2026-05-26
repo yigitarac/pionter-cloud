@@ -790,6 +790,16 @@ export default function AnaSayfa() {
         );
       });
   };
+  const sunucuFormunuTemizle = () => {
+    setSunucuTakmaAd("");
+    setSunucuIp("");
+    setSunucuKullanici("root");
+    setSunucuPort("22");
+    setSunucuSifre("");
+    setSshPrivateKey("");
+    setIzoleKlasor("/PionterCloud");
+    setBaglantiTipi("password");
+  };
   const sunucuKaydet = () => {
     const temizSunucuTakmaAd = sunucuTakmaAd.trim();
     const temizSunucuIp = sunucuIp.trim();
@@ -852,14 +862,7 @@ export default function AnaSayfa() {
         sunuculariGetir();
         toastGoster(t.serverSaveSuccess, "success");
 
-        setSunucuTakmaAd("");
-        setSunucuIp("");
-        setSunucuKullanici("root");
-        setSunucuPort("22");
-        setSunucuSifre("");
-        setSshPrivateKey("");
-        setIzoleKlasor("/PionterCloud");
-        setBaglantiTipi("password");
+        sunucuFormunuTemizle();
         setSunucuFormAcik(false);
       })
       .catch((hata) => {
@@ -1219,7 +1222,10 @@ export default function AnaSayfa() {
 
                   <div className="flex justify-end gap-3 mt-5">
                     <button
-                      onClick={() => setSunucuFormAcik(false)}
+                      onClick={() => {
+                        sunucuFormunuTemizle();
+                        setSunucuFormAcik(false);
+                      }}
                       className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors"
                     >
                       {t.cancel}
