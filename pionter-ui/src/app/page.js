@@ -803,11 +803,15 @@ export default function AnaSayfa() {
       });
   };
 
-  const hedefKlasoreGir = (klasorYolu) => {
+  const hedefKlasorYolunaGit = (hedefYol) => {
     if (hedefKlasorlerYukleniyor) return;
 
-    setHedefKlasorGezintiYolu(klasorYolu);
-    hedefKlasorleriGetir(klasorYolu);
+    setHedefKlasorGezintiYolu(hedefYol);
+    hedefKlasorleriGetir(hedefYol);
+  };
+
+  const hedefKlasoreGir = (klasorYolu) => {
+    hedefKlasorYolunaGit(klasorYolu);
   };
 
   const hedefUstKlasoreDon = () => {
@@ -1114,6 +1118,9 @@ export default function AnaSayfa() {
       });
   };
   const yolParcalari = mevcutYol.split("/").filter(Boolean);
+  const hedefKlasorYolParcalari = hedefKlasorGezintiYolu
+    .split("/")
+    .filter(Boolean);
   const gosterilecekDosyalar = dosyalar.filter((dosya) =>
     dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
   );
@@ -1227,21 +1234,56 @@ export default function AnaSayfa() {
                 {t.currentMoveTarget}
               </p>
 
-              <div className="flex items-center gap-2 min-w-0">
-                <svg
-                  className="w-5 h-5 text-[#458588] dark:text-[#83a598] shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                </svg>
+              <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                {hedefKlasorGezintiYolu === "/" ? (
+                  <span className="text-sm font-bold cursor-default text-[#458588] dark:text-[#83a598]">
+                    {t.homeFolder}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => hedefKlasorYolunaGit("/")}
+                    disabled={hedefKlasorlerYukleniyor}
+                    className="text-sm font-bold transition-colors cursor-pointer text-[#3c3836] dark:text-[#ebdbb2] hover:text-[#458588] dark:hover:text-[#83a598] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t.homeFolder}
+                  </button>
+                )}
 
-                <p className="text-sm font-bold truncate text-[#3c3836] dark:text-[#ebdbb2]">
-                  {yoluKullaniciyaGoster(hedefKlasorGezintiYolu)}
-                </p>
+                {hedefKlasorYolParcalari.map((parca, index) => {
+                  const hedefYol =
+                    "/" + hedefKlasorYolParcalari.slice(0, index + 1).join("/");
+
+                  const aktifMi = hedefYol === hedefKlasorGezintiYolu;
+
+                  return (
+                    <div
+                      key={hedefYol}
+                      className="flex items-center gap-1 min-w-0"
+                    >
+                      <span className="text-sm text-[#928374] dark:text-[#a89984]">
+                        /
+                      </span>
+
+                      {aktifMi ? (
+                        <span className="inline-block text-sm font-bold truncate max-w-[120px] cursor-default text-[#458588] dark:text-[#83a598]">
+                          {parca}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => hedefKlasorYolunaGit(hedefYol)}
+                          disabled={hedefKlasorlerYukleniyor}
+                          className="text-sm font-bold truncate max-w-[120px] transition-colors cursor-pointer text-[#3c3836] dark:text-[#ebdbb2] hover:text-[#458588] dark:hover:text-[#83a598] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {parca}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
             <div className="mt-4 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -1256,7 +1298,7 @@ export default function AnaSayfa() {
                   disabled={
                     hedefKlasorGezintiYolu === "/" || hedefKlasorlerYukleniyor
                   }
-                  className="shrink-0 rounded-md px-3 py-1.5 text-xs font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="shrink-0 rounded-md px-3 py-1.5 text-xs font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {dil === "tr" ? "Geri" : "Back"}
                 </button>
@@ -1287,7 +1329,7 @@ export default function AnaSayfa() {
                         key={klasor.ad}
                         type="button"
                         onClick={() => hedefKlasoreGir(klasorYolu)}
-                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors flex items-center gap-2"
+                        className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors flex items-center gap-2 cursor-pointer"
                       >
                         <svg
                           className="w-5 h-5 text-[#458588] dark:text-[#83a598] shrink-0"
@@ -1799,20 +1841,25 @@ export default function AnaSayfa() {
                 <span className="opacity-70 mr-2">{t.currentPath}</span>
 
                 <div className="flex items-center gap-1 min-w-0 flex-wrap">
-                  <button
-                    onClick={() => yolaGit("/")}
-                    className={`font-bold hover:text-[#458588] dark:hover:text-[#83a598] transition-colors ${
-                      mevcutYol === "/"
-                        ? "text-[#458588] dark:text-[#83a598]"
-                        : ""
-                    }`}
-                  >
-                    {t.homeFolder}
-                  </button>
+                  {mevcutYol === "/" ? (
+                    <span className="font-bold cursor-default text-[#458588] dark:text-[#83a598]">
+                      {t.homeFolder}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => yolaGit("/")}
+                      className="font-bold transition-colors cursor-pointer hover:text-[#458588] dark:hover:text-[#83a598]"
+                    >
+                      {t.homeFolder}
+                    </button>
+                  )}
 
                   {yolParcalari.map((parca, index) => {
                     const hedefYol =
                       "/" + yolParcalari.slice(0, index + 1).join("/");
+
+                    const aktifMi = hedefYol === mevcutYol;
 
                     return (
                       <div
@@ -1820,16 +1867,20 @@ export default function AnaSayfa() {
                         className="flex items-center gap-1 min-w-0"
                       >
                         <span className="opacity-50">/</span>
-                        <button
-                          onClick={() => yolaGit(hedefYol)}
-                          className={`font-bold truncate max-w-[140px] hover:text-[#458588] dark:hover:text-[#83a598] transition-colors ${
-                            hedefYol === mevcutYol
-                              ? "text-[#458588] dark:text-[#83a598]"
-                              : ""
-                          }`}
-                        >
-                          {parca}
-                        </button>
+
+                        {aktifMi ? (
+                          <span className="inline-block font-bold truncate max-w-[140px] cursor-default text-[#458588] dark:text-[#83a598]">
+                            {parca}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => yolaGit(hedefYol)}
+                            className="font-bold truncate max-w-[140px] transition-colors cursor-pointer hover:text-[#458588] dark:hover:text-[#83a598]"
+                          >
+                            {parca}
+                          </button>
+                        )}
                       </div>
                     );
                   })}
