@@ -1171,7 +1171,7 @@ export default function AnaSayfa() {
                       placeholder={t.serverNickname}
                       value={sunucuTakmaAd}
                       onChange={(e) => setSunucuTakmaAd(e.target.value)}
-                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
 
                     <input
@@ -1179,7 +1179,7 @@ export default function AnaSayfa() {
                       placeholder={t.srvIp}
                       value={sunucuIp}
                       onChange={(e) => setSunucuIp(e.target.value)}
-                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
 
                     <input
@@ -1187,7 +1187,7 @@ export default function AnaSayfa() {
                       placeholder={t.sshUser}
                       value={sunucuKullanici}
                       onChange={(e) => setSunucuKullanici(e.target.value)}
-                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
 
                     <input
@@ -1195,13 +1195,13 @@ export default function AnaSayfa() {
                       placeholder={t.sshPort}
                       value={sunucuPort}
                       onChange={(e) => setSunucuPort(e.target.value)}
-                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
 
                     <select
                       value={baglantiTipi}
                       onChange={(e) => baglantiTipiniDegistir(e.target.value)}
-                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     >
                       <option value="password">{t.connectWithPassword}</option>
                       <option value="ssh_key">{t.connectWithKey}</option>
@@ -1212,7 +1212,7 @@ export default function AnaSayfa() {
                       placeholder={t.isolatedFolder}
                       value={izoleKlasor}
                       onChange={(e) => setIzoleKlasor(e.target.value)}
-                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
                   </div>
 
@@ -1222,14 +1222,14 @@ export default function AnaSayfa() {
                       placeholder={t.srvPass}
                       value={sunucuSifre}
                       onChange={(e) => setSunucuSifre(e.target.value)}
-                      className="mt-4 w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="mt-4 w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
                   ) : (
                     <textarea
                       placeholder={t.sshPrivateKey}
                       value={sshPrivateKey}
                       onChange={(e) => setSshPrivateKey(e.target.value)}
-                      className="mt-4 w-full min-h-32 px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm focus:outline-none"
+                      className="mt-4 w-full min-h-32 px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
                     />
                   )}
 
