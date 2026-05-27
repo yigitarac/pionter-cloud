@@ -171,6 +171,7 @@ export default function AnaSayfa() {
       pinServer: "Pin",
       unpinServer: "Unpin",
       serverPinFailed: "Server pin status could not be updated.",
+      pinnedServer: "Pinned",
     },
     tr: {
       loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -291,8 +292,9 @@ export default function AnaSayfa() {
       serverUpdateFailed: "Sunucu güncellenemedi.",
       updatingServer: "Sunucu güncelleniyor...",
       pinServer: "Sabitle",
-      unpinServer: "Sabitleme",
+      unpinServer: "Kaldır",
       serverPinFailed: "Sunucu sabitleme durumu güncellenemedi.",
+      pinnedServer: "Sabitli",
     },
   };
 
@@ -2131,9 +2133,17 @@ export default function AnaSayfa() {
                       <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
                         {sunucu.kullanici}@{sunucu.ip}:{sunucu.port}
                       </p>
-                      <p className="text-xs text-[#928374] dark:text-[#a89984] mt-2">
-                        {sunucu.izoleKlasor} · {sunucu.baglantiTipi}
-                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-[#928374] dark:text-[#a89984]">
+                        <span className="truncate">
+                          {sunucu.izoleKlasor} · {sunucu.baglantiTipi}
+                        </span>
+
+                        {sunucu.sabitli && (
+                          <span className="shrink-0 rounded-full bg-[#d79921]/20 px-2 py-0.5 font-bold text-[#d79921]">
+                            {t.pinnedServer}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

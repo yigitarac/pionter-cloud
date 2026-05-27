@@ -82,6 +82,7 @@ func main() {
 	http.HandleFunc("/api/delete", dosyaVeyaKlasorSil)
 	http.HandleFunc("/api/rename", dosyaVeyaKlasorYenidenAdlandir)
 	http.HandleFunc("/api/move", dosyaVeyaKlasorTasi)
+	http.HandleFunc("/api/servers/pin", sunucuSabitle)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -1273,7 +1274,8 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 			sunucu_port,
 			sunucu_kullanici,
 			baglanti_tipi,
-			izole_klasor
+			izole_klasor,
+			sabitli
 		FROM sunucular
 		WHERE user_id = $1
 		ORDER BY sabitli DESC, id DESC
