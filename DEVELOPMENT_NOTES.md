@@ -88,6 +88,36 @@ Example:
 
 The frontend should translate user-facing messages based on the code.
 
+### Completed backend cleanup
+
+The backend now has small request helper functions for repeated request setup logic:
+
+- `corsAyarla`
+- `postIstekKontrolu`
+- `jsonOku`
+
+These helpers are used across the main JSON-based API endpoints to reduce repeated boilerplate.
+
+Current helper coverage includes:
+
+- auth/register
+- server management
+- file listing
+- download
+- upload request setup
+- folder creation
+- delete
+- rename
+- move
+
+Further backend refactor work can still split `main.go` into smaller files later, such as:
+
+- handlers
+- request/response models
+- database helpers
+- SSH/SFTP helpers
+- validation helpers
+
 ## Security Refactor Notes
 
 Before production, the following must be improved:

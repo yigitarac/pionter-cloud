@@ -215,17 +215,14 @@ func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	return k, err
 }
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
 		return
 	}
+
 	var bilgiler BaglantiBilgileri
-	err := json.NewDecoder(r.Body).Decode(&bilgiler)
-	if err != nil {
-		fmt.Println("Gelen paketi okuyamadım:", err)
+	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
 	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
@@ -324,17 +321,14 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(cevap)
 }
 func dosyaIndir(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
 		return
 	}
+
 	var bilgiler BaglantiBilgileri
-	err := json.NewDecoder(r.Body).Decode(&bilgiler)
-	if err != nil {
-		fmt.Println("Gelen paketi okuyamadım:", err)
+	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
 	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
@@ -373,11 +367,9 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, acilanDosya)
 }
 func dosyaYukle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 	r.ParseMultipartForm(10 << 20)
@@ -443,25 +435,17 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	io.Copy(hedefDosya, gelenDosya)
 }
 func klasorOlustur(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
 	var bilgiler KlasorOlusturBilgileri
-	err := json.NewDecoder(r.Body).Decode(&bilgiler)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
+
 	if bilgiler.KlasorAdi == "" {
 		http.Error(w, "Klasör adı boş olamaz", http.StatusBadRequest)
 		return
@@ -521,24 +505,14 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"}`))
 }
 func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
 	var bilgiler SilmeBilgileri
-	err := json.NewDecoder(r.Body).Decode(&bilgiler)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
 
@@ -601,23 +575,14 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Silme başarılı"}`))
 }
 func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
 	var bilgiler YenidenAdlandirBilgileri
-	err := json.NewDecoder(r.Body).Decode(&bilgiler)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
 
@@ -685,22 +650,14 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Yeniden adlandırma başarılı"}`))
 }
 func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
 	var bilgiler TasiBilgileri
-	err := json.NewDecoder(r.Body).Decode(&bilgiler)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
 
@@ -788,19 +745,17 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Taşıma başarılı"}`))
 }
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
 		return
 	}
+
 	var veri KayitBilgileri
-	err := json.NewDecoder(r.Body).Decode(&veri)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &veri) {
 		return
 	}
+
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 	veri.PionterEmail = strings.ToLower(strings.TrimSpace(veri.PionterEmail))
 
@@ -814,7 +769,7 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec(`
+	_, err := db.Exec(`
 		INSERT INTO kullanicilar (pionter_kullanici, pionter_email, pionter_sifre)
 		VALUES ($1, $2, $3)`,
 		veri.PionterKullanici,
@@ -837,9 +792,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var veri SunucuKayitBilgileri
-	err := json.NewDecoder(r.Body).Decode(&veri)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &veri) {
 		return
 	}
 
@@ -850,7 +803,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	err = db.QueryRow(`
+	err := db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
 		WHERE
@@ -905,9 +858,7 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var veri SunucuSilBilgileri
-	err := json.NewDecoder(r.Body).Decode(&veri)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &veri) {
 		return
 	}
 
@@ -919,7 +870,7 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	err = db.QueryRow(`
+	err := db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
 		WHERE
@@ -968,9 +919,7 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var veri SunucuGuncelleBilgileri
-	err := json.NewDecoder(r.Body).Decode(&veri)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &veri) {
 		return
 	}
 
@@ -1141,9 +1090,7 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var veri SunucuSabitleBilgileri
-	err := json.NewDecoder(r.Body).Decode(&veri)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &veri) {
 		return
 	}
 
@@ -1155,7 +1102,7 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID int
-	err = db.QueryRow(`
+	err := db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
 		WHERE
@@ -1204,16 +1151,14 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var veri KayitBilgileri
-	err := json.NewDecoder(r.Body).Decode(&veri)
-	if err != nil {
-		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+	if !jsonOku(w, r, &veri) {
 		return
 	}
 
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 
 	var userID int
-	err = db.QueryRow(`
+	err := db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
 		WHERE
@@ -1344,6 +1289,15 @@ func postIstekKontrolu(w http.ResponseWriter, r *http.Request) bool {
 
 	if r.Method != "POST" {
 		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return false
+	}
+
+	return true
+}
+func jsonOku(w http.ResponseWriter, r *http.Request, hedef interface{}) bool {
+	err := json.NewDecoder(r.Body).Decode(hedef)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
 		return false
 	}
 
