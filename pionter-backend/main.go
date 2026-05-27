@@ -74,6 +74,7 @@ func main() {
 	http.HandleFunc("/api/servers", sunucuKaydet)
 	http.HandleFunc("/api/servers/list", sunuculariListele)
 	http.HandleFunc("/api/servers/delete", sunucuSil)
+	http.HandleFunc("/api/servers/update", sunucuGuncelle)
 	http.HandleFunc("/api/folders/create", klasorOlustur)
 	http.HandleFunc("/api/delete", dosyaVeyaKlasorSil)
 	http.HandleFunc("/api/rename", dosyaVeyaKlasorYenidenAdlandir)
@@ -117,6 +118,20 @@ type SunucuKayitBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 
+	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
+	SunucuIP        string `json:"sunucu_ip"`
+	SunucuPort      string `json:"sunucu_port"`
+	SunucuKullanici string `json:"sunucu_kullanici"`
+	BaglantiTipi    string `json:"baglanti_tipi"`
+	SunucuSifre     string `json:"sunucu_sifre"`
+	SSHPrivateKey   string `json:"ssh_private_key"`
+	IzoleKlasor     string `json:"izole_klasor"`
+}
+type SunucuGuncelleBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+
+	ServerID        int    `json:"server_id"`
 	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
 	SunucuIP        string `json:"sunucu_ip"`
 	SunucuPort      string `json:"sunucu_port"`
@@ -949,6 +964,155 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mesaj": "Sunucu silindi"}`))
 
+}
+func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var veri SunucuGuncelleBilgileri
+	err := json.NewDecoder(r.Body).Decode(&veri)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+	veri.SunucuTakmaAd = strings.TrimSpace(veri.SunucuTakmaAd)
+	veri.SunucuIP = strings.TrimSpace(veri.SunucuIP)
+	veri.SunucuPort = strings.TrimSpace(veri.SunucuPort)
+	veri.SunucuKullanici = strings.TrimSpace(veri.SunucuKullanici)
+	veri.BaglantiTipi = strings.TrimSpace(veri.BaglantiTipi)
+	veri.IzoleKlasor = strings.TrimSpace(veri.IzoleKlasor)
+
+	if veri.SunucuPort == "" {
+		veri.SunucuPort = "22"
+	}
+
+	if veri.PionterKullanici == "" ||
+		veri.PionterSifre == "" ||
+		veri.ServerID <= 0 ||
+		veri.SunucuTakmaAd == "" ||
+		veri.SunucuIP == "" ||
+		veri.SunucuKullanici == "" ||
+		veri.SunucuPort == "" ||
+		veri.BaglantiTipi == "" ||
+		veri.IzoleKlasor == "" {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	portSayisi, err := strconv.Atoi(veri.SunucuPort)
+	if err != nil || portSayisi < 1 || portSayisi > 65535 {
+		http.Error(w, "Geçersiz SSH portu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi != "password" && veri.BaglantiTipi != "ssh_key" {
+		http.Error(w, "Geçersiz bağlantı tipi", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.HasPrefix(veri.IzoleKlasor, "/") {
+		http.Error(w, "İzole klasör / ile başlamalı", http.StatusBadRequest)
+		return
+	}
+
+	if strings.Contains(veri.IzoleKlasor, "..") ||
+		strings.Contains(veri.IzoleKlasor, "\\") ||
+		strings.Contains(veri.IzoleKlasor, "⁄") {
+		http.Error(w, "Geçersiz izole klasör yolu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi == "password" && veri.SunucuSifre == "" {
+		http.Error(w, "Sunucu şifresi zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi == "ssh_key" && strings.TrimSpace(veri.SSHPrivateKey) == "" {
+		http.Error(w, "SSH private key zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	err = db.QueryRow(`
+			SELECT id
+			FROM kullanicilar
+			WHERE
+				(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
+				AND pionter_sifre = $2
+		`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
+
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	if veri.BaglantiTipi == "password" {
+		veri.SSHPrivateKey = ""
+	}
+
+	if veri.BaglantiTipi == "ssh_key" {
+		veri.SunucuSifre = ""
+	}
+
+	result, err := db.Exec(`
+			UPDATE sunucular
+			SET
+				sunucu_takma_ad = $1,
+				sunucu_ip = $2,
+				sunucu_port = $3,
+				sunucu_kullanici = $4,
+				baglanti_tipi = $5,
+				sunucu_sifre = $6,
+				ssh_private_key = $7,
+				izole_klasor = $8
+			WHERE id = $9 AND user_id = $10
+		`,
+		veri.SunucuTakmaAd,
+		veri.SunucuIP,
+		veri.SunucuPort,
+		veri.SunucuKullanici,
+		veri.BaglantiTipi,
+		veri.SunucuSifre,
+		veri.SSHPrivateKey,
+		veri.IzoleKlasor,
+		veri.ServerID,
+		userID,
+	)
+
+	if err != nil {
+		fmt.Println("Sunucu güncelleme hatası:", err)
+		http.Error(w, "Sunucu güncellenemedi", http.StatusInternalServerError)
+		return
+	}
+
+	etkilenenSatir, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println("Güncellenen satır sayısı okunamadı:", err)
+		http.Error(w, "Sunucu güncelleme sonucu okunamadı", http.StatusInternalServerError)
+		return
+	}
+
+	if etkilenenSatir == 0 {
+		http.Error(w, "Sunucu bulunamadı veya bu kullanıcıya ait değil", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Sunucu güncellendi"}`))
 }
 func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
