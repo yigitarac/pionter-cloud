@@ -33,6 +33,8 @@ export default function AnaSayfa() {
   const [aramaMetni, setAramaMetni] = useState("");
   const [toast, setToast] = useState(null);
   const [renameModalAcik, setRenameModalAcik] = useState(false);
+  const [serverDeleteModalAcik, setServerDeleteModalAcik] = useState(false);
+  const [silinecekSunucu, setSilinecekSunucu] = useState(null);
   const [yenidenAdlandirilacakDosya, setYenidenAdlandirilacakDosya] =
     useState(null);
   const [yeniAd, setYeniAd] = useState("");
@@ -149,6 +151,12 @@ export default function AnaSayfa() {
       registerInfo: "Create a Pionter account to start adding your servers.",
       confirmMoveHere: "Move Here",
       currentMoveTarget: "Current target",
+      deleteServer: "Delete Server",
+      deleteServerTitle: "Delete Server",
+      deleteServerText: "Are you sure you want to delete this server?",
+      deleteServerFailed: "Server could not be deleted.",
+      deleteServerSuccess: "Server deleted successfully.",
+      deletingServer: "Deleting server...",
     },
     tr: {
       loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -253,6 +261,12 @@ export default function AnaSayfa() {
         "Sunucularını eklemeye başlamak için Pionter hesabı oluştur.",
       confirmMoveHere: "Buraya Taşı",
       currentMoveTarget: "Geçerli hedef",
+      deleteServer: "Sunucuyu Sil",
+      deleteServerTitle: "Sunucuyu Sil",
+      deleteServerText: "Bu sunucuyu silmek istediğine emin misin?",
+      deleteServerFailed: "Sunucu silinemedi.",
+      deleteServerSuccess: "Sunucu başarıyla silindi.",
+      deletingServer: "Sunucu siliniyor...",
     },
   };
 
@@ -445,6 +459,8 @@ export default function AnaSayfa() {
     setYukleniyor(false);
     setYuklemeMesaji("");
     setHedefKlasorGezintiYolu("/");
+    setServerDeleteModalAcik(false);
+    setSilinecekSunucu(null);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -1068,6 +1084,54 @@ export default function AnaSayfa() {
     }
   };
 
+  const sunucuSilmeModaliniAc = (sunucu) => {
+    if (yukleniyor) return;
+
+    setSilinecekSunucu(sunucu);
+    setServerDeleteModalAcik(true);
+  };
+
+  const sunucuSilmeyiOnayla = () => {
+    if (yukleniyor) return;
+    if (!silinecekSunucu) return;
+
+    setServerDeleteModalAcik(false);
+    setYukleniyor(true);
+    setYuklemeMesaji(t.deletingServer);
+
+    fetch("http://localhost:8080/api/servers/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: kullaniciAdi,
+        pionter_sifre: sifre,
+        server_id: silinecekSunucu.id,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Sunucu silinemedi");
+        }
+
+        toastGoster(t.deleteServerSuccess, "success");
+
+        setSunucular((mevcutSunucular) =>
+          mevcutSunucular.filter((sunucu) => sunucu.id !== silinecekSunucu.id),
+        );
+
+        setSilinecekSunucu(null);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+      })
+      .catch((hata) => {
+        console.log("Sunucu silme hatası:", hata);
+        setSilinecekSunucu(null);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        toastGoster(t.deleteServerFailed, "error");
+      });
+  };
+
   const sunucuKaydet = () => {
     if (yukleniyor) return;
     const temizSunucuTakmaAd = sunucuTakmaAd.trim();
@@ -1495,6 +1559,52 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
+      {serverDeleteModalAcik && (
+        <div
+          onClick={() => {
+            setServerDeleteModalAcik(false);
+            setSilinecekSunucu(null);
+          }}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+          >
+            <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.deleteServerTitle}
+            </h2>
+
+            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-2">
+              {t.deleteServerText}
+            </p>
+
+            <p className="text-sm font-bold mb-5 truncate text-[#cc241d]">
+              {silinecekSunucu?.takmaAd}
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setServerDeleteModalAcik(false);
+                  setSilinecekSunucu(null);
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                onClick={sunucuSilmeyiOnayla}
+                disabled={yukleniyor}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t.confirmDelete}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div
         onClick={() => setAcikMenuIndex(null)}
         className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200"
@@ -1683,9 +1793,22 @@ export default function AnaSayfa() {
                       onClick={() => sunucuSec(sunucu)}
                       className="rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-4 cursor-pointer hover:scale-[1.01] transition-transform"
                     >
-                      <h3 className="font-bold text-lg mb-1">
-                        {sunucu.takmaAd}
-                      </h3>
+                      <div className="mb-1 flex items-start justify-between gap-3">
+                        <h3 className="font-bold text-lg truncate">
+                          {sunucu.takmaAd}
+                        </h3>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            sunucuSilmeModaliniAc(sunucu);
+                          }}
+                          className="shrink-0 rounded-md px-2 py-1 text-xs font-bold text-[#cc241d] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors cursor-pointer"
+                        >
+                          {t.deleteItem}
+                        </button>
+                      </div>
                       <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
                         {sunucu.kullanici}@{sunucu.ip}:{sunucu.port}
                       </p>
