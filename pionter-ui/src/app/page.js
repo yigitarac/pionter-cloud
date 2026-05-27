@@ -48,6 +48,8 @@ export default function AnaSayfa() {
     useState(false);
   const [hedefKlasorGezintiYolu, setHedefKlasorGezintiYolu] = useState("/");
   const hedefKlasorCacheRef = useRef({});
+  const [serverEditModalAcik, setServerEditModalAcik] = useState(false);
+  const [duzenlenecekSunucu, setDuzenlenecekSunucu] = useState(null);
 
   const sozluk = {
     en: {
@@ -158,6 +160,14 @@ export default function AnaSayfa() {
       deleteServerFailed: "Server could not be deleted.",
       deleteServerSuccess: "Server deleted successfully.",
       deletingServer: "Deleting server...",
+      editServer: "Edit",
+      editServerTitle: "Edit Server",
+      serverCredentialsOptional:
+        "Leave the password or SSH key empty to keep the current saved credential.",
+      saveServerChanges: "Save Changes",
+      serverUpdateSuccess: "Server updated successfully.",
+      serverUpdateFailed: "Server could not be updated.",
+      updatingServer: "Updating server...",
     },
     tr: {
       loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -269,6 +279,14 @@ export default function AnaSayfa() {
       deleteServerFailed: "Sunucu silinemedi.",
       deleteServerSuccess: "Sunucu başarıyla silindi.",
       deletingServer: "Sunucu siliniyor...",
+      editServer: "Düzenle",
+      editServerTitle: "Sunucuyu Düzenle",
+      serverCredentialsOptional:
+        "Kayıtlı bilgiyi korumak için sunucu şifresini veya SSH key alanını boş bırakabilirsin.",
+      saveServerChanges: "Değişiklikleri Kaydet",
+      serverUpdateSuccess: "Sunucu başarıyla güncellendi.",
+      serverUpdateFailed: "Sunucu güncellenemedi.",
+      updatingServer: "Sunucu güncelleniyor...",
     },
   };
 
@@ -463,6 +481,8 @@ export default function AnaSayfa() {
     setHedefKlasorGezintiYolu("/");
     setServerDeleteModalAcik(false);
     setSilinecekSunucu(null);
+    setServerEditModalAcik(false);
+    setDuzenlenecekSunucu(null);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -1086,6 +1106,30 @@ export default function AnaSayfa() {
     }
   };
 
+  const sunucuDuzenlemeModaliniAc = (sunucu) => {
+    if (yukleniyor) return;
+
+    setDuzenlenecekSunucu(sunucu);
+
+    setSunucuTakmaAd(sunucu.takmaAd);
+    setSunucuIp(sunucu.ip);
+    setSunucuKullanici(sunucu.kullanici);
+    setSunucuPort(sunucu.port || "22");
+    setBaglantiTipi(sunucu.baglantiTipi || "password");
+    setIzoleKlasor(sunucu.izoleKlasor);
+
+    setSunucuSifre("");
+    setSshPrivateKey("");
+
+    setServerEditModalAcik(true);
+  };
+
+  const sunucuDuzenlemeModaliniKapat = () => {
+    setServerEditModalAcik(false);
+    setDuzenlenecekSunucu(null);
+    sunucuFormunuTemizle();
+  };
+
   const sunucuSilmeModaliniAc = (sunucu) => {
     if (yukleniyor) return;
 
@@ -1212,6 +1256,96 @@ export default function AnaSayfa() {
         toastGoster(t.serverSaveFailed, "error");
       });
   };
+
+  const sunucuGuncelle = () => {
+    if (yukleniyor) return;
+    if (!duzenlenecekSunucu) return;
+
+    const temizSunucuTakmaAd = sunucuTakmaAd.trim();
+    const temizSunucuIp = sunucuIp.trim();
+    const temizSunucuKullanici = sunucuKullanici.trim();
+    const temizSunucuPort = sunucuPort.trim();
+    const temizIzoleKlasor = izoleKlasor.trim();
+
+    if (
+      !temizSunucuTakmaAd ||
+      !temizSunucuIp ||
+      !temizSunucuKullanici ||
+      !temizSunucuPort ||
+      !temizIzoleKlasor
+    ) {
+      toastGoster(t.serverRequiredFields, "error");
+      return;
+    }
+
+    const portSayisi = Number(temizSunucuPort);
+
+    if (!Number.isInteger(portSayisi) || portSayisi < 1 || portSayisi > 65535) {
+      toastGoster(t.invalidServerPort, "error");
+      return;
+    }
+
+    if (!temizIzoleKlasor.startsWith("/")) {
+      toastGoster(t.invalidIsolatedFolder, "error");
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeMesaji(t.updatingServer);
+
+    fetch("http://localhost:8080/api/servers/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: kullaniciAdi,
+        pionter_sifre: sifre,
+
+        server_id: duzenlenecekSunucu.id,
+        sunucu_takma_ad: temizSunucuTakmaAd,
+        sunucu_ip: temizSunucuIp,
+        sunucu_port: temizSunucuPort,
+        sunucu_kullanici: temizSunucuKullanici,
+        baglanti_tipi: baglantiTipi,
+        sunucu_sifre: baglantiTipi === "password" ? sunucuSifre : "",
+        ssh_private_key: baglantiTipi === "ssh_key" ? sshPrivateKey : "",
+        izole_klasor: temizIzoleKlasor,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Sunucu güncellenemedi");
+        }
+
+        toastGoster(t.serverUpdateSuccess, "success");
+
+        setSunucular((mevcutSunucular) =>
+          mevcutSunucular.map((sunucu) =>
+            sunucu.id === duzenlenecekSunucu.id
+              ? {
+                  ...sunucu,
+                  takmaAd: temizSunucuTakmaAd,
+                  ip: temizSunucuIp,
+                  port: temizSunucuPort,
+                  kullanici: temizSunucuKullanici,
+                  baglantiTipi,
+                  izoleKlasor: temizIzoleKlasor,
+                }
+              : sunucu,
+          ),
+        );
+
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        sunucuDuzenlemeModaliniKapat();
+      })
+      .catch((hata) => {
+        console.log("Sunucu güncelleme hatası:", hata);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        toastGoster(t.serverUpdateFailed, "error");
+      });
+  };
+
   const yolParcalari = mevcutYol.split("/").filter(Boolean);
   const hedefKlasorYolParcalari = hedefKlasorGezintiYolu
     .split("/")
@@ -1607,6 +1741,114 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
+      {serverEditModalAcik && (
+        <div
+          onClick={sunucuDuzenlemeModaliniKapat}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+          >
+            <h2 className="text-lg font-bold mb-1 text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.editServerTitle}
+            </h2>
+
+            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-5 truncate">
+              {duzenlenecekSunucu?.takmaAd}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder={t.serverNickname}
+                value={sunucuTakmaAd}
+                onChange={(e) => setSunucuTakmaAd(e.target.value)}
+                className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder={t.srvIp}
+                value={sunucuIp}
+                onChange={(e) => setSunucuIp(e.target.value)}
+                className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder={t.sshUser}
+                value={sunucuKullanici}
+                onChange={(e) => setSunucuKullanici(e.target.value)}
+                className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder={t.sshPort}
+                value={sunucuPort}
+                onChange={(e) => setSunucuPort(e.target.value)}
+                className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+
+              <select
+                value={baglantiTipi}
+                onChange={(e) => baglantiTipiniDegistir(e.target.value)}
+                className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] focus:outline-none"
+              >
+                <option value="password">{t.connectWithPassword}</option>
+                <option value="ssh_key">{t.connectWithKey}</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder={t.isolatedFolder}
+                value={izoleKlasor}
+                onChange={(e) => setIzoleKlasor(e.target.value)}
+                className="px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+            </div>
+
+            {baglantiTipi === "password" ? (
+              <input
+                type="password"
+                placeholder={t.srvPass}
+                value={sunucuSifre}
+                onChange={(e) => setSunucuSifre(e.target.value)}
+                className="mt-4 w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+            ) : (
+              <textarea
+                placeholder={t.sshPrivateKey}
+                value={sshPrivateKey}
+                onChange={(e) => setSshPrivateKey(e.target.value)}
+                className="mt-4 w-full min-h-32 px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+              />
+            )}
+
+            <p className="mt-3 text-xs text-[#7c6f64] dark:text-[#a89984]">
+              {t.serverCredentialsOptional}
+            </p>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={sunucuDuzenlemeModaliniKapat}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                onClick={sunucuGuncelle}
+                disabled={yukleniyor}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t.saveServerChanges}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div
         onClick={() => setAcikMenuIndex(null)}
         className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200"
@@ -1800,16 +2042,29 @@ export default function AnaSayfa() {
                           {sunucu.takmaAd}
                         </h3>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            sunucuSilmeModaliniAc(sunucu);
-                          }}
-                          className="shrink-0 rounded-md px-2 py-1 text-xs font-bold text-[#cc241d] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors cursor-pointer"
-                        >
-                          {t.deleteItem}
-                        </button>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              sunucuDuzenlemeModaliniAc(sunucu);
+                            }}
+                            className="rounded-md px-2 py-1 text-xs font-bold text-[#458588] dark:text-[#83a598] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors cursor-pointer"
+                          >
+                            {t.editServer}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              sunucuSilmeModaliniAc(sunucu);
+                            }}
+                            className="rounded-md px-2 py-1 text-xs font-bold text-[#cc241d] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors cursor-pointer"
+                          >
+                            {t.deleteItem}
+                          </button>
+                        </div>
                       </div>
                       <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
                         {sunucu.kullanici}@{sunucu.ip}:{sunucu.port}

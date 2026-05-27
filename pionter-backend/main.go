@@ -52,6 +52,7 @@ func main() {
 			sunucu_port VARCHAR(10) DEFAULT '22',
 			sunucu_kullanici VARCHAR(50) NOT NULL,
 			baglanti_tipi VARCHAR(20) NOT NULL DEFAULT 'password',
+			sabitli BOOLEAN NOT NULL DEFAULT FALSE,
 			sunucu_sifre VARCHAR(500),
 			ssh_private_key TEXT,
 			izole_klasor VARCHAR(200) NOT NULL
@@ -62,6 +63,8 @@ func main() {
 		CREATE UNIQUE INDEX IF NOT EXISTS kullanicilar_pionter_email_lower_unique
 		ON kullanicilar (LOWER(pionter_email))
 		WHERE pionter_email IS NOT NULL;
+		ALTER TABLE sunucular
+		ADD COLUMN IF NOT EXISTS sabitli BOOLEAN NOT NULL DEFAULT FALSE;
 `)
 	if err != nil {
 		panic("Tablo oluşturulamadı: " + err.Error())
@@ -149,6 +152,7 @@ type SunucuListeBilgileri struct {
 	SunucuKullanici string `json:"sunucu_kullanici"`
 	BaglantiTipi    string `json:"baglanti_tipi"`
 	IzoleKlasor     string `json:"izole_klasor"`
+	Sabitli         bool   `json:"sabitli"`
 }
 type KlasorOlusturBilgileri struct {
 	KullaniciAdi string `json:"kullaniciAdi"`
@@ -185,6 +189,12 @@ type SunucuSilBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 	ServerID         int    `json:"server_id"`
+}
+type SunucuSabitleBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+	ServerID         int    `json:"server_id"`
+	Sabitli          bool   `json:"sabitli"`
 }
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
@@ -994,6 +1004,8 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 	veri.SunucuKullanici = strings.TrimSpace(veri.SunucuKullanici)
 	veri.BaglantiTipi = strings.TrimSpace(veri.BaglantiTipi)
 	veri.IzoleKlasor = strings.TrimSpace(veri.IzoleKlasor)
+	veri.SunucuSifre = strings.TrimSpace(veri.SunucuSifre)
+	veri.SSHPrivateKey = strings.TrimSpace(veri.SSHPrivateKey)
 
 	if veri.SunucuPort == "" {
 		veri.SunucuPort = "22"
@@ -1035,16 +1047,6 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if veri.BaglantiTipi == "password" && veri.SunucuSifre == "" {
-		http.Error(w, "Sunucu şifresi zorunlu", http.StatusBadRequest)
-		return
-	}
-
-	if veri.BaglantiTipi == "ssh_key" && strings.TrimSpace(veri.SSHPrivateKey) == "" {
-		http.Error(w, "SSH private key zorunlu", http.StatusBadRequest)
-		return
-	}
-
 	var userID int
 	err = db.QueryRow(`
 			SELECT id
@@ -1059,11 +1061,51 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var mevcutBaglantiTipi string
+	var mevcutSunucuSifre string
+	var mevcutSSHPrivateKey string
+
+	err = db.QueryRow(`
+		SELECT
+			baglanti_tipi,
+			COALESCE(sunucu_sifre, ''),
+			COALESCE(ssh_private_key, '')
+		FROM sunucular
+		WHERE id = $1 AND user_id = $2
+		`, veri.ServerID, userID).Scan(
+		&mevcutBaglantiTipi,
+		&mevcutSunucuSifre,
+		&mevcutSSHPrivateKey,
+	)
+
+	if err != nil {
+		http.Error(w, "Sunucu bulunamadı veya bu kullanıcıya ait değil", http.StatusNotFound)
+		return
+	}
+
 	if veri.BaglantiTipi == "password" {
+		if veri.SunucuSifre == "" {
+			if mevcutBaglantiTipi == "password" && mevcutSunucuSifre != "" {
+				veri.SunucuSifre = mevcutSunucuSifre
+			} else {
+				http.Error(w, "Sunucu şifresi zorunlu", http.StatusBadRequest)
+				return
+			}
+		}
+
 		veri.SSHPrivateKey = ""
 	}
 
 	if veri.BaglantiTipi == "ssh_key" {
+		if veri.SSHPrivateKey == "" {
+			if mevcutBaglantiTipi == "ssh_key" && mevcutSSHPrivateKey != "" {
+				veri.SSHPrivateKey = mevcutSSHPrivateKey
+			} else {
+				http.Error(w, "SSH private key zorunlu", http.StatusBadRequest)
+				return
+			}
+		}
+
 		veri.SunucuSifre = ""
 	}
 
@@ -1114,6 +1156,77 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mesaj": "Sunucu güncellendi"}`))
 }
+func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var veri SunucuSabitleBilgileri
+	err := json.NewDecoder(r.Body).Decode(&veri)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+
+	if veri.PionterKullanici == "" || veri.PionterSifre == "" || veri.ServerID <= 0 {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	err = db.QueryRow(`
+		SELECT id
+		FROM kullanicilar
+		WHERE
+			(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
+			AND pionter_sifre = $2
+	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
+
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	result, err := db.Exec(`
+		UPDATE sunucular
+		SET sabitli = $1
+		WHERE id = $2 AND user_id = $3
+	`, veri.Sabitli, veri.ServerID, userID)
+
+	if err != nil {
+		fmt.Println("Sunucu sabitleme hatası:", err)
+		http.Error(w, "Sunucu sabitleme durumu güncellenemedi", http.StatusInternalServerError)
+		return
+	}
+
+	etkilenenSatir, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println("Güncellenen satır sayısı okunamadı:", err)
+		http.Error(w, "Sunucu sabitleme sonucu okunamadı", http.StatusInternalServerError)
+		return
+	}
+
+	if etkilenenSatir == 0 {
+		http.Error(w, "Sunucu bulunamadı veya bu kullanıcıya ait değil", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Sunucu sabitleme durumu güncellendi"}`))
+}
 func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -1163,7 +1276,7 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 			izole_klasor
 		FROM sunucular
 		WHERE user_id = $1
-		ORDER BY id DESC
+		ORDER BY sabitli DESC, id DESC
 	`, userID)
 
 	if err != nil {
@@ -1186,6 +1299,7 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 			&s.SunucuKullanici,
 			&s.BaglantiTipi,
 			&s.IzoleKlasor,
+			&s.Sabitli,
 		)
 
 		if err != nil {
