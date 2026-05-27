@@ -168,6 +168,9 @@ export default function AnaSayfa() {
       serverUpdateSuccess: "Server updated successfully.",
       serverUpdateFailed: "Server could not be updated.",
       updatingServer: "Updating server...",
+      pinServer: "Pin",
+      unpinServer: "Unpin",
+      serverPinFailed: "Server pin status could not be updated.",
     },
     tr: {
       loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -287,6 +290,9 @@ export default function AnaSayfa() {
       serverUpdateSuccess: "Sunucu başarıyla güncellendi.",
       serverUpdateFailed: "Sunucu güncellenemedi.",
       updatingServer: "Sunucu güncelleniyor...",
+      pinServer: "Sabitle",
+      unpinServer: "Sabitleme",
+      serverPinFailed: "Sunucu sabitleme durumu güncellenemedi.",
     },
   };
 
@@ -1064,6 +1070,7 @@ export default function AnaSayfa() {
           port: sunucu.sunucu_port,
           baglantiTipi: sunucu.baglanti_tipi,
           izoleKlasor: sunucu.izole_klasor,
+          sabitli: sunucu.sabitli,
         }));
 
         setSunucular(duzenlenmisSunucular);
@@ -1122,6 +1129,47 @@ export default function AnaSayfa() {
     setSshPrivateKey("");
 
     setServerEditModalAcik(true);
+  };
+
+  const sunucuSabitlemeDegistir = (sunucu) => {
+    if (yukleniyor) return;
+
+    const yeniSabitliDurumu = !sunucu.sabitli;
+
+    fetch("http://localhost:8080/api/servers/pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: kullaniciAdi,
+        pionter_sifre: sifre,
+        server_id: sunucu.id,
+        sabitli: yeniSabitliDurumu,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Sunucu sabitleme durumu güncellenemedi");
+        }
+
+        setSunucular((mevcutSunucular) =>
+          mevcutSunucular
+            .map((mevcutSunucu) =>
+              mevcutSunucu.id === sunucu.id
+                ? { ...mevcutSunucu, sabitli: yeniSabitliDurumu }
+                : mevcutSunucu,
+            )
+            .sort((a, b) => {
+              if (a.sabitli && !b.sabitli) return -1;
+              if (!a.sabitli && b.sabitli) return 1;
+
+              return b.id - a.id;
+            }),
+        );
+      })
+      .catch((hata) => {
+        console.log("Sunucu sabitleme hatası:", hata);
+        toastGoster(t.serverPinFailed, "error");
+      });
   };
 
   const sunucuDuzenlemeModaliniKapat = () => {
@@ -2043,6 +2091,20 @@ export default function AnaSayfa() {
                         </h3>
 
                         <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              sunucuSabitlemeDegistir(sunucu);
+                            }}
+                            className={`rounded-md px-2 py-1 text-xs font-bold transition-colors cursor-pointer hover:bg-[#d5c4a1] dark:hover:bg-[#504945] ${
+                              sunucu.sabitli
+                                ? "text-[#d79921]"
+                                : "text-[#7c6f64] dark:text-[#a89984]"
+                            }`}
+                          >
+                            {sunucu.sabitli ? t.unpinServer : t.pinServer}
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {
