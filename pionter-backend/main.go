@@ -830,17 +830,9 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Kayıt başarılı!"}`))
 }
 func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
@@ -906,17 +898,9 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Sunucu kaydedildi!"}`))
 }
 func sunucuSil(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
@@ -977,17 +961,9 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 
 }
 func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
@@ -1158,17 +1134,9 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Sunucu güncellendi"}`))
 }
 func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
@@ -1229,17 +1197,9 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"mesaj": "Sunucu sabitleme durumu güncellendi"}`))
 }
 func sunuculariListele(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	corsAyarla(w, "POST, OPTIONS")
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if r.Method != "POST" {
-		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+	if !postIstekKontrolu(w, r) {
 		return
 	}
 
@@ -1370,6 +1330,24 @@ func guvenliYolOlustur(izoleKlasor string, kullaniciYolu string) (string, error)
 	}
 
 	return path.Join(temizIzoleKlasor, temizKullaniciYolu), nil
+}
+func corsAyarla(w http.ResponseWriter, methods string) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", methods)
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+func postIstekKontrolu(w http.ResponseWriter, r *http.Request) bool {
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return false
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return false
+	}
+
+	return true
 }
 func guvenliAdMi(ad string) bool {
 	if ad == "" {
