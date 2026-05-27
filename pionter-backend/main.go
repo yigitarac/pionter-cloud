@@ -73,6 +73,7 @@ func main() {
 	http.HandleFunc("/api/register", kullaniciKaydet)
 	http.HandleFunc("/api/servers", sunucuKaydet)
 	http.HandleFunc("/api/servers/list", sunuculariListele)
+	http.HandleFunc("/api/servers/delete", sunucuSil)
 	http.HandleFunc("/api/folders/create", klasorOlustur)
 	http.HandleFunc("/api/delete", dosyaVeyaKlasorSil)
 	http.HandleFunc("/api/rename", dosyaVeyaKlasorYenidenAdlandir)
@@ -164,6 +165,11 @@ type TasiBilgileri struct {
 	KaynakYol    string `json:"kaynak_yol"`
 	HedefYol     string `json:"hedef_yol"`
 	DosyaAdi     string `json:"dosya_adi"`
+}
+type SunucuSilBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+	ServerID         int    `json:"server_id"`
 }
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
@@ -872,6 +878,77 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(`{"mesaj": "Sunucu kaydedildi!"}`))
+}
+func sunucuSil(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Sadece POST isteği kabul edilir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var veri SunucuSilBilgileri
+	err := json.NewDecoder(r.Body).Decode(&veri)
+	if err != nil {
+		http.Error(w, "Geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+
+	if veri.PionterKullanici == "" || veri.PionterSifre == "" || veri.ServerID < 0 {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	err = db.QueryRow(`
+		SELECT id
+		FROM kullanicilar
+		WHERE
+			(pionter_kullanici = $1 OR LOWER (pionter_email) = LOWER($1))
+			AND pionter_sifre = $2
+		`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
+
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	result, err := db.Exec(`
+		DELETE FROM sunucular
+		WHERE id = $1 AND user_id = $2
+		`, veri.ServerID, userID)
+
+	if err != nil {
+		fmt.Println("Sunucu silme hatası:", err)
+		http.Error(w, "Sunucu silinemedi", http.StatusInternalServerError)
+		return
+	}
+
+	etkilenenSatir, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println("Silinen satır sayısı okunamadı:", err)
+		http.Error(w, "Sunucu silme sonucu okunamadı", http.StatusInternalServerError)
+		return
+	}
+
+	if etkilenenSatir == 0 {
+		http.Error(w, "Sunucu bulunamadı veya bu kullanıcıya ait değil", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Sunucu silindi"}`))
+
 }
 func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
