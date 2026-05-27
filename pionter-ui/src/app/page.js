@@ -153,7 +153,8 @@ export default function AnaSayfa() {
       currentMoveTarget: "Current target",
       deleteServer: "Delete Server",
       deleteServerTitle: "Delete Server",
-      deleteServerText: "Are you sure you want to delete this server?",
+      deleteServerText:
+        "This will remove the server from PionterCloud. Files on the actual server will not be deleted.",
       deleteServerFailed: "Server could not be deleted.",
       deleteServerSuccess: "Server deleted successfully.",
       deletingServer: "Deleting server...",
@@ -263,7 +264,8 @@ export default function AnaSayfa() {
       currentMoveTarget: "Geçerli hedef",
       deleteServer: "Sunucuyu Sil",
       deleteServerTitle: "Sunucuyu Sil",
-      deleteServerText: "Bu sunucuyu silmek istediğine emin misin?",
+      deleteServerText:
+        "Bu işlem sunucuyu PionterCloud listesinden kaldırır. Gerçek sunucudaki dosyalar silinmez.",
       deleteServerFailed: "Sunucu silinemedi.",
       deleteServerSuccess: "Sunucu başarıyla silindi.",
       deletingServer: "Sunucu siliniyor...",
