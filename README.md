@@ -11,7 +11,10 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 - User registration and login flow
   - register with username, email and password
   - login with username or email
-- Add and list multiple servers
+- Server management
+  - add servers
+  - list servers
+  - delete saved servers
 - Connect to a selected server over SSH/SFTP
 - List files and folders
 - Upload files
