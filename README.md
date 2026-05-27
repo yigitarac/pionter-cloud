@@ -14,7 +14,10 @@ The idea is simple: users add their own server, choose an isolated folder, and m
 - Server management
   - add servers
   - list servers
+  - edit saved servers
   - delete saved servers
+  - pin/unpin frequently used servers
+  - pinned servers appear first
 - Connect to a selected server over SSH/SFTP
 - List files and folders
 - Upload files
