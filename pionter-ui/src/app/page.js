@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { sozluk } from "./sozluk";
+import { dosyaBoyutuYaz } from "./yardimcilar";
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -739,24 +740,6 @@ export default function AnaSayfa() {
         setYuklemeMesaji("");
         toastGoster(t.moveFailed, "error");
       });
-  };
-
-  const dosyaBoyutuYaz = (boyut) => {
-    if (!boyut || boyut === 0) return "0 B";
-
-    if (boyut < 1024) {
-      return boyut + " B";
-    }
-
-    if (boyut < 1024 * 1024) {
-      return (boyut / 1024).toFixed(1) + " KB";
-    }
-
-    if (boyut < 1024 * 1024 * 1024) {
-      return (boyut / (1024 * 1024)).toFixed(1) + " MB";
-    }
-
-    return (boyut / (1024 * 1024 * 1024)).toFixed(1) + " GB";
   };
 
   const toastGoster = (mesaj, tip = "info") => {
