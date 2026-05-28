@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
@@ -83,6 +84,7 @@ func main() {
 	http.HandleFunc("/api/rename", dosyaVeyaKlasorYenidenAdlandir)
 	http.HandleFunc("/api/move", dosyaVeyaKlasorTasi)
 	http.HandleFunc("/api/servers/pin", sunucuSabitle)
+	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -196,6 +198,18 @@ type SunucuSabitleBilgileri struct {
 	PionterSifre     string `json:"pionter_sifre"`
 	ServerID         int    `json:"server_id"`
 	Sabitli          bool   `json:"sabitli"`
+}
+type SunucuTestBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+
+	SunucuIP        string `json:"sunucu_ip"`
+	SunucuPort      string `json:"sunucu_port"`
+	SunucuKullanici string `json:"sunucu_kullanici"`
+	BaglantiTipi    string `json:"baglanti_tipi"`
+	SunucuSifre     string `json:"sunucu_sifre"`
+	SSHPrivateKey   string `json:"ssh_private_key"`
+	IzoleKlasor     string `json:"izole_klasor"`
 }
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
@@ -1384,4 +1398,138 @@ func sshAuthMethodOlustur(kimlik GizliKimlik) ([]ssh.AuthMethod, error) {
 	}
 
 	return []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)}, nil
+}
+func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var veri SunucuTestBilgileri
+	if !jsonOku(w, r, &veri) {
+		return
+	}
+
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+	veri.SunucuIP = strings.TrimSpace(veri.SunucuIP)
+	veri.SunucuPort = strings.TrimSpace(veri.SunucuPort)
+	veri.SunucuKullanici = strings.TrimSpace(veri.SunucuKullanici)
+	veri.BaglantiTipi = strings.TrimSpace(veri.BaglantiTipi)
+	veri.SunucuSifre = strings.TrimSpace(veri.SunucuSifre)
+	veri.SSHPrivateKey = strings.TrimSpace(veri.SSHPrivateKey)
+	veri.IzoleKlasor = strings.TrimSpace(veri.IzoleKlasor)
+
+	if veri.SunucuPort == "" {
+		veri.SunucuPort = "22"
+	}
+
+	if veri.PionterKullanici == "" ||
+		veri.PionterSifre == "" ||
+		veri.SunucuIP == "" ||
+		veri.SunucuKullanici == "" ||
+		veri.SunucuPort == "" ||
+		veri.BaglantiTipi == "" ||
+		veri.IzoleKlasor == "" {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	portSayisi, err := strconv.Atoi(veri.SunucuPort)
+	if err != nil || portSayisi < 1 || portSayisi > 65535 {
+		http.Error(w, "Geçersiz SSH portu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi != "password" && veri.BaglantiTipi != "ssh_key" {
+		http.Error(w, "Geçersiz bağlantı tipi", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.HasPrefix(veri.IzoleKlasor, "/") {
+		http.Error(w, "İzole klasör / ile başlamalı", http.StatusBadRequest)
+		return
+	}
+
+	if strings.Contains(veri.IzoleKlasor, "..") ||
+		strings.Contains(veri.IzoleKlasor, "\\") ||
+		strings.Contains(veri.IzoleKlasor, "⁄") {
+		http.Error(w, "Geçersiz izole klasör yolu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi == "password" && veri.SunucuSifre == "" {
+		http.Error(w, "Sunucu şifresi zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi == "ssh_key" && veri.SSHPrivateKey == "" {
+		http.Error(w, "SSH private key zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	var userID int
+	err = db.QueryRow(`
+		SELECT id
+		FROM kullanicilar
+		WHERE
+			(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
+			AND pionter_sifre = $2
+	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
+
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	kimlik := GizliKimlik{
+		IP:              veri.SunucuIP,
+		Port:            veri.SunucuPort,
+		SunucuKullanici: veri.SunucuKullanici,
+		BaglantiTipi:    veri.BaglantiTipi,
+		SunucuSifre:     veri.SunucuSifre,
+		SSHPrivateKey:   veri.SSHPrivateKey,
+		IzoleKlasor:     veri.IzoleKlasor,
+	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth test hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         5 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("SSH test bağlantı hatası:", err)
+		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("SFTP test hatası:", err)
+		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer sftpClient.Close()
+
+	_, err = sftpClient.Stat(kimlik.IzoleKlasor)
+	if err != nil {
+		fmt.Println("İzole klasör test hatası:", err)
+		http.Error(w, "İzole klasör bulunamadı veya erişilemedi", http.StatusBadGateway)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Sunucu bağlantısı başarılı"}`))
 }
