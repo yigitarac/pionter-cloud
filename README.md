@@ -18,6 +18,8 @@ The idea is simple: users add their own server, choose an isolated folder, and m
   - delete saved servers
   - pin/unpin frequently used servers
   - pinned servers appear first
+  - test SSH/SFTP connection before saving or updating servers
+  - prevent saving invalid server connection settings
 - Connect to a selected server over SSH/SFTP
 - List files and folders
 - Upload files
