@@ -1520,6 +1520,7 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
 		return
 	}
+
 	defer sftpClient.Close()
 
 	_, err = sftpClient.Stat(kimlik.IzoleKlasor)
