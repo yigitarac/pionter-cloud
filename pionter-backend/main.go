@@ -16,6 +16,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/pkg/sftp"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -43,7 +44,7 @@ func main() {
 			id SERIAL PRIMARY KEY,
 			pionter_kullanici VARCHAR(50) UNIQUE NOT NULL,
 			pionter_email TEXT,
-			pionter_sifre VARCHAR(50) NOT NULL
+			pionter_sifre TEXT NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS sunucular (
 			id SERIAL PRIMARY KEY,
@@ -60,6 +61,9 @@ func main() {
 		);
 		ALTER TABLE kullanicilar
 		ADD COLUMN IF NOT EXISTS pionter_email TEXT;
+
+		ALTER TABLE kullanicilar
+		ALTER COLUMN pionter_sifre TYPE TEXT;
 
 		CREATE UNIQUE INDEX IF NOT EXISTS kullanicilar_pionter_email_lower_unique
 		ON kullanicilar (LOWER(pionter_email))
@@ -1629,4 +1633,28 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mesaj": "Sunucu bağlantısı başarılı"}`))
+}
+
+func sifreHashle(sifre string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(sifre), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hash), nil
+}
+
+func bcryptHashMi(sifre string) bool {
+	return strings.HasPrefix(sifre, "$2a$") ||
+		strings.HasPrefix(sifre, "$2b$") ||
+		strings.HasPrefix(sifre, "$2y$")
+}
+
+func sifreDogruMu(kayitliSifre string, girilenSifre string) bool {
+	if bcryptHashMi(kayitliSifre) {
+		err := bcrypt.CompareHashAndPassword([]byte(kayitliSifre), []byte(girilenSifre))
+		return err == nil
+	}
+
+	return kayitliSifre == girilenSifre
 }

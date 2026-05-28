@@ -242,3 +242,76 @@ Future improvements:
   - isolated folder not found or not accessible
 - Consider checking write permission inside the isolated folder.
 - Consider optional auto-create behavior for the isolated folder later, if it is safe and clearly communicated.
+
+## v0.2 Security Gate Plan
+
+The v0.1 version is a local/portfolio MVP. It demonstrates the core product flow, but it is not production-ready.
+
+Before any public or private deployment, the following security improvements should be prioritized.
+
+### Main goals
+
+- Stop storing Pionter account passwords in plain text.
+- Stop sending the user's password with every frontend request.
+- Add a real session/token based authentication flow.
+- Protect backend endpoints with a reusable authentication mechanism.
+- Improve how saved server credentials are stored.
+- Keep SSH host key verification on the production security roadmap.
+
+### Planned steps
+
+1. Password hashing
+
+   Replace plain text password storage with a password hashing system.
+
+   Planned behavior:
+
+   - Register hashes the password before saving it.
+   - Login compares the entered password against the stored hash.
+   - Existing plain text development users may need to be recreated or migrated.
+
+2. Session/token based authentication
+
+   Replace repeated username/password requests with a login token.
+
+   Planned behavior:
+
+   - Login returns a token.
+   - Frontend stores the token temporarily.
+   - Protected requests send the token instead of the password.
+   - Backend validates the token before running protected actions.
+
+3. Protected backend request flow
+
+   Move repeated user authentication logic into helper functions or middleware-like helpers.
+
+   Planned behavior:
+
+   - Server listing, file actions, server editing, server deletion and pinning should use the authenticated user from the token.
+   - Frontend should not need to send `pionter_sifre` for every action.
+
+4. Server credential storage
+
+   Saved server passwords and SSH private keys should not remain as plain text forever.
+
+   Planned options:
+
+   - Encrypt server credentials before saving them.
+   - Keep encryption keys in environment variables.
+   - Never expose saved credentials back to the frontend.
+
+5. Production security reminders
+
+   Still required before real production use:
+
+   - HTTPS deployment
+   - Rate limiting
+   - SSH host key verification
+   - Better backend validation
+   - Stable backend error codes
+   - Safer CORS configuration
+   - More secure secret management
+
+### Important note
+
+This security phase may temporarily slow down visible feature development, but it is necessary before treating the project as anything more than a local/portfolio MVP.
