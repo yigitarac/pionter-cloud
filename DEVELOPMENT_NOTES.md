@@ -10,6 +10,24 @@ This was useful during the early learning and prototyping phase because it made 
 
 As the project grows, the file should be split into smaller components and helper functions.
 
+### Completed frontend cleanup
+
+The translation dictionary has been moved out of `page.js` into:
+
+- `src/app/sozluk.js`
+
+This keeps user-facing text in a separate file and makes `page.js` easier to read.
+
+Further frontend cleanup can still split the UI into components later, such as:
+
+- `AuthForm`
+- `ServerCard`
+- `ServerForm`
+- `FileGrid`
+- `FileCard`
+- `MoveModal`
+- `DeleteModal`
+
 ## Repeated UI Classes
 
 There are repeated Tailwind class groups for:
