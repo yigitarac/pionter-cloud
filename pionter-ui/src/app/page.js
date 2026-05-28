@@ -993,15 +993,16 @@ export default function AnaSayfa() {
     }
 
     setYukleniyor(true);
-    setYuklemeMesaji(t.testingConnection);
+    setYuklemeMesaji(t.savingServer);
 
-    fetch("http://localhost:8080/api/servers/test", {
+    fetch("http://localhost:8080/api/servers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         pionter_kullanici: kullaniciAdi,
         pionter_sifre: sifre,
 
+        sunucu_takma_ad: temizSunucuTakmaAd,
         sunucu_ip: temizSunucuIp,
         sunucu_port: temizSunucuPort,
         sunucu_kullanici: temizSunucuKullanici,
@@ -1011,31 +1012,6 @@ export default function AnaSayfa() {
         izole_klasor: temizIzoleKlasor,
       }),
     })
-      .then((cevap) => {
-        if (!cevap.ok) {
-          throw new Error("Bağlantı testi başarısız");
-        }
-
-        setYuklemeMesaji(t.savingServer);
-
-        return fetch("http://localhost:8080/api/servers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pionter_kullanici: kullaniciAdi,
-            pionter_sifre: sifre,
-
-            sunucu_takma_ad: temizSunucuTakmaAd,
-            sunucu_ip: temizSunucuIp,
-            sunucu_port: temizSunucuPort,
-            sunucu_kullanici: temizSunucuKullanici,
-            baglanti_tipi: baglantiTipi,
-            sunucu_sifre: baglantiTipi === "password" ? sunucuSifre : "",
-            ssh_private_key: baglantiTipi === "ssh_key" ? sshPrivateKey : "",
-            izole_klasor: temizIzoleKlasor,
-          }),
-        });
-      })
       .then((cevap) => {
         if (!cevap.ok) {
           throw new Error("Sunucu kaydedilemedi");
@@ -1051,15 +1027,9 @@ export default function AnaSayfa() {
         setSunucuFormAcik(false);
       })
       .catch((hata) => {
-        console.log("Sunucu kayıt/test hatası:", hata);
+        console.log("Sunucu kayıt hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-
-        if (hata.message === "Bağlantı testi başarısız") {
-          toastGoster(t.connectionTestFailed, "error");
-          return;
-        }
-
         toastGoster(t.serverSaveFailed, "error");
       });
   };
@@ -1150,82 +1120,6 @@ export default function AnaSayfa() {
         setYukleniyor(false);
         setYuklemeMesaji("");
         toastGoster(t.serverUpdateFailed, "error");
-      });
-  };
-
-  const sunucuBaglantisiniTestEt = () => {
-    if (yukleniyor) return;
-
-    const temizSunucuIp = sunucuIp.trim();
-    const temizSunucuKullanici = sunucuKullanici.trim();
-    const temizSunucuPort = sunucuPort.trim();
-    const temizIzoleKlasor = izoleKlasor.trim();
-
-    if (
-      !temizSunucuIp ||
-      !temizSunucuKullanici ||
-      !temizSunucuPort ||
-      !temizIzoleKlasor
-    ) {
-      toastGoster(t.serverRequiredFields, "error");
-      return;
-    }
-
-    const portSayisi = Number(temizSunucuPort);
-
-    if (!Number.isInteger(portSayisi) || portSayisi < 1 || portSayisi > 65535) {
-      toastGoster(t.invalidServerPort, "error");
-      return;
-    }
-
-    if (!temizIzoleKlasor.startsWith("/")) {
-      toastGoster(t.invalidIsolatedFolder, "error");
-      return;
-    }
-
-    if (baglantiTipi === "password" && !sunucuSifre) {
-      toastGoster(t.serverPasswordRequired, "error");
-      return;
-    }
-
-    if (baglantiTipi === "ssh_key" && !sshPrivateKey.trim()) {
-      toastGoster(t.sshKeyRequired, "error");
-      return;
-    }
-
-    setYukleniyor(true);
-    setYuklemeMesaji(t.testingConnection);
-
-    fetch("http://localhost:8080/api/servers/test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
-        pionter_sifre: sifre,
-
-        sunucu_ip: temizSunucuIp,
-        sunucu_port: temizSunucuPort,
-        sunucu_kullanici: temizSunucuKullanici,
-        baglanti_tipi: baglantiTipi,
-        sunucu_sifre: baglantiTipi === "password" ? sunucuSifre : "",
-        ssh_private_key: baglantiTipi === "ssh_key" ? sshPrivateKey : "",
-        izole_klasor: temizIzoleKlasor,
-      }),
-    })
-      .then((cevap) => {
-        if (!cevap.ok) {
-          throw new Error("Bağlantı testi başarısız");
-        }
-
-        toastGoster(t.connectionTestSuccess, "success");
-        setYukleniyor(false);
-        setYuklemeMesaji("");
-      })
-      .catch((hata) => {
-        console.log("Sunucu bağlantı testi hatası:", hata);
-        toastGoster(t.connectionTestFailed, "error");
-        setYukleniyor(false);
-        setYuklemeMesaji("");
       });
   };
 
@@ -1708,15 +1602,6 @@ export default function AnaSayfa() {
               </button>
 
               <button
-                type="button"
-                onClick={sunucuBaglantisiniTestEt}
-                disabled={yukleniyor}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t.testConnection}
-              </button>
-
-              <button
                 onClick={sunucuGuncelle}
                 disabled={yukleniyor}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1888,15 +1773,6 @@ export default function AnaSayfa() {
                       className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors cursor-pointer"
                     >
                       {t.cancel}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={sunucuBaglantisiniTestEt}
-                      disabled={yukleniyor}
-                      className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {t.testConnection}
                     </button>
 
                     <button
