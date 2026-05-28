@@ -932,15 +932,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userID int
-	err = db.QueryRow(`
-		SELECT id
-		FROM kullanicilar
-		WHERE
-	 		(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
-			AND pionter_sifre = $2
-	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
-
+	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
 		return
@@ -1024,15 +1016,7 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userID int
-	err := db.QueryRow(`
-		SELECT id
-		FROM kullanicilar
-		WHERE
-			(pionter_kullanici = $1 OR LOWER (pionter_email) = LOWER($1))
-			AND pionter_sifre = $2
-		`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
-
+	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
 		return
@@ -1128,15 +1112,7 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userID int
-	err = db.QueryRow(`
-			SELECT id
-			FROM kullanicilar
-			WHERE
-				(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
-				AND pionter_sifre = $2
-		`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
-
+	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
 		return
@@ -1273,15 +1249,7 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userID int
-	err := db.QueryRow(`
-		SELECT id
-		FROM kullanicilar
-		WHERE
-			(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
-			AND pionter_sifre = $2
-	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
-
+	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
 		return
@@ -1329,15 +1297,7 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 
-	var userID int
-	err := db.QueryRow(`
-		SELECT id
-		FROM kullanicilar
-		WHERE
-			(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
-			AND pionter_sifre = $2
-	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
-
+	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
 		return
@@ -1396,25 +1356,24 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 func sunucuKimlikSorgula(kullanici string, sifre string, serverID int) (GizliKimlik, error) {
 	var k GizliKimlik
 
-	kullanici = strings.TrimSpace(kullanici)
+	userID, err := kullaniciDogrula(kullanici, sifre)
+	if err != nil {
+		return k, err
+	}
 
-	err := db.QueryRow(`
+	err = db.QueryRow(`
 		SELECT
-			s.sunucu_ip,
-			s.sunucu_port,
-			s.sunucu_kullanici,
-			s.baglanti_tipi,
-			COALESCE(s.sunucu_sifre, ''),
-			COALESCE(s.ssh_private_key, ''),
-			s.izole_klasor
-		FROM kullanicilar k
-		JOIN sunucular s ON k.id = s.user_id
-		WHERE
-			(k.pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
-			AND k.pionter_sifre = $2
-			AND s.id = $3
+			sunucu_ip,
+			sunucu_port,
+			sunucu_kullanici,
+			baglanti_tipi,
+			COALESCE(sunucu_sifre, ''),
+			COALESCE(ssh_private_key, ''),
+			izole_klasor
+		FROM sunucular
+		WHERE id = $1 AND user_id = $2
 		LIMIT 1
-	`, kullanici, sifre, serverID).Scan(
+	`, serverID, userID).Scan(
 		&k.IP,
 		&k.Port,
 		&k.SunucuKullanici,
@@ -1599,15 +1558,7 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userID int
-	err = db.QueryRow(`
-		SELECT id
-		FROM kullanicilar
-		WHERE
-			(pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1))
-			AND pionter_sifre = $2
-	`, veri.PionterKullanici, veri.PionterSifre).Scan(&userID)
-
+	_, err = kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
 		return
@@ -1657,4 +1608,26 @@ func sifreDogruMu(kayitliSifre string, girilenSifre string) bool {
 	}
 
 	return kayitliSifre == girilenSifre
+}
+func kullaniciDogrula(kullanici string, sifre string) (int, error) {
+	kullanici = strings.TrimSpace(kullanici)
+
+	var userID int
+	var kayitliSifre string
+
+	err := db.QueryRow(`
+		SELECT id, pionter_sifre
+		FROM kullanicilar
+		WHERE pionter_kullanici = $1 OR LOWER(pionter_email) = LOWER($1)
+	`, kullanici).Scan(&userID, &kayitliSifre)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if !sifreDogruMu(kayitliSifre, sifre) {
+		return 0, fmt.Errorf("şifre yanlış")
+	}
+
+	return userID, nil
 }
