@@ -846,12 +846,19 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.Exec(`
+	hashlenmisSifre, err := sifreHashle(veri.PionterSifre)
+	if err != nil {
+		fmt.Println("Şifre hashleme hatası:", err)
+		http.Error(w, "Şifre güvenli şekilde kaydedilemedi", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.Exec(`
 		INSERT INTO kullanicilar (pionter_kullanici, pionter_email, pionter_sifre)
 		VALUES ($1, $2, $3)`,
 		veri.PionterKullanici,
 		veri.PionterEmail,
-		veri.PionterSifre,
+		hashlenmisSifre,
 	)
 	if err != nil {
 		fmt.Println("Kayıt hatası:", err)
