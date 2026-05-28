@@ -202,3 +202,43 @@ Future auth/security improvements:
 - Add logout/session expiration behavior.
 - Improve backend error responses for auth failures.
 - Consider email verification later.
+
+## Server Connection Validation Notes
+
+Current behavior:
+
+- When adding a new server, the backend tests the SSH/SFTP connection before saving it.
+- When updating an existing server, the backend tests the SSH/SFTP connection before applying the update.
+- If the connection test fails, the server is not saved or updated.
+- The connection test checks:
+  - SSH connection
+  - SSH authentication
+  - SFTP client creation
+  - isolated folder accessibility
+
+Frontend behavior:
+
+- The separate manual "Test Connection" button was removed.
+- The user only uses the save/update action.
+- Save/update now means:
+  - validate form fields
+  - send request to backend
+  - backend checks the connection
+  - backend saves only if the connection is valid
+
+Important limitation:
+
+- SSH host key verification is still not implemented.
+- The backend still uses insecure host key behavior during SSH connections.
+- This must be improved before production use.
+
+Future improvements:
+
+- Return stable backend error codes for different connection failure reasons.
+- Show more specific frontend messages such as:
+  - SSH connection failed
+  - SSH authentication failed
+  - SFTP could not be started
+  - isolated folder not found or not accessible
+- Consider checking write permission inside the isolated folder.
+- Consider optional auto-create behavior for the isolated folder later, if it is safe and clearly communicated.
