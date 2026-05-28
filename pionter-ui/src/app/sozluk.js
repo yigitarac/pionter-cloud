@@ -119,6 +119,10 @@ export const sozluk = {
     unpinServer: "Unpin",
     serverPinFailed: "Server pin status could not be updated.",
     pinnedServer: "Pinned",
+    testConnection: "Test Connection",
+    testingConnection: "Testing connection...",
+    connectionTestSuccess: "Connection test successful.",
+    connectionTestFailed: "Connection test failed.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -240,5 +244,9 @@ export const sozluk = {
     unpinServer: "Kaldır",
     serverPinFailed: "Sunucu sabitleme durumu güncellenemedi.",
     pinnedServer: "Sabitli",
+    testConnection: "Bağlantıyı Test Et",
+    testingConnection: "Bağlantı test ediliyor...",
+    connectionTestSuccess: "Bağlantı testi başarılı.",
+    connectionTestFailed: "Bağlantı testi başarısız.",
   },
 };
