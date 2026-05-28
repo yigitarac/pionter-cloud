@@ -18,6 +18,18 @@ The translation dictionary has been moved out of `page.js` into:
 
 This keeps user-facing text in a separate file and makes `page.js` easier to read.
 
+Small frontend helper functions have also been moved out of `page.js` into:
+
+- `src/app/yardimcilar.js`
+
+Current helper functions include:
+
+- `dosyaBoyutuYaz`
+- `gecersizDosyaVeyaKlasorAdiMi`
+- `gecersizYolMu`
+
+This keeps repeated formatting and validation logic outside the main UI file.
+
 Further frontend cleanup can still split the UI into components later, such as:
 
 - `AuthForm`

@@ -2,7 +2,11 @@
 
 import { useState, useRef } from "react";
 import { sozluk } from "./sozluk";
-import { dosyaBoyutuYaz, gecersizDosyaVeyaKlasorAdiMi } from "./yardimcilar";
+import {
+  dosyaBoyutuYaz,
+  gecersizDosyaVeyaKlasorAdiMi,
+  gecersizYolMu,
+} from "./yardimcilar";
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -661,11 +665,7 @@ export default function AnaSayfa() {
       return;
     }
 
-    if (
-      temizHedefYol.includes("..") ||
-      temizHedefYol.includes("\\") ||
-      temizHedefYol.includes("⁄")
-    ) {
+    if (gecersizYolMu(temizHedefYol)) {
       toastGoster(t.invalidTargetPath, "error");
       return;
     }

@@ -24,3 +24,7 @@ export const gecersizDosyaVeyaKlasorAdiMi = (ad) => {
     ad.includes("⁄")
   );
 };
+
+export const gecersizYolMu = (yol) => {
+  return yol.includes("..") || yol.includes("\\") || yol.includes("⁄");
+};
