@@ -870,13 +870,66 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+	veri.SunucuTakmaAd = strings.TrimSpace(veri.SunucuTakmaAd)
+	veri.SunucuIP = strings.TrimSpace(veri.SunucuIP)
+	veri.SunucuPort = strings.TrimSpace(veri.SunucuPort)
+	veri.SunucuKullanici = strings.TrimSpace(veri.SunucuKullanici)
+	veri.BaglantiTipi = strings.TrimSpace(veri.BaglantiTipi)
+	veri.SunucuSifre = strings.TrimSpace(veri.SunucuSifre)
+	veri.SSHPrivateKey = strings.TrimSpace(veri.SSHPrivateKey)
+	veri.IzoleKlasor = strings.TrimSpace(veri.IzoleKlasor)
 
 	if veri.SunucuPort == "" {
 		veri.SunucuPort = "22"
 	}
 
+	if veri.PionterKullanici == "" ||
+		veri.PionterSifre == "" ||
+		veri.SunucuTakmaAd == "" ||
+		veri.SunucuIP == "" ||
+		veri.SunucuKullanici == "" ||
+		veri.SunucuPort == "" ||
+		veri.BaglantiTipi == "" ||
+		veri.IzoleKlasor == "" {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	portSayisi, err := strconv.Atoi(veri.SunucuPort)
+	if err != nil || portSayisi < 1 || portSayisi > 65535 {
+		http.Error(w, "Geçersiz SSH portu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi != "password" && veri.BaglantiTipi != "ssh_key" {
+		http.Error(w, "Geçersiz bağlantı tipi", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.HasPrefix(veri.IzoleKlasor, "/") {
+		http.Error(w, "İzole klasör / ile başlamalı", http.StatusBadRequest)
+		return
+	}
+
+	if strings.Contains(veri.IzoleKlasor, "..") ||
+		strings.Contains(veri.IzoleKlasor, "\\") ||
+		strings.Contains(veri.IzoleKlasor, "⁄") {
+		http.Error(w, "Geçersiz izole klasör yolu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi == "password" && veri.SunucuSifre == "" {
+		http.Error(w, "Sunucu şifresi zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	if veri.BaglantiTipi == "ssh_key" && veri.SSHPrivateKey == "" {
+		http.Error(w, "SSH private key zorunlu", http.StatusBadRequest)
+		return
+	}
+
 	var userID int
-	err := db.QueryRow(`
+	err = db.QueryRow(`
 		SELECT id
 		FROM kullanicilar
 		WHERE
@@ -886,6 +939,31 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	if veri.BaglantiTipi == "password" {
+		veri.SSHPrivateKey = ""
+	}
+
+	if veri.BaglantiTipi == "ssh_key" {
+		veri.SunucuSifre = ""
+	}
+
+	testKimlik := GizliKimlik{
+		IP:              veri.SunucuIP,
+		Port:            veri.SunucuPort,
+		SunucuKullanici: veri.SunucuKullanici,
+		BaglantiTipi:    veri.BaglantiTipi,
+		SunucuSifre:     veri.SunucuSifre,
+		SSHPrivateKey:   veri.SSHPrivateKey,
+		IzoleKlasor:     veri.IzoleKlasor,
+	}
+
+	err = sunucuBaglantisiCalisiyorMu(testKimlik)
+	if err != nil {
+		fmt.Println("Sunucu kayıt öncesi bağlantı testi hatası:", err)
+		http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
 		return
 	}
 
@@ -1106,6 +1184,23 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		veri.SunucuSifre = ""
+
+		testKimlik := GizliKimlik{
+			IP:              veri.SunucuIP,
+			Port:            veri.SunucuPort,
+			SunucuKullanici: veri.SunucuKullanici,
+			BaglantiTipi:    veri.BaglantiTipi,
+			SunucuSifre:     veri.SunucuSifre,
+			SSHPrivateKey:   veri.SSHPrivateKey,
+			IzoleKlasor:     veri.IzoleKlasor,
+		}
+
+		err = sunucuBaglantisiCalisiyorMu(testKimlik)
+		if err != nil {
+			fmt.Println("Sunucu güncelleme öncesi bağlantı testi hatası:", err)
+			http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
+			return
+		}
 	}
 
 	result, err := db.Exec(`
@@ -1399,6 +1494,38 @@ func sshAuthMethodOlustur(kimlik GizliKimlik) ([]ssh.AuthMethod, error) {
 
 	return []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)}, nil
 }
+func sunucuBaglantisiCalisiyorMu(kimlik GizliKimlik) error {
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		return fmt.Errorf("SSH kimlik doğrulama hazırlanamadı: %w", err)
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         5 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		return fmt.Errorf("SSH bağlantısı kurulamadı: %w", err)
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		return fmt.Errorf("SFTP bağlantısı kurulamadı: %w", err)
+	}
+	defer sftpClient.Close()
+
+	_, err = sftpClient.Stat(kimlik.IzoleKlasor)
+	if err != nil {
+		return fmt.Errorf("İzole klasör bulunamadı veya erişilemedi: %w", err)
+	}
+
+	return nil
+}
 func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
 
@@ -1492,41 +1619,10 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		IzoleKlasor:     veri.IzoleKlasor,
 	}
 
-	authMethods, err := sshAuthMethodOlustur(kimlik)
+	err = sunucuBaglantisiCalisiyorMu(kimlik)
 	if err != nil {
-		fmt.Println("SSH auth test hatası:", err)
-		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
-		return
-	}
-
-	config := &ssh.ClientConfig{
-		User:            kimlik.SunucuKullanici,
-		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         5 * time.Second,
-	}
-
-	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
-	if err != nil {
-		fmt.Println("SSH test bağlantı hatası:", err)
-		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
-		return
-	}
-	defer client.Close()
-
-	sftpClient, err := sftp.NewClient(client)
-	if err != nil {
-		fmt.Println("SFTP test hatası:", err)
-		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
-		return
-	}
-
-	defer sftpClient.Close()
-
-	_, err = sftpClient.Stat(kimlik.IzoleKlasor)
-	if err != nil {
-		fmt.Println("İzole klasör test hatası:", err)
-		http.Error(w, "İzole klasör bulunamadı veya erişilemedi", http.StatusBadGateway)
+		fmt.Println("Sunucu bağlantı testi hatası:", err)
+		http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
 		return
 	}
 
