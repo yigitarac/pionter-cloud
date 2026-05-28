@@ -248,9 +248,23 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(DosyaListeCevabi{
+			Basarili: false,
+			Mesaj:    "SSH kimlik doğrulama hazırlanamadı",
+			Dosyalar: []DosyaBilgileri{},
+		})
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -341,9 +355,17 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
 		return
 	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -408,9 +430,17 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tamYol := path.Join(gercekYol, baslik.Filename)
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -474,9 +504,17 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	yeniKlasorYolu := path.Join(gercekYol, bilgiler.KlasorAdi)
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -536,9 +574,16 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 
 	silinecekYol := path.Join(gercekYol, bilgiler.DosyaAdi)
 
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
@@ -611,9 +656,16 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 	eskiYol := path.Join(gercekYol, bilgiler.EskiAd)
 	yeniYol := path.Join(gercekYol, bilgiler.YeniAd)
 
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
@@ -697,9 +749,16 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
-		Auth:            []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)},
+		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -1311,4 +1370,18 @@ func guvenliAdMi(ad string) bool {
 		return false
 	}
 	return true
+}
+func sshAuthMethodOlustur(kimlik GizliKimlik) ([]ssh.AuthMethod, error) {
+	if kimlik.BaglantiTipi == "ssh_key" {
+		signer, err := ssh.ParsePrivateKey([]byte(kimlik.SSHPrivateKey))
+		if err != nil {
+			return nil, fmt.Errorf("SSH Private Key okunamadı: %w", err)
+		}
+		return []ssh.AuthMethod{ssh.PublicKeys(signer)}, nil
+	}
+	if kimlik.SunucuSifre == "" {
+		return nil, fmt.Errorf("sunucu şifresi boş")
+	}
+
+	return []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)}, nil
 }
