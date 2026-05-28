@@ -30,6 +30,18 @@ Current helper functions include:
 
 This keeps repeated formatting and validation logic outside the main UI file.
 
+Small UI components have started to move out of `page.js` into:
+
+- `src/app/components/Toast.jsx`
+- `src/app/components/LoadingState.jsx`
+
+Current extracted components:
+
+- `Toast`
+- `LoadingState`
+
+This is the first step toward splitting the large frontend page into smaller UI components.
+
 Further frontend cleanup can still split the UI into components later, such as:
 
 - `AuthForm`

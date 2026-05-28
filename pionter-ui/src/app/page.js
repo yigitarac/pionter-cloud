@@ -7,6 +7,9 @@ import {
   gecersizDosyaVeyaKlasorAdiMi,
   gecersizYolMu,
 } from "./yardimcilar";
+import Toast from "./components/Toast";
+import LoadingOverlay from "./components/LoadingOverlay";
+import LoadingState from "./components/LoadingState";
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -1157,21 +1160,7 @@ export default function AnaSayfa() {
     });
   return (
     <div className={karanlikMod ? "dark" : ""}>
-      {toast && (
-        <div className="fixed right-4 top-4 z-50">
-          <div
-            className={`rounded-lg px-4 py-3 shadow-lg text-sm font-semibold border ${
-              toast.tip === "success"
-                ? "bg-[#98971a] text-[#fbf1c7] border-[#79740e]"
-                : toast.tip === "error"
-                  ? "bg-[#cc241d] text-[#fbf1c7] border-[#9d0006]"
-                  : "bg-[#458588] text-[#fbf1c7] border-[#076678]"
-            }`}
-          >
-            {toast.mesaj}
-          </div>
-        </div>
-      )}
+      <Toast toast={toast} />
       {renameModalAcik && (
         <div
           onClick={() => {
@@ -2161,31 +2150,7 @@ export default function AnaSayfa() {
             </div>
 
             {yukleniyor ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <svg
-                  className="animate-spin h-8 w-8 text-[#458588] dark:text-[#83a598] mb-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <p className="text-sm text-[#7c6f64] dark:text-[#a89984] animate-pulse">
-                  {yuklemeMesaji || t.loading}
-                </p>
-              </div>
+              <LoadingState mesaj={yuklemeMesaji || t.loading} />
             ) : dosyalar.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
                 <svg
