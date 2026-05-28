@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { sozluk } from "./sozluk";
-import { dosyaBoyutuYaz } from "./yardimcilar";
+import { dosyaBoyutuYaz, gecersizDosyaVeyaKlasorAdiMi } from "./yardimcilar";
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -345,12 +345,7 @@ export default function AnaSayfa() {
   const sunucuyaDosyaYukle = (dosya) => {
     if (yukleniyor) return;
     if (!dosya) return;
-    if (
-      dosya.name.includes("/") ||
-      dosya.name.includes("\\") ||
-      dosya.name.includes("..") ||
-      dosya.name.includes("⁄")
-    ) {
+    if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
       toastGoster(t.invalidFileName, "error");
       return;
     }
@@ -402,13 +397,8 @@ export default function AnaSayfa() {
       toastGoster(t.folderNameEmpty, "error");
       return;
     }
-    if (
-      temizKlasorAdi.includes("/") ||
-      temizKlasorAdi.includes("\\") ||
-      temizKlasorAdi.includes("..") ||
-      temizKlasorAdi.includes("⁄")
-    ) {
-      toastGoster(t.invalidFolderName, "error");
+    if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
+      toastGoster(t.invalidFileName, "error");
       return;
     }
     setYukleniyor(true);
@@ -519,15 +509,11 @@ export default function AnaSayfa() {
       return;
     }
 
-    if (
-      temizYeniAd.includes("/") ||
-      temizYeniAd.includes("\\") ||
-      temizYeniAd.includes("..") ||
-      temizYeniAd.includes("⁄")
-    ) {
+    if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
       toastGoster(t.invalidFileName, "error");
       return;
     }
+
     if (temizYeniAd === yenidenAdlandirilacakDosya.ad) {
       setRenameModalAcik(false);
       setYenidenAdlandirilacakDosya(null);

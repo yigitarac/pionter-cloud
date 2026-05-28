@@ -15,3 +15,12 @@ export const dosyaBoyutuYaz = (boyut) => {
 
   return (boyut / (1024 * 1024 * 1024)).toFixed(1) + " GB";
 };
+
+export const gecersizDosyaVeyaKlasorAdiMi = (ad) => {
+  return (
+    ad.includes("/") ||
+    ad.includes("\\") ||
+    ad.includes("..") ||
+    ad.includes("⁄")
+  );
+};
