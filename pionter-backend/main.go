@@ -13,6 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"crypto/rand"
+	"encoding/hex"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/pkg/sftp"
@@ -59,6 +62,12 @@ func main() {
 			ssh_private_key TEXT,
 			izole_klasor VARCHAR(200) NOT NULL
 		);
+		CREATE TABLE IF NOT EXISTS oturumlar (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER REFERENCES kullanicilar(id) ON DELETE CASCADE,
+			token TEXT UNIQUE NOT NULL,
+			olusturma_tarihi TIMESTAMP NOT NULL DEFAULT NOW()
+		);
 		ALTER TABLE kullanicilar
 		ADD COLUMN IF NOT EXISTS pionter_email TEXT;
 
@@ -79,6 +88,7 @@ func main() {
 	http.HandleFunc("/api/download", dosyaIndir)
 	http.HandleFunc("/api/upload", dosyaYukle)
 	http.HandleFunc("/api/register", kullaniciKaydet)
+	http.HandleFunc("/api/login", kullaniciGirisYap)
 	http.HandleFunc("/api/servers", sunucuKaydet)
 	http.HandleFunc("/api/servers/list", sunuculariListele)
 	http.HandleFunc("/api/servers/delete", sunucuSil)
@@ -214,6 +224,15 @@ type SunucuTestBilgileri struct {
 	SunucuSifre     string `json:"sunucu_sifre"`
 	SSHPrivateKey   string `json:"ssh_private_key"`
 	IzoleKlasor     string `json:"izole_klasor"`
+}
+type GirisBilgileri struct {
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+}
+
+type GirisCevabi struct {
+	Token string `json:"token"`
+	Mesaj string `json:"mesaj"`
 }
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
@@ -867,6 +886,45 @@ func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(`{"mesaj": "Kayıt başarılı!"}`))
+}
+func kullaniciGirisYap(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var veri GirisBilgileri
+	if !jsonOku(w, r, &veri) {
+		return
+	}
+
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+
+	if veri.PionterKullanici == "" || veri.PionterSifre == "" {
+		http.Error(w, "Kullanıcı adı/e-posta ve şifre zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	if err != nil {
+		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		return
+	}
+
+	token, err := oturumOlustur(userID)
+	if err != nil {
+		fmt.Println("Oturum oluşturma hatası:", err)
+		http.Error(w, "Oturum oluşturulamadı", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GirisCevabi{
+		Token: token,
+		Mesaj: "Giriş başarılı",
+	})
 }
 func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
@@ -1634,6 +1692,73 @@ func kullaniciDogrula(kullanici string, sifre string) (int, error) {
 
 	if !sifreDogruMu(kayitliSifre, sifre) {
 		return 0, fmt.Errorf("şifre yanlış")
+	}
+
+	if !bcryptHashMi(kayitliSifre) {
+		hashlenmisSifre, err := sifreHashle(sifre)
+		if err != nil {
+			return 0, err
+		}
+
+		_, err = db.Exec(`
+			UPDATE kullanicilar
+			SET pionter_sifre = $1
+			WHERE id = $2
+		`, hashlenmisSifre, userID)
+
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return userID, nil
+}
+func tokenOlustur() (string, error) {
+	byteListesi := make([]byte, 32)
+
+	_, err := rand.Read(byteListesi)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(byteListesi), nil
+}
+
+func oturumOlustur(userID int) (string, error) {
+	token, err := tokenOlustur()
+	if err != nil {
+		return "", err
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO oturumlar (user_id, token)
+		VALUES ($1, $2)
+	`, userID, token)
+
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func tokenIleKullaniciDogrula(token string) (int, error) {
+	token = strings.TrimSpace(token)
+
+	if token == "" {
+		return 0, fmt.Errorf("token boş")
+	}
+
+	var userID int
+
+	err := db.QueryRow(`
+		SELECT user_id
+		FROM oturumlar
+		WHERE token = $1
+	`, token).Scan(&userID)
+
+	if err != nil {
+		return 0, err
 	}
 
 	return userID, nil
