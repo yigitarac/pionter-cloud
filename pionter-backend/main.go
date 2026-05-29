@@ -89,6 +89,7 @@ func main() {
 	http.HandleFunc("/api/upload", dosyaYukle)
 	http.HandleFunc("/api/register", kullaniciKaydet)
 	http.HandleFunc("/api/login", kullaniciGirisYap)
+	http.HandleFunc("/api/logout", kullaniciCikisYap)
 	http.HandleFunc("/api/servers", sunucuKaydet)
 	http.HandleFunc("/api/servers/list", sunuculariListele)
 	http.HandleFunc("/api/servers/delete", sunucuSil)
@@ -920,6 +921,46 @@ func kullaniciGirisYap(w http.ResponseWriter, r *http.Request) {
 		Token: token,
 		Mesaj: "Giriş başarılı",
 	})
+}
+func kullaniciCikisYap(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var veri TokenIstekBilgileri
+	if !jsonOku(w, r, &veri) {
+		return
+	}
+
+	veri.Token = strings.TrimSpace(veri.Token)
+
+	if veri.Token == "" {
+		http.Error(w, "Token zorunlu", http.StatusBadRequest)
+		return
+	}
+
+	_, err := tokenIleKullaniciDogrula(veri.Token)
+	if err != nil {
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
+		return
+	}
+
+	_, err = db.Exec(`
+		DELETE FROM oturumlar
+		WHERE token = $1
+	`, veri.Token)
+
+	if err != nil {
+		fmt.Println("Oturum silme hatası:", err)
+		http.Error(w, "Çıkış yapılamadı", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"mesaj": "Çıkış başarılı"}`))
 }
 func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
