@@ -910,8 +910,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
-        pionter_sifre: sifre,
+        token: oturumToken,
         server_id: sunucu.id,
         sabitli: yeniSabitliDurumu,
       }),
@@ -967,8 +966,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
-        pionter_sifre: sifre,
+        token: oturumToken,
         server_id: silinecekSunucu.id,
       }),
     })
@@ -1041,8 +1039,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
-        pionter_sifre: sifre,
+        token: oturumToken,
 
         sunucu_takma_ad: temizSunucuTakmaAd,
         sunucu_ip: temizSunucuIp,
@@ -1116,8 +1113,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pionter_kullanici: kullaniciAdi,
-        pionter_sifre: sifre,
+        token: oturumToken,
 
         server_id: duzenlenecekSunucu.id,
         sunucu_takma_ad: temizSunucuTakmaAd,
