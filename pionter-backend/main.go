@@ -1847,6 +1847,14 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 		return k, err
 	}
 
+	kayitliSunucuSifre := k.SunucuSifre
+	kayitliSSHPrivateKey := k.SSHPrivateKey
+
+	err = sunucuCredentiallariniGerekirseSifrele(serverID, userID, kayitliSunucuSifre, kayitliSSHPrivateKey)
+	if err != nil {
+		return k, fmt.Errorf("sunucu credentialları şifrelenemedi: %w", err)
+	}
+
 	k.SunucuSifre, err = gizliVeriCoz(k.SunucuSifre)
 	if err != nil {
 		return k, fmt.Errorf("sunucu şifresi çözülemedi: %w", err)
@@ -1971,4 +1979,43 @@ func gizliVeriCoz(veri string) (string, error) {
 	}
 
 	return string(duzMetin), nil
+}
+func sunucuCredentiallariniGerekirseSifrele(serverID int, userID int, kayitliSunucuSifre string, kayitliSSHPrivateKey string) error {
+	yeniSunucuSifre := kayitliSunucuSifre
+	yeniSSHPrivateKey := kayitliSSHPrivateKey
+	guncellemeGerekli := false
+
+	if strings.TrimSpace(kayitliSunucuSifre) != "" && !gizliVeriSifreliMi(kayitliSunucuSifre) {
+		sifreliSunucuSifre, err := gizliVeriSifrele(kayitliSunucuSifre)
+		if err != nil {
+			return err
+		}
+
+		yeniSunucuSifre = sifreliSunucuSifre
+		guncellemeGerekli = true
+	}
+
+	if strings.TrimSpace(kayitliSSHPrivateKey) != "" && !gizliVeriSifreliMi(kayitliSSHPrivateKey) {
+		sifreliSSHPrivateKey, err := gizliVeriSifrele(kayitliSSHPrivateKey)
+		if err != nil {
+			return err
+		}
+
+		yeniSSHPrivateKey = sifreliSSHPrivateKey
+		guncellemeGerekli = true
+	}
+
+	if !guncellemeGerekli {
+		return nil
+	}
+
+	_, err := db.Exec(`
+		UPDATE sunucular
+		SET
+			sunucu_sifre = $1,
+			ssh_private_key = $2
+		WHERE id = $3 AND user_id = $4
+	`, yeniSunucuSifre, yeniSSHPrivateKey, serverID, userID)
+
+	return err
 }
