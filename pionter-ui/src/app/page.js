@@ -61,6 +61,7 @@ export default function AnaSayfa() {
   const [oturumToken, setOturumToken] = useState("");
   const [yuklemeYuzdesi, setYuklemeYuzdesi] = useState(null);
   const [seciliOgeAnahtarlari, setSeciliOgeAnahtarlari] = useState([]);
+  const [topluSilmeModalAcik, setTopluSilmeModalAcik] = useState(false);
 
   const t = sozluk[dil];
 
@@ -299,6 +300,7 @@ export default function AnaSayfa() {
     setSilinecekSunucu(null);
     setServerEditModalAcik(false);
     setDuzenlenecekSunucu(null);
+    setTopluSilmeModalAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -347,6 +349,7 @@ export default function AnaSayfa() {
     setDuzenlenecekSunucu(null);
     setServerDeleteModalAcik(false);
     setSilinecekSunucu(null);
+    setTopluSilmeModalAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -417,6 +420,7 @@ export default function AnaSayfa() {
     setYenidenAdlandirilacakDosya(null);
     setYeniAd("");
 
+    setTopluSilmeModalAcik(false);
     setMoveModalAcik(false);
     setTasinacakDosya(null);
     setHedefKlasorGezintiYolu("/");
@@ -491,20 +495,18 @@ export default function AnaSayfa() {
   };
 
   const tekDosyaYukle = (dosya, sira = 1, toplam = 1) => {
-    if (yukleniyor) return;
-    if (!dosya) return;
+    if (!dosya) {
+      return Promise.reject(new Error("Dosya bulunamadı"));
+    }
 
     if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
-      toastGoster(t.invalidFileName, "error");
-      return;
+      return Promise.reject(new Error("Geçersiz dosya adı"));
     }
 
     if (!seciliSunucu) {
-      toastGoster(t.selectServerFirst, "error");
-      return;
+      return Promise.reject(new Error("Sunucu seçilmedi"));
     }
 
-    setYukleniyor(true);
     const gorunenDosyaAdi =
       dosya.name.length > 40 ? dosya.name.slice(0, 37) + "..." : dosya.name;
 
@@ -536,33 +538,22 @@ export default function AnaSayfa() {
       xhr.onload = () => {
         if (oturumHatasiKontrolEt(xhr)) {
           setYuklemeYuzdesi(null);
+          reject(new Error("Oturum geçersiz"));
           return;
         }
 
         if (xhr.status >= 200 && xhr.status < 300) {
-          toastGoster(t.uploadSuccess, "success");
-
-          setYuklemeYuzdesi(null);
-          setYuklemeMesaji(t.loadingFiles);
-
-          hedefKlasorCacheRef.current = {};
-          klasoruYenile(mevcutYol);
+          resolve();
           return;
         }
 
         console.log("Yükleme başarısız:", xhr.status, xhr.responseText);
-        setYukleniyor(false);
-        setYuklemeMesaji("");
-        setYuklemeYuzdesi(null);
-        toastGoster(t.uploadFailed, "error");
+        reject(new Error("Yükleme başarısız"));
       };
 
       xhr.onerror = () => {
         console.log("Yükleme bağlantı hatası");
-        setYukleniyor(false);
-        setYuklemeMesaji("");
-        setYuklemeYuzdesi(null);
-        toastGoster(t.uploadFailed, "error");
+        reject(new Error("Yükleme bağlantı hatası"));
       };
 
       xhr.send(formData);
@@ -1194,6 +1185,75 @@ export default function AnaSayfa() {
     setServerDeleteModalAcik(true);
   };
 
+  const topluSilmeyiOnayla = async () => {
+    if (yukleniyor) return;
+
+    const seciliOgeler = seciliOgeleriGetir();
+
+    if (seciliOgeler.length === 0) {
+      setTopluSilmeModalAcik(false);
+      return;
+    }
+
+    setTopluSilmeModalAcik(false);
+    setYukleniyor(true);
+    setYuklemeMesaji(
+      dil === "tr"
+        ? `Seçili öğeler siliniyor... (0/${seciliOgeler.length})`
+        : `Deleting selected items... (0/${seciliOgeler.length})`,
+    );
+
+    try {
+      for (let i = 0; i < seciliOgeler.length; i++) {
+        const oge = seciliOgeler[i];
+
+        setYuklemeMesaji(
+          dil === "tr"
+            ? `Seçili öğeler siliniyor... (${i + 1}/${seciliOgeler.length})`
+            : `Deleting selected items... (${i + 1}/${seciliOgeler.length})`,
+        );
+
+        const cevap = await fetch("http://localhost:8080/api/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: oturumToken,
+            yol: mevcutYol,
+            server_id: seciliSunucu.id,
+            dosya_adi: oge.ad,
+            klasor_mu: oge.klasorMu,
+          }),
+        });
+
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Toplu silme başarısız");
+        }
+      }
+
+      toastGoster(
+        dil === "tr" ? "Seçili öğeler silindi." : "Selected items deleted.",
+        "success",
+      );
+
+      secimleriTemizle();
+      hedefKlasorCacheRef.current = {};
+      klasoruYenile(mevcutYol);
+    } catch (hata) {
+      if (hata.message === "Oturum geçersiz") {
+        return;
+      }
+
+      console.log("Toplu silme hatası:", hata);
+      setYukleniyor(false);
+      setYuklemeMesaji("");
+      toastGoster(t.deleteFailed, "error");
+    }
+  };
+
   const sunucuSilmeyiOnayla = () => {
     if (yukleniyor) return;
     if (!silinecekSunucu) return;
@@ -1469,6 +1529,22 @@ export default function AnaSayfa() {
 
   const secimleriTemizle = () => {
     setSeciliOgeAnahtarlari([]);
+  };
+
+  const topluSilmeModaliniAc = () => {
+    if (yukleniyor) return;
+
+    const seciliOgeler = seciliOgeleriGetir();
+
+    if (seciliOgeler.length === 0) {
+      return;
+    }
+
+    setTopluSilmeModalAcik(true);
+  };
+
+  const seciliOgeleriGetir = () => {
+    return dosyalar.filter((dosya) => dosyaSeciliMi(dosya));
   };
 
   const gosterilecekDosyalar = dosyalar
@@ -1819,6 +1895,44 @@ export default function AnaSayfa() {
 
               <button
                 onClick={sunucuSilmeyiOnayla}
+                disabled={yukleniyor}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t.confirmDelete}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {topluSilmeModalAcik && (
+        <div
+          onClick={() => setTopluSilmeModalAcik(false)}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
+          >
+            <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
+              {dil === "tr" ? "Seçili öğeleri sil" : "Delete selected items"}
+            </h2>
+
+            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-5">
+              {dil === "tr"
+                ? `${seciliOgeAnahtarlari.length} öğeyi silmek istediğine emin misin?`
+                : `Are you sure you want to delete ${seciliOgeAnahtarlari.length} selected item(s)?`}
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setTopluSilmeModalAcik(false)}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                onClick={topluSilmeyiOnayla}
                 disabled={yukleniyor}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -2413,18 +2527,28 @@ export default function AnaSayfa() {
               />
             </div>
             {seciliOgeAnahtarlari.length > 0 && (
-              <div className="mb-4 flex items-center justify-between rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] px-4 py-3">
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 dark:border-[#504945] dark:bg-[#3c3836] sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-bold text-[#3c3836] dark:text-[#ebdbb2]">
                   {seciliOgeAnahtarlari.length} {t.selectedItems}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={secimleriTemizle}
-                  className="text-sm font-bold text-[#458588] dark:text-[#83a598] hover:underline cursor-pointer"
-                >
-                  {t.clearSelection}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={topluSilmeModaliniAc}
+                    className="rounded-md bg-[#cc241d] px-3 py-1.5 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#9d0006] cursor-pointer"
+                  >
+                    {dil === "tr" ? "Seçilenleri sil" : "Delete selected"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={secimleriTemizle}
+                    className="text-sm font-bold text-[#458588] hover:underline dark:text-[#83a598] cursor-pointer"
+                  >
+                    {t.clearSelection}
+                  </button>
+                </div>
               </div>
             )}
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
