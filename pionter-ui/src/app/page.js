@@ -218,7 +218,7 @@ export default function AnaSayfa() {
         setOturumToken(veri.token);
         setKullaniciAdi(temizKullaniciAdi);
 
-        sunuculariGetir(temizKullaniciAdi, veri.token);
+        sunuculariGetir(veri.token);
       })
       .catch((hata) => {
         console.log("Login hatası:", hata);
@@ -795,26 +795,23 @@ export default function AnaSayfa() {
       sunucuyaDosyaYukle(e.target.files[0]);
     }
   };
-  const sunuculariGetir = (
-    girisKimligi = kullaniciAdi,
-    token = oturumToken,
-  ) => {
+  const sunuculariGetir = (token = oturumToken) => {
+    if (!token) {
+      toastGoster(
+        dil === "tr" ? "Oturum bulunamadı." : "Session not found.",
+        "error",
+      );
+      return;
+    }
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingServers);
 
     fetch("http://localhost:8080/api/servers/list", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        token
-          ? {
-              token,
-            }
-          : {
-              pionter_kullanici: girisKimligi,
-              pionter_sifre: sifre,
-            },
-      ),
+      body: JSON.stringify({
+        token,
+      }),
     })
       .then((cevap) => {
         if (!cevap.ok) {
