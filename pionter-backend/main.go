@@ -1319,6 +1319,20 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sifreliSunucuSifre, err := gizliVeriSifrele(veri.SunucuSifre)
+	if err != nil {
+		fmt.Println("Sunucu şifresi şifrelenemedi:", err)
+		http.Error(w, "Sunucu bilgileri güvenli şekilde güncellenemedi", http.StatusInternalServerError)
+		return
+	}
+
+	sifreliSSHPrivateKey, err := gizliVeriSifrele(veri.SSHPrivateKey)
+	if err != nil {
+		fmt.Println("SSH private key şifrelenemedi:", err)
+		http.Error(w, "Sunucu bilgileri güvenli şekilde güncellenemedi", http.StatusInternalServerError)
+		return
+	}
+
 	result, err := db.Exec(`
 			UPDATE sunucular
 			SET
@@ -1337,8 +1351,8 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort,
 		veri.SunucuKullanici,
 		veri.BaglantiTipi,
-		veri.SunucuSifre,
-		veri.SSHPrivateKey,
+		sifreliSunucuSifre,
+		sifreliSSHPrivateKey,
 		veri.IzoleKlasor,
 		veri.ServerID,
 		userID,
