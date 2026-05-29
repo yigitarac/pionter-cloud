@@ -727,8 +727,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        kullaniciAdi,
-        sifre,
+        token: oturumToken,
         server_id: seciliSunucu.id,
         kaynak_yol: mevcutYol,
         hedef_yol: hedefYol,
