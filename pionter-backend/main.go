@@ -450,10 +450,13 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseMultipartForm(10 << 20)
+
+	token := r.FormValue("token")
 	kullaniciAdi := r.FormValue("kullaniciAdi")
 	sifre := r.FormValue("sifre")
 	yol := r.FormValue("yol")
 	serverIDStr := r.FormValue("server_id")
+
 	serverID, err := strconv.Atoi(serverIDStr)
 	if err != nil {
 		http.Error(w, "Geçersiz server_id", http.StatusBadRequest)
@@ -473,7 +476,11 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz dosya adı", http.StatusBadRequest)
 		return
 	}
-	kimlik, err := sunucuKimlikSorgula(kullaniciAdi, sifre, serverID)
+	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
+		Token:            token,
+		PionterKullanici: kullaniciAdi,
+		PionterSifre:     sifre,
+	}, serverID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
