@@ -299,6 +299,82 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
   };
 
+  const cikisYap = () => {
+    if (yukleniyor) return;
+
+    const mevcutToken = oturumToken;
+
+    const oturumuTemizle = () => {
+      setOturumToken("");
+      setGirisYapildi(false);
+      setKullaniciAdi("");
+      setSifre("");
+      setEposta("");
+
+      setSeciliSunucu(null);
+      setSunucular([]);
+      setDosyalar([]);
+      setDosyaMesaji("");
+      setMevcutYol("/");
+      setAramaMetni("");
+      setYeniKlasorAdi("");
+      setAcikMenuIndex(null);
+
+      setSunucuFormAcik(false);
+      sunucuFormunuTemizle();
+
+      setServerEditModalAcik(false);
+      setDuzenlenecekSunucu(null);
+      setServerDeleteModalAcik(false);
+      setSilinecekSunucu(null);
+
+      setRenameModalAcik(false);
+      setYenidenAdlandirilacakDosya(null);
+      setYeniAd("");
+
+      setMoveModalAcik(false);
+      setTasinacakDosya(null);
+      setHedefKlasorler([]);
+      setHedefKlasorGezintiYolu("/");
+      hedefKlasorCacheRef.current = {};
+
+      setDeleteModalAcik(false);
+      setSilinecekDosya(null);
+
+      setYukleniyor(false);
+      setYuklemeMesaji("");
+    };
+
+    if (!mevcutToken) {
+      oturumuTemizle();
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeMesaji(t.loggingOut);
+
+    fetch("http://localhost:8080/api/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: mevcutToken,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Çıkış yapılamadı");
+        }
+
+        oturumuTemizle();
+        toastGoster(t.logoutSuccess, "success");
+      })
+      .catch((hata) => {
+        console.log("Çıkış hatası:", hata);
+        oturumuTemizle();
+        toastGoster(t.logoutFailed, "error");
+      });
+  };
+
   const sunucuSec = (sunucu) => {
     if (yukleniyor) return;
 
@@ -1659,6 +1735,15 @@ export default function AnaSayfa() {
           </div>
 
           <div className="flex items-center gap-2">
+            {girisYapildi && (
+              <button
+                onClick={cikisYap}
+                disabled={yukleniyor}
+                className="px-3 py-1.5 rounded-lg font-bold text-sm bg-[#cc241d] hover:bg-[#9d0006] text-[#fbf1c7] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t.logout}
+              </button>
+            )}
             <button
               onClick={() => setDil(dil === "en" ? "tr" : "en")}
               className="px-3 py-1.5 rounded-lg font-bold text-sm bg-[#ebdbb2] dark:bg-[#3c3836] hover:bg-[#d5c4a1] dark:hover:bg-[#504945] transition-colors cursor-pointer"
