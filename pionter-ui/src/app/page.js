@@ -590,11 +590,7 @@ export default function AnaSayfa() {
       }
 
       toastGoster(
-        yuklenecekDosyalar.length > 1
-          ? dil === "tr"
-            ? "Dosyalar yüklendi."
-            : "Files uploaded successfully."
-          : t.uploadSuccess,
+        yuklenecekDosyalar.length > 1 ? t.multiUploadSuccess : t.uploadSuccess,
         "success",
       );
 
