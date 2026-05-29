@@ -299,51 +299,51 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
   };
 
+  const oturumuTemizle = () => {
+    setOturumToken("");
+    setGirisYapildi(false);
+    setKullaniciAdi("");
+    setSifre("");
+    setEposta("");
+
+    setSeciliSunucu(null);
+    setSunucular([]);
+    setDosyalar([]);
+    setDosyaMesaji("");
+    setMevcutYol("/");
+    setAramaMetni("");
+    setYeniKlasorAdi("");
+    setAcikMenuIndex(null);
+
+    setSunucuFormAcik(false);
+    sunucuFormunuTemizle();
+
+    setServerEditModalAcik(false);
+    setDuzenlenecekSunucu(null);
+    setServerDeleteModalAcik(false);
+    setSilinecekSunucu(null);
+
+    setRenameModalAcik(false);
+    setYenidenAdlandirilacakDosya(null);
+    setYeniAd("");
+
+    setMoveModalAcik(false);
+    setTasinacakDosya(null);
+    setHedefKlasorler([]);
+    setHedefKlasorGezintiYolu("/");
+    hedefKlasorCacheRef.current = {};
+
+    setDeleteModalAcik(false);
+    setSilinecekDosya(null);
+
+    setYukleniyor(false);
+    setYuklemeMesaji("");
+  };
+
   const cikisYap = () => {
     if (yukleniyor) return;
 
     const mevcutToken = oturumToken;
-
-    const oturumuTemizle = () => {
-      setOturumToken("");
-      setGirisYapildi(false);
-      setKullaniciAdi("");
-      setSifre("");
-      setEposta("");
-
-      setSeciliSunucu(null);
-      setSunucular([]);
-      setDosyalar([]);
-      setDosyaMesaji("");
-      setMevcutYol("/");
-      setAramaMetni("");
-      setYeniKlasorAdi("");
-      setAcikMenuIndex(null);
-
-      setSunucuFormAcik(false);
-      sunucuFormunuTemizle();
-
-      setServerEditModalAcik(false);
-      setDuzenlenecekSunucu(null);
-      setServerDeleteModalAcik(false);
-      setSilinecekSunucu(null);
-
-      setRenameModalAcik(false);
-      setYenidenAdlandirilacakDosya(null);
-      setYeniAd("");
-
-      setMoveModalAcik(false);
-      setTasinacakDosya(null);
-      setHedefKlasorler([]);
-      setHedefKlasorGezintiYolu("/");
-      hedefKlasorCacheRef.current = {};
-
-      setDeleteModalAcik(false);
-      setSilinecekDosya(null);
-
-      setYukleniyor(false);
-      setYuklemeMesaji("");
-    };
 
     if (!mevcutToken) {
       oturumuTemizle();
