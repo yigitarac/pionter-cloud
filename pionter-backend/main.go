@@ -104,23 +104,24 @@ func main() {
 }
 
 type BaglantiBilgileri struct {
-	Token        string `json:"token"`
-	KullaniciAdi string `json:"kullaniciAdi"`
-	Sifre        string `json:"sifre"`
-	Yol          string `json:"yol"`
-	ServerID     int    `json:"server_id"`
+	Token    string `json:"token"`
+	Yol      string `json:"yol"`
+	ServerID int    `json:"server_id"`
 }
+
 type DosyaBilgileri struct {
 	Ad           string `json:"ad"`
 	KlasorMu     bool   `json:"klasorMu"`
 	Boyut        int64  `json:"boyut"`
 	Degistirilme string `json:"degistirilme"`
 }
+
 type DosyaListeCevabi struct {
 	Basarili bool             `json:"basarili"`
 	Mesaj    string           `json:"mesaj"`
 	Dosyalar []DosyaBilgileri `json:"dosyalar"`
 }
+
 type GizliKimlik struct {
 	IP              string
 	Port            string
@@ -130,15 +131,15 @@ type GizliKimlik struct {
 	SSHPrivateKey   string
 	IzoleKlasor     string
 }
+
 type KayitBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterEmail     string `json:"pionter_email"`
 	PionterSifre     string `json:"pionter_sifre"`
 }
+
 type SunucuKayitBilgileri struct {
-	Token            string `json:"token"`
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
+	Token string `json:"token"`
 
 	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
 	SunucuIP        string `json:"sunucu_ip"`
@@ -149,10 +150,9 @@ type SunucuKayitBilgileri struct {
 	SSHPrivateKey   string `json:"ssh_private_key"`
 	IzoleKlasor     string `json:"izole_klasor"`
 }
+
 type SunucuGuncelleBilgileri struct {
-	Token            string `json:"token"`
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
+	Token string `json:"token"`
 
 	ServerID        int    `json:"server_id"`
 	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
@@ -164,6 +164,7 @@ type SunucuGuncelleBilgileri struct {
 	SSHPrivateKey   string `json:"ssh_private_key"`
 	IzoleKlasor     string `json:"izole_klasor"`
 }
+
 type SunucuListeBilgileri struct {
 	ID              int    `json:"id"`
 	SunucuTakmaAd   string `json:"sunucu_takma_ad"`
@@ -174,54 +175,49 @@ type SunucuListeBilgileri struct {
 	IzoleKlasor     string `json:"izole_klasor"`
 	Sabitli         bool   `json:"sabitli"`
 }
+
 type KlasorOlusturBilgileri struct {
-	Token        string `json:"token"`
-	KullaniciAdi string `json:"kullaniciAdi"`
-	Sifre        string `json:"sifre"`
-	Yol          string `json:"yol"`
-	ServerID     int    `json:"server_id"`
-	KlasorAdi    string `json:"klasor_adi"`
+	Token     string `json:"token"`
+	Yol       string `json:"yol"`
+	ServerID  int    `json:"server_id"`
+	KlasorAdi string `json:"klasor_adi"`
 }
+
 type SilmeBilgileri struct {
-	Token        string `json:"token"`
-	KullaniciAdi string `json:"kullaniciAdi"`
-	Sifre        string `json:"sifre"`
-	Yol          string `json:"yol"`
-	ServerID     int    `json:"server_id"`
-	DosyaAdi     string `json:"dosya_adi"`
-	KlasorMu     bool   `json:"klasor_mu"`
+	Token    string `json:"token"`
+	Yol      string `json:"yol"`
+	ServerID int    `json:"server_id"`
+	DosyaAdi string `json:"dosya_adi"`
+	KlasorMu bool   `json:"klasor_mu"`
 }
+
 type YenidenAdlandirBilgileri struct {
-	Token        string `json:"token"`
-	KullaniciAdi string `json:"kullaniciAdi"`
-	Sifre        string `json:"sifre"`
-	Yol          string `json:"yol"`
-	ServerID     int    `json:"server_id"`
-	EskiAd       string `json:"eski_ad"`
-	YeniAd       string `json:"yeni_ad"`
+	Token    string `json:"token"`
+	Yol      string `json:"yol"`
+	ServerID int    `json:"server_id"`
+	EskiAd   string `json:"eski_ad"`
+	YeniAd   string `json:"yeni_ad"`
 }
+
 type TasiBilgileri struct {
-	Token        string `json:"token"`
-	KullaniciAdi string `json:"kullaniciAdi"`
-	Sifre        string `json:"sifre"`
-	ServerID     int    `json:"server_id"`
-	KaynakYol    string `json:"kaynak_yol"`
-	HedefYol     string `json:"hedef_yol"`
-	DosyaAdi     string `json:"dosya_adi"`
+	Token     string `json:"token"`
+	ServerID  int    `json:"server_id"`
+	KaynakYol string `json:"kaynak_yol"`
+	HedefYol  string `json:"hedef_yol"`
+	DosyaAdi  string `json:"dosya_adi"`
 }
+
 type SunucuSilBilgileri struct {
-	Token            string `json:"token"`
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
-	ServerID         int    `json:"server_id"`
+	Token    string `json:"token"`
+	ServerID int    `json:"server_id"`
 }
+
 type SunucuSabitleBilgileri struct {
-	Token            string `json:"token"`
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
-	ServerID         int    `json:"server_id"`
-	Sabitli          bool   `json:"sabitli"`
+	Token    string `json:"token"`
+	ServerID int    `json:"server_id"`
+	Sabitli  bool   `json:"sabitli"`
 }
+
 type SunucuTestBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
@@ -234,6 +230,7 @@ type SunucuTestBilgileri struct {
 	SSHPrivateKey   string `json:"ssh_private_key"`
 	IzoleKlasor     string `json:"izole_klasor"`
 }
+
 type GirisBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
@@ -243,31 +240,11 @@ type GirisCevabi struct {
 	Token string `json:"token"`
 	Mesaj string `json:"mesaj"`
 }
-type KimlikIstekBilgileri struct {
-	Token            string `json:"token"`
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
-}
+
 type TokenIstekBilgileri struct {
 	Token string `json:"token"`
 }
 
-func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
-	var k GizliKimlik
-
-	kullanici = strings.TrimSpace(kullanici)
-
-	err := db.QueryRow(`
-        SELECT s.sunucu_ip, s.sunucu_kullanici, s.sunucu_sifre, s.izole_klasor
-        FROM kullanicilar k
-        JOIN sunucular s ON k.id = s.user_id
-        WHERE
-        	(k.pionter_kullanici = $1 OR LOWER(k.pionter_email) = LOWER($1))
-         	AND k.pionter_sifre = $2
-        LIMIT 1
-    `, kullanici, sifre).Scan(&k.IP, &k.SunucuKullanici, &k.SunucuSifre, &k.IzoleKlasor)
-	return k, err
-}
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
 
@@ -279,11 +256,7 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            bilgiler.Token,
-		PionterKullanici: bilgiler.KullaniciAdi,
-		PionterSifre:     bilgiler.Sifre,
-	}, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		fmt.Println("Kullanıcı bulunamadı veya şifre yanlış:", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -403,11 +376,7 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            bilgiler.Token,
-		PionterKullanici: bilgiler.KullaniciAdi,
-		PionterSifre:     bilgiler.Sifre,
-	}, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
@@ -459,8 +428,6 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20)
 
 	token := r.FormValue("token")
-	kullaniciAdi := r.FormValue("kullaniciAdi")
-	sifre := r.FormValue("sifre")
 	yol := r.FormValue("yol")
 	serverIDStr := r.FormValue("server_id")
 
@@ -483,11 +450,7 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz dosya adı", http.StatusBadRequest)
 		return
 	}
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            token,
-		PionterKullanici: kullaniciAdi,
-		PionterSifre:     sifre,
-	}, serverID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(token, serverID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
@@ -556,11 +519,7 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz klasör adı", http.StatusBadRequest)
 		return
 	}
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            bilgiler.Token,
-		PionterKullanici: bilgiler.KullaniciAdi,
-		PionterSifre:     bilgiler.Sifre,
-	}, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
@@ -632,11 +591,7 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            bilgiler.Token,
-		PionterKullanici: bilgiler.KullaniciAdi,
-		PionterSifre:     bilgiler.Sifre,
-	}, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
@@ -718,11 +673,7 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            bilgiler.Token,
-		PionterKullanici: bilgiler.KullaniciAdi,
-		PionterSifre:     bilgiler.Sifre,
-	}, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
@@ -804,11 +755,7 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
-		Token:            bilgiler.Token,
-		PionterKullanici: bilgiler.KullaniciAdi,
-		PionterSifre:     bilgiler.Sifre,
-	}, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusBadRequest)
 		return
@@ -986,7 +933,6 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 	veri.SunucuTakmaAd = strings.TrimSpace(veri.SunucuTakmaAd)
 	veri.SunucuIP = strings.TrimSpace(veri.SunucuIP)
 	veri.SunucuPort = strings.TrimSpace(veri.SunucuPort)
@@ -1000,7 +946,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort = "22"
 	}
 
-	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) ||
+	if strings.TrimSpace(veri.Token) == "" ||
 		veri.SunucuTakmaAd == "" ||
 		veri.SunucuIP == "" ||
 		veri.SunucuKullanici == "" ||
@@ -1044,13 +990,9 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
-		Token:            veri.Token,
-		PionterKullanici: veri.PionterKullanici,
-		PionterSifre:     veri.PionterSifre,
-	})
+	userID, err := tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
-		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
 	}
 
@@ -1125,20 +1067,14 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
-
-	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) || veri.ServerID <= 0 {
+	if strings.TrimSpace(veri.Token) == "" || veri.ServerID <= 0 {
 		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
 		return
 	}
 
-	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
-		Token:            veri.Token,
-		PionterKullanici: veri.PionterKullanici,
-		PionterSifre:     veri.PionterSifre,
-	})
+	userID, err := tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
-		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
 	}
 
@@ -1182,7 +1118,6 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 	veri.SunucuTakmaAd = strings.TrimSpace(veri.SunucuTakmaAd)
 	veri.SunucuIP = strings.TrimSpace(veri.SunucuIP)
 	veri.SunucuPort = strings.TrimSpace(veri.SunucuPort)
@@ -1196,7 +1131,7 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort = "22"
 	}
 
-	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) ||
+	if strings.TrimSpace(veri.Token) == "" ||
 		veri.ServerID <= 0 ||
 		veri.SunucuTakmaAd == "" ||
 		veri.SunucuIP == "" ||
@@ -1231,13 +1166,9 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
-		Token:            veri.Token,
-		PionterKullanici: veri.PionterKullanici,
-		PionterSifre:     veri.PionterSifre,
-	})
+	userID, err := tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
-		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
 	}
 
@@ -1364,20 +1295,14 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
-
-	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) || veri.ServerID <= 0 {
+	if strings.TrimSpace(veri.Token) == "" || veri.ServerID <= 0 {
 		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
 		return
 	}
 
-	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
-		Token:            veri.Token,
-		PionterKullanici: veri.PionterKullanici,
-		PionterSifre:     veri.PionterSifre,
-	})
+	userID, err := tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
-		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
 	}
 
@@ -1476,38 +1401,6 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sunucular)
-}
-func sunucuKimlikSorgula(kullanici string, sifre string, serverID int) (GizliKimlik, error) {
-	var k GizliKimlik
-
-	userID, err := kullaniciDogrula(kullanici, sifre)
-	if err != nil {
-		return k, err
-	}
-
-	err = db.QueryRow(`
-		SELECT
-			sunucu_ip,
-			sunucu_port,
-			sunucu_kullanici,
-			baglanti_tipi,
-			COALESCE(sunucu_sifre, ''),
-			COALESCE(ssh_private_key, ''),
-			izole_klasor
-		FROM sunucular
-		WHERE id = $1 AND user_id = $2
-		LIMIT 1
-	`, serverID, userID).Scan(
-		&k.IP,
-		&k.Port,
-		&k.SunucuKullanici,
-		&k.BaglantiTipi,
-		&k.SunucuSifre,
-		&k.SSHPrivateKey,
-		&k.IzoleKlasor,
-	)
-
-	return k, err
 }
 func guvenliYolOlustur(izoleKlasor string, kullaniciYolu string) (string, error) {
 	if kullaniciYolu == "" {
@@ -1822,20 +1715,10 @@ func tokenIleKullaniciDogrula(token string) (int, error) {
 
 	return userID, nil
 }
-func istektenKullaniciIDAl(veri KimlikIstekBilgileri) (int, error) {
-	veri.Token = strings.TrimSpace(veri.Token)
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
-
-	if veri.Token != "" {
-		return tokenIleKullaniciDogrula(veri.Token)
-	}
-
-	return kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
-}
-func sunucuKimlikSorgulaKimlikIle(kimlikBilgileri KimlikIstekBilgileri, serverID int) (GizliKimlik, error) {
+func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error) {
 	var k GizliKimlik
 
-	userID, err := istektenKullaniciIDAl(kimlikBilgileri)
+	userID, err := tokenIleKullaniciDogrula(token)
 	if err != nil {
 		return k, err
 	}
@@ -1863,14 +1746,4 @@ func sunucuKimlikSorgulaKimlikIle(kimlikBilgileri KimlikIstekBilgileri, serverID
 	)
 
 	return k, err
-}
-func kimlikBilgisiVarMi(token string, kullanici string, sifre string) bool {
-	token = strings.TrimSpace(token)
-	kullanici = strings.TrimSpace(kullanici)
-
-	if token != "" {
-		return true
-	}
-
-	return kullanici != "" && sifre != ""
 }
