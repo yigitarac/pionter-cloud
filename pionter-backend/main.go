@@ -248,6 +248,9 @@ type KimlikIstekBilgileri struct {
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 }
+type TokenIstekBilgileri struct {
+	Token string `json:"token"`
+}
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
@@ -1413,14 +1416,14 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var veri KimlikIstekBilgileri
+	var veri TokenIstekBilgileri
 	if !jsonOku(w, r, &veri) {
 		return
 	}
 
-	userID, err := istektenKullaniciIDAl(veri)
+	userID, err := tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
-		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
 	}
 
