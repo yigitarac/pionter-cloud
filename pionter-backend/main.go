@@ -977,8 +977,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort = "22"
 	}
 
-	if veri.PionterKullanici == "" ||
-		veri.PionterSifre == "" ||
+	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) ||
 		veri.SunucuTakmaAd == "" ||
 		veri.SunucuIP == "" ||
 		veri.SunucuKullanici == "" ||
@@ -1105,7 +1104,7 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 
-	if veri.PionterKullanici == "" || veri.PionterSifre == "" || veri.ServerID < 0 {
+	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) || veri.ServerID <= 0 {
 		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
 		return
 	}
@@ -1174,8 +1173,7 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort = "22"
 	}
 
-	if veri.PionterKullanici == "" ||
-		veri.PionterSifre == "" ||
+	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) ||
 		veri.ServerID <= 0 ||
 		veri.SunucuTakmaAd == "" ||
 		veri.SunucuIP == "" ||
@@ -1266,23 +1264,22 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		veri.SunucuSifre = ""
+	}
+	testKimlik := GizliKimlik{
+		IP:              veri.SunucuIP,
+		Port:            veri.SunucuPort,
+		SunucuKullanici: veri.SunucuKullanici,
+		BaglantiTipi:    veri.BaglantiTipi,
+		SunucuSifre:     veri.SunucuSifre,
+		SSHPrivateKey:   veri.SSHPrivateKey,
+		IzoleKlasor:     veri.IzoleKlasor,
+	}
 
-		testKimlik := GizliKimlik{
-			IP:              veri.SunucuIP,
-			Port:            veri.SunucuPort,
-			SunucuKullanici: veri.SunucuKullanici,
-			BaglantiTipi:    veri.BaglantiTipi,
-			SunucuSifre:     veri.SunucuSifre,
-			SSHPrivateKey:   veri.SSHPrivateKey,
-			IzoleKlasor:     veri.IzoleKlasor,
-		}
-
-		err = sunucuBaglantisiCalisiyorMu(testKimlik)
-		if err != nil {
-			fmt.Println("Sunucu güncelleme öncesi bağlantı testi hatası:", err)
-			http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
-			return
-		}
+	err = sunucuBaglantisiCalisiyorMu(testKimlik)
+	if err != nil {
+		fmt.Println("Sunucu güncelleme öncesi bağlantı testi hatası:", err)
+		http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
+		return
 	}
 
 	result, err := db.Exec(`
@@ -1346,7 +1343,7 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 
 	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
 
-	if veri.PionterKullanici == "" || veri.PionterSifre == "" || veri.ServerID <= 0 {
+	if !kimlikBilgisiVarMi(veri.Token, veri.PionterKullanici, veri.PionterSifre) || veri.ServerID <= 0 {
 		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
 		return
 	}
@@ -1843,4 +1840,14 @@ func sunucuKimlikSorgulaKimlikIle(kimlikBilgileri KimlikIstekBilgileri, serverID
 	)
 
 	return k, err
+}
+func kimlikBilgisiVarMi(token string, kullanici string, sifre string) bool {
+	token = strings.TrimSpace(token)
+	kullanici = strings.TrimSpace(kullanici)
+
+	if token != "" {
+		return true
+	}
+
+	return kullanici != "" && sifre != ""
 }
