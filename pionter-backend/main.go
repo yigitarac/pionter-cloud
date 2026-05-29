@@ -1076,6 +1076,20 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sifreliSunucuSifre, err := gizliVeriSifrele(veri.SunucuSifre)
+	if err != nil {
+		fmt.Println("Sunucu şifresi şifrelenemedi:", err)
+		http.Error(w, "Sunucu bilgileri güvenli şekilde kaydedilemedi", http.StatusInternalServerError)
+		return
+	}
+
+	sifreliSSHPrivateKey, err := gizliVeriSifrele(veri.SSHPrivateKey)
+	if err != nil {
+		fmt.Println("SSH private key şifrelenemedi:", err)
+		http.Error(w, "Sunucu bilgileri güvenli şekilde kaydedilemedi", http.StatusInternalServerError)
+		return
+	}
+
 	_, err = db.Exec(`
 		INSERT INTO sunucular (
 			user_id,
@@ -1096,8 +1110,8 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort,
 		veri.SunucuKullanici,
 		veri.BaglantiTipi,
-		veri.SunucuSifre,
-		veri.SSHPrivateKey,
+		sifreliSunucuSifre,
+		sifreliSSHPrivateKey,
 		veri.IzoleKlasor,
 	)
 
