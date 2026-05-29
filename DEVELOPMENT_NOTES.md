@@ -13,14 +13,15 @@ The project is currently at the end of the v0.2 Security Gate phase.
 Current high-level status:
 
 * v0.1 Local/Portfolio MVP: completed
-* v0.2 Security Gate: mostly completed, final documentation and smoke testing in progress
-* v0.3 Core File Manager Polish: planned
+* v0.2 Security Gate: completed
+* v0.3 Core File Manager Polish: active
 * v0.4 Server Monitoring: planned
 * v0.5 File Preview and Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
+
 
 ## Product Direction
 
@@ -142,6 +143,20 @@ Completed security improvements:
 * Server passwords and SSH private keys are encrypted before being stored.
 * Existing plain text server credentials are lazily migrated to encrypted values when the server is used.
 * Saved server credentials are not returned to the frontend.
+
+v0.2 final smoke test status:
+
+* Backend startup verified.
+* Frontend startup verified.
+* Register/login/logout flow verified.
+* Token expiration/session invalidation behavior verified.
+* Server management flow verified.
+* File manager flow verified.
+* Credential encryption behavior verified.
+* Secret tracking checks passed.
+
+v0.2 is considered complete.
+
 
 ## Current Authentication Behavior
 

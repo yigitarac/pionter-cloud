@@ -15,14 +15,15 @@ PionterCloud has completed its local/portfolio MVP stage and is currently finish
 Current phase status:
 
 * v0.1 Local/Portfolio MVP: completed
-* v0.2 Security Gate: completed / final documentation and smoke testing in progress
-* v0.3 Core File Manager Polish: planned
+* v0.2 Security Gate: completed
+* v0.3 Core File Manager Polish: active
 * v0.4 Server Monitoring: planned
 * v0.5 File Preview and Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
+
 
 ## What PionterCloud Does
 
