@@ -1,124 +1,338 @@
 # Development Notes
 
-This file tracks technical debt and future refactor plans for PionterCloud.
+This file tracks the current technical status, security decisions, technical debt, and future roadmap for PionterCloud.
 
-## Current Frontend Status
+PionterCloud is a learning-focused full-stack project, but the goal is to keep the codebase honest, maintainable, and security-aware as it grows.
 
-The frontend currently lives mostly inside a single `src/app/page.js` file.
+## Current Project Status
 
-This was useful during the early learning and prototyping phase because it made the data flow easier to see in one place.
+PionterCloud has passed the v0.1 local/portfolio MVP stage.
 
-As the project grows, the file should be split into smaller components and helper functions.
+The project is currently at the end of the v0.2 Security Gate phase.
 
-### Completed frontend cleanup
+Current high-level status:
 
-The translation dictionary has been moved out of `page.js` into:
+* v0.1 Local/Portfolio MVP: completed
+* v0.2 Security Gate: mostly completed, final documentation and smoke testing in progress
+* v0.3 Core File Manager Polish: planned
+* v0.4 Server Monitoring: planned
+* v0.5 File Preview and Editor: planned
+* v0.6 Terminal: planned
+* v0.7 AI Features: planned
+* v0.8 Deployment / Production Hardening: planned
+* v1.0 Public-ready strong release: future goal
 
-- `src/app/sozluk.js`
+## Product Direction
 
-This keeps user-facing text in a separate file and makes `page.js` easier to read.
+PionterCloud started as a bring-your-own-server cloud file manager.
 
-Small frontend helper functions have also been moved out of `page.js` into:
+The product direction is evolving toward:
 
-- `src/app/yardimcilar.js`
+* bring-your-own-server cloud dashboard
+* secure web-based file manager
+* server monitoring panel
+* lightweight web editor
+* optional terminal access
+* optional AI-assisted file/code explanation features
 
-Current helper functions include:
+The project should continue to prioritize correctness, security, and maintainability over speed.
 
-- `dosyaBoyutuYaz`
-- `gecersizDosyaVeyaKlasorAdiMi`
-- `gecersizYolMu`
+## Current Architecture
 
-This keeps repeated formatting and validation logic outside the main UI file.
+### Backend
 
-Small UI components have started to move out of `page.js` into:
+The backend is written in Go.
 
-- `src/app/components/Toast.jsx`
-- `src/app/components/LoadingState.jsx`
+Current backend responsibilities:
 
-Current extracted components:
+* User registration
+* User login
+* Password hashing
+* Token/session management
+* Server management
+* SSH/SFTP connection validation
+* File listing
+* File upload
+* File download
+* Folder creation
+* Delete
+* Rename
+* Move
+* Server credential encryption and decryption
 
-- `Toast`
-- `LoadingState`
+### Frontend
 
-This is the first step toward splitting the large frontend page into smaller UI components.
+The frontend is written with Next.js, React, and Tailwind CSS.
 
-Further frontend cleanup can still split the UI into components later, such as:
+Current frontend responsibilities:
 
-- `AuthForm`
-- `ServerCard`
-- `ServerForm`
-- `FileGrid`
-- `FileCard`
-- `MoveModal`
-- `DeleteModal`
+* Login/register UI
+* Server list UI
+* Server add/edit/delete/pin UI
+* File manager UI
+* Upload/download UI
+* Folder creation UI
+* Rename/delete/move modals
+* Toast notifications
+* Loading states
+* Dark/light mode
+* Turkish/English language switch
 
-## Repeated UI Classes
+### Database
 
-There are repeated Tailwind class groups for:
+PostgreSQL is used for local development.
 
-- Inputs
-- Buttons
-- Modal containers
-- Toast styles
-- Card layouts
-- File/folder menu items
+Current main tables:
 
-These should eventually be extracted into reusable components or shared class constants.
+* `kullanicilar`
+* `sunucular`
+* `oturumlar`
 
-Possible future components:
+## v0.1 Local/Portfolio MVP Summary
 
-- `TextInput`
-- `PrimaryButton`
-- `SecondaryButton`
-- `DangerButton`
-- `Modal`
-- `Toast`
-- `ServerForm`
-- `AuthForm`
-- `FileGrid`
-- `FileCard`
-- `Breadcrumb`
+The v0.1 phase focused on making the core product usable locally.
 
-## File Manager Refactor
+Completed in v0.1:
 
-The file manager area should eventually be split into:
+* User registration and login
+* Multiple server support
+* Server add/list/edit/delete
+* Server pin/unpin
+* SSH/SFTP file listing
+* Upload files
+* Download files
+* Create folders
+* Delete files and empty folders
+* Rename files and folders
+* Move files and folders
+* Nested target folder picker for move
+* Breadcrumb navigation
+* Search/filter files in current folder
+* Folders-first alphabetical listing
+* File metadata display
+* Toast notification system
+* Custom modals
+* Dark/light mode
+* Turkish/English language switch
+* Initial README and development notes
+* Final v0.1 smoke test
 
-- Server selection screen
-- Selected server header
-- Upload dropzone
-- Folder creation bar
-- Search bar
-- Breadcrumb navigation
-- File grid
-- File action menu
-- Rename modal
-- Move modal
-- Delete confirmation modal
+v0.1 was considered a local/portfolio MVP, not a production-ready release.
 
-## API Helper Refactor
+## v0.2 Security Gate Summary
 
-Frontend fetch calls are currently written directly inside `page.js`.
+The v0.2 phase focused on improving authentication, session handling, and credential storage.
 
-Later, these should be moved into API helper functions such as:
+Completed security improvements:
 
-- `registerUser`
-- `fetchServers`
-- `saveServer`
-- `fetchFiles`
-- `uploadFile`
-- `downloadFile`
-- `createFolder`
-- `deleteItem`
-- `renameItem`
-- `moveItem`
+* New Pionter account passwords are stored with bcrypt hashing.
+* Older plain text development passwords are migrated to bcrypt after successful login.
+* A dedicated `/api/login` endpoint was added.
+* Login returns a session token.
+* Session tokens are stored in the `oturumlar` table.
+* Protected backend endpoints now use token-based authentication.
+* Protected backend endpoints no longer accept username/password fallback.
+* The frontend no longer sends the Pionter account password after login.
+* Logout support was added.
+* Logout deletes the active session token from the database.
+* Session tokens now have an expiration timestamp.
+* Expired tokens are rejected by the backend.
+* Expired sessions are cleaned up during login.
+* The frontend handles `401 Unauthorized` responses by clearing the local session and returning to the login screen.
+* Server passwords and SSH private keys are encrypted before being stored.
+* Existing plain text server credentials are lazily migrated to encrypted values when the server is used.
+* Saved server credentials are not returned to the frontend.
 
-This will make the UI code cleaner and easier to maintain.
+## Current Authentication Behavior
 
-## Backend Refactor Notes
+Current auth flow:
 
-Backend error responses should eventually use stable error codes instead of user-facing text messages.
+1. User registers with username, email, and password.
+2. Backend hashes the password before saving it.
+3. User logs in with username/email and password.
+4. Backend verifies the password.
+5. Backend creates a session token.
+6. Frontend stores the token in React state.
+7. Protected requests send the token.
+8. Backend validates the token.
+9. Logout deletes the token.
+10. Expired tokens are rejected.
 
-Example:
+Current limitation:
+
+* Tokens are currently sent in request bodies.
+* A future improvement should move tokens to the `Authorization: Bearer <token>` header.
+
+## Current Credential Encryption Behavior
+
+Saved server credentials are encrypted before being stored.
+
+Encrypted fields:
+
+* `sunucu_sifre`
+* `ssh_private_key`
+
+Encryption behavior:
+
+* AES-GCM is used.
+* Encrypted values use the `enc:v1:` prefix.
+* The encryption key is loaded from `CREDENTIAL_ENCRYPTION_KEY`.
+* The real encryption key must never be committed.
+* `.env.example` only contains a placeholder value.
+* Plain text old development credentials are lazily migrated when the server is used.
+
+Important note:
+
+If the encryption key is lost, encrypted server credentials cannot be recovered.
+
+## Server Connection Validation Notes
+
+Current behavior:
+
+* When adding a new server, the backend tests the SSH/SFTP connection before saving it.
+* When updating an existing server, the backend tests the SSH/SFTP connection before applying the update.
+* If the connection test fails, the server is not saved or updated.
+* The connection test checks:
+
+  * SSH connection
+  * SSH authentication
+  * SFTP client creation
+  * isolated folder accessibility
+
+Frontend behavior:
+
+* The separate manual "Test Connection" button was removed.
+* Save/update now means:
+
+  * validate form fields
+  * send request to backend
+  * backend checks the connection
+  * backend saves only if the connection is valid
+
+Important limitation:
+
+* SSH host key verification is still not implemented.
+* The backend still uses insecure host key behavior during SSH connections.
+* This must be improved before production use.
+
+## Current Security Status
+
+The project is significantly safer than the v0.1 local MVP.
+
+Current improvements:
+
+* Pionter account passwords are no longer stored as plain text.
+* Frontend no longer sends the Pionter password after login.
+* Protected endpoints use token authentication.
+* Logout and token expiration exist.
+* Saved server credentials are encrypted.
+* Existing plain server credentials are lazily migrated.
+
+Still not production-ready.
+
+Remaining security work before serious public usage:
+
+* Move tokens from request body to `Authorization` header.
+* Improve CORS configuration.
+* Add rate limiting.
+* Add stricter request size limits.
+* Add SSH host key verification.
+* Add stable backend error codes.
+* Improve logging without leaking secrets.
+* Add production deployment hardening.
+* Add HTTPS deployment.
+* Add backup and recovery planning.
+* Review database migration strategy.
+* Review token cleanup strategy outside login.
+
+## Current Frontend Refactor Status
+
+The frontend has started to move away from a single large `page.js` file, but more refactoring is still needed.
+
+Already extracted:
+
+* Loading state component
+* Toast component
+* Helper functions
+* Dictionary file
+
+Still needed:
+
+* Split large file manager UI into smaller components.
+* Extract repeated button/input/modal styles.
+* Extract server form logic.
+* Extract file action menu.
+* Extract modal components.
+* Extract API helper functions.
+* Reduce repeated fetch/error/loading logic.
+
+Possible future frontend components:
+
+* `TextInput`
+* `PrimaryButton`
+* `SecondaryButton`
+* `DangerButton`
+* `Modal`
+* `Toast`
+* `ServerForm`
+* `AuthForm`
+* `FileGrid`
+* `FileCard`
+* `Breadcrumb`
+* `FileActionMenu`
+* `RenameModal`
+* `MoveModal`
+* `DeleteConfirmationModal`
+
+## Current Backend Refactor Status
+
+The backend is functional but still mostly lives in a single `main.go` file.
+
+Already improved:
+
+* CORS helper
+* POST request helper
+* JSON read helper
+* Password hashing helpers
+* Token/session helpers
+* Credential encryption helpers
+* Server credential lookup helper
+* Connection validation helper
+
+Still needed:
+
+* Split backend code into packages/files.
+* Add middleware-style auth helpers.
+* Improve error response format.
+* Add stable error codes.
+* Reduce repeated SSH/SFTP connection setup.
+* Centralize response helpers.
+* Improve config/env loading.
+* Add structured logging.
+* Add database migration tooling later.
+
+Possible future backend structure:
+
+```text
+pionter-backend/
+  main.go
+  config/
+  db/
+  handlers/
+  middleware/
+  auth/
+  servers/
+  files/
+  sshclient/
+  crypto/
+  models/
+```
+
+## API/Error Response Notes
+
+Backend error responses currently use user-facing text messages.
+
+Future goal:
 
 ```json
 {
@@ -128,190 +342,156 @@ Example:
 }
 ```
 
-The frontend should translate user-facing messages based on the code.
+The frontend should eventually translate user-facing messages based on stable backend error codes.
 
-### Completed backend cleanup
+## Known Technical Debt
 
-The backend now has small request helper functions for repeated request setup logic:
+Current known technical debt:
 
-- `corsAyarla`
-- `postIstekKontrolu`
-- `jsonOku`
+* Frontend `page.js` is still too large.
+* Backend `main.go` is still too large.
+* Tokens are sent in request bodies instead of headers.
+* CORS is still too permissive.
+* SSH host key verification is not implemented.
+* Rate limiting is not implemented.
+* Request size limits need improvement.
+* Error responses are not standardized.
+* Logging is basic.
+* No formal migration system yet.
+* No deployment guide yet.
+* No automated tests yet.
+* No CI pipeline yet.
 
-These helpers are used across the main JSON-based API endpoints to reduce repeated boilerplate.
+## Roadmap
 
-Current helper coverage includes:
+### v0.3 Core File Manager Polish
 
-- auth/register
-- server management
-- file listing
-- download
-- upload request setup
-- folder creation
-- delete
-- rename
-- move
+Planned improvements:
 
-Further backend refactor work can still split `main.go` into smaller files later, such as:
+* Upload progress indicator
+* Better loading states
+* Multi-file selection
+* Bulk delete
+* Bulk move
+* Improved empty states
+* Improved error states
+* Better keyboard/UX interactions
+* More polished file cards and action menus
 
-- handlers
-- request/response models
-- database helpers
-- SSH/SFTP helpers
-- validation helpers
+### v0.4 Server Monitoring
 
-## Security Refactor Notes
+Planned improvements:
 
-Before production, the following must be improved:
+* CPU usage
+* RAM usage
+* Disk usage
+* Uptime
+* Load average
+* Manual refresh
+* Optional auto-refresh
+* Server status dashboard
 
-- Password hashing
-- Session/token based authentication
-- Secure server credential storage
-- SSH host key verification
-- Better backend validation
-- Rate limiting
-- HTTPS deployment
+### v0.5 File Preview and Editor
 
-## Auth Notes
+Planned improvements:
 
-Current auth behavior:
+* Text file preview
+* Image preview
+* Unsupported file warning
+* Large file limit
+* Binary file detection
+* Basic text/code editor
+* Save edited file
+* Unsaved changes warning
+* Monaco editor integration
+* Syntax highlighting
 
-- Users register with:
-  - username
-  - email
-  - password
-- Users can login with:
-  - username + password
-  - email + password
-- Email addresses are normalized to lowercase during registration.
-- Login checks email case-insensitively.
-- Frontend and backend trim username/email input before authentication.
+### v0.6 Terminal
 
-Current limitations:
+Planned improvements:
 
-- Passwords are currently stored in plain text.
-- There is no real session or token system yet.
-- The frontend sends username/email and password with each backend request.
-- This is acceptable for the current learning/development stage, but must be replaced before production use.
+* Web terminal for selected server
+* Terminal starts in isolated folder
+* Strong user warning before opening terminal
+* WebSocket-based command session
+* Research restricted user/chroot/limited shell options
 
-Future auth/security improvements:
+Important risk:
 
-- Hash passwords before saving them.
-- Add real session/token based authentication.
-- Stop sending the password with every file/server request.
-- Add logout/session expiration behavior.
-- Improve backend error responses for auth failures.
-- Consider email verification later.
+Terminal access can be dangerous. It should not be added before the security foundation is strong.
 
-## Server Connection Validation Notes
+### v0.7 AI Features
 
-Current behavior:
+Possible improvements:
 
-- When adding a new server, the backend tests the SSH/SFTP connection before saving it.
-- When updating an existing server, the backend tests the SSH/SFTP connection before applying the update.
-- If the connection test fails, the server is not saved or updated.
-- The connection test checks:
-  - SSH connection
-  - SSH authentication
-  - SFTP client creation
-  - isolated folder accessibility
+* User-provided AI API key
+* Explain selected file
+* Summarize code file
+* Analyze log file
+* Explain error messages
+* Suggest refactors
+* Privacy warning before sending file content to an AI provider
 
-Frontend behavior:
+Important decisions:
 
-- The separate manual "Test Connection" button was removed.
-- The user only uses the save/update action.
-- Save/update now means:
-  - validate form fields
-  - send request to backend
-  - backend checks the connection
-  - backend saves only if the connection is valid
+* Where API keys are stored
+* Whether API keys are encrypted
+* Whether file content is sent only with explicit user confirmation
+* How large files are handled
 
-Important limitation:
+### v0.8 Deployment / Production Gate
 
-- SSH host key verification is still not implemented.
-- The backend still uses insecure host key behavior during SSH connections.
-- This must be improved before production use.
+Planned improvements:
 
-Future improvements:
+* HTTPS deployment
+* Production environment configuration
+* Safer CORS
+* Rate limiting
+* Request size limits
+* SSH host key verification
+* Stable backend error codes
+* Safer logging
+* Backup strategy
+* Docker/deployment guide
+* Production checklist
 
-- Return stable backend error codes for different connection failure reasons.
-- Show more specific frontend messages such as:
-  - SSH connection failed
-  - SSH authentication failed
-  - SFTP could not be started
-  - isolated folder not found or not accessible
-- Consider checking write permission inside the isolated folder.
-- Consider optional auto-create behavior for the isolated folder later, if it is safe and clearly communicated.
+### v1.0 Public-ready Strong Release
 
-## v0.2 Security Gate Plan
+v1.0 should not mean “perfect,” but it should mean:
 
-The v0.1 version is a local/portfolio MVP. It demonstrates the core product flow, but it is not production-ready.
+* The app has a strong security foundation.
+* Core file manager flows are polished.
+* Server monitoring exists.
+* Preview/editor functionality exists.
+* Deployment documentation exists.
+* Known limitations are clearly documented.
+* Public usage risks are understood and reduced.
 
-Before any public or private deployment, the following security improvements should be prioritized.
+## Deployment Position
 
-### Main goals
+Recommended deployment strategy:
 
-- Stop storing Pionter account passwords in plain text.
-- Stop sending the user's password with every frontend request.
-- Add a real session/token based authentication flow.
-- Protect backend endpoints with a reusable authentication mechanism.
-- Improve how saved server credentials are stored.
-- Keep SSH host key verification on the production security roadmap.
+* v0.1: local/portfolio only
+* v0.2: possible private deployment after careful setup
+* v0.3/v0.4: stronger portfolio/demo visibility
+* v0.8/v1.0: serious public deployment consideration
 
-### Planned steps
+Domain can be purchased earlier, but public usage should wait until deployment hardening is complete.
 
-1. Password hashing
+## Current Recommendation
 
-   Replace plain text password storage with a password hashing system.
+Do not treat PionterCloud as production-ready yet.
 
-   Planned behavior:
+It is suitable for:
 
-   - Register hashes the password before saving it.
-   - Login compares the entered password against the stored hash.
-   - Existing plain text development users may need to be recreated or migrated.
+* learning
+* local testing
+* portfolio development
+* controlled private testing after v0.2
 
-2. Session/token based authentication
+It is not yet suitable for:
 
-   Replace repeated username/password requests with a login token.
-
-   Planned behavior:
-
-   - Login returns a token.
-   - Frontend stores the token temporarily.
-   - Protected requests send the token instead of the password.
-   - Backend validates the token before running protected actions.
-
-3. Protected backend request flow
-
-   Move repeated user authentication logic into helper functions or middleware-like helpers.
-
-   Planned behavior:
-
-   - Server listing, file actions, server editing, server deletion and pinning should use the authenticated user from the token.
-   - Frontend should not need to send `pionter_sifre` for every action.
-
-4. Server credential storage
-
-   Saved server passwords and SSH private keys should not remain as plain text forever.
-
-   Planned options:
-
-   - Encrypt server credentials before saving them.
-   - Keep encryption keys in environment variables.
-   - Never expose saved credentials back to the frontend.
-
-5. Production security reminders
-
-   Still required before real production use:
-
-   - HTTPS deployment
-   - Rate limiting
-   - SSH host key verification
-   - Better backend validation
-   - Stable backend error codes
-   - Safer CORS configuration
-   - More secure secret management
-
-### Important note
-
-This security phase may temporarily slow down visible feature development, but it is necessary before treating the project as anything more than a local/portfolio MVP.
+* broad public signup
+* untrusted users
+* production server credential storage without further hardening
+* terminal access in public environments
