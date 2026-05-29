@@ -234,6 +234,11 @@ type GirisCevabi struct {
 	Token string `json:"token"`
 	Mesaj string `json:"mesaj"`
 }
+type KimlikIstekBilgileri struct {
+	Token            string `json:"token"`
+	PionterKullanici string `json:"pionter_kullanici"`
+	PionterSifre     string `json:"pionter_sifre"`
+}
 
 func kimlikSorgula(kullanici string, sifre string) (GizliKimlik, error) {
 	var k GizliKimlik
@@ -1355,16 +1360,14 @@ func sunuculariListele(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var veri KayitBilgileri
+	var veri KimlikIstekBilgileri
 	if !jsonOku(w, r, &veri) {
 		return
 	}
 
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
-
-	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	userID, err := istektenKullaniciIDAl(veri)
 	if err != nil {
-		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
 		return
 	}
 
@@ -1762,4 +1765,14 @@ func tokenIleKullaniciDogrula(token string) (int, error) {
 	}
 
 	return userID, nil
+}
+func istektenKullaniciIDAl(veri KimlikIstekBilgileri) (int, error) {
+	veri.Token = strings.TrimSpace(veri.Token)
+	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+
+	if veri.Token != "" {
+		return tokenIleKullaniciDogrula(veri.Token)
+	}
+
+	return kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
 }

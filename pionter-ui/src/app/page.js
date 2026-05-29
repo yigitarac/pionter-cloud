@@ -58,6 +58,7 @@ export default function AnaSayfa() {
   const hedefKlasorCacheRef = useRef({});
   const [serverEditModalAcik, setServerEditModalAcik] = useState(false);
   const [duzenlenecekSunucu, setDuzenlenecekSunucu] = useState(null);
+  const [oturumToken, setOturumToken] = useState("");
 
   const t = sozluk[dil];
 
@@ -183,6 +184,7 @@ export default function AnaSayfa() {
     setKullaniciAdi("");
     setEposta("");
     setSifre("");
+    setOturumToken("");
   };
 
   const baglantiyiBaslat = () => {
@@ -195,8 +197,40 @@ export default function AnaSayfa() {
       return;
     }
 
-    setKullaniciAdi(temizKullaniciAdi);
-    sunuculariGetir(temizKullaniciAdi);
+    setYukleniyor(true);
+    setYuklemeMesaji(t.loggingIn);
+
+    fetch("http://localhost:8080/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pionter_kullanici: temizKullaniciAdi,
+        pionter_sifre: sifre,
+      }),
+    })
+      .then((cevap) => {
+        if (!cevap.ok) {
+          throw new Error("Giriş başarısız");
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        setOturumToken(veri.token);
+        setKullaniciAdi(temizKullaniciAdi);
+
+        sunuculariGetir(temizKullaniciAdi, veri.token);
+      })
+      .catch((hata) => {
+        console.log("Login hatası:", hata);
+        setOturumToken("");
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        toastGoster(
+          dil === "tr" ? "Giriş başarısız." : "Login failed.",
+          "error",
+        );
+      });
   };
 
   const klasoreGir = (dosya) => {
@@ -769,17 +803,26 @@ export default function AnaSayfa() {
       sunucuyaDosyaYukle(e.target.files[0]);
     }
   };
-  const sunuculariGetir = (girisKimligi = kullaniciAdi) => {
+  const sunuculariGetir = (
+    girisKimligi = kullaniciAdi,
+    token = oturumToken,
+  ) => {
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingServers);
 
     fetch("http://localhost:8080/api/servers/list", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        pionter_kullanici: girisKimligi,
-        pionter_sifre: sifre,
-      }),
+      body: JSON.stringify(
+        token
+          ? {
+              token,
+            }
+          : {
+              pionter_kullanici: girisKimligi,
+              pionter_sifre: sifre,
+            },
+      ),
     })
       .then((cevap) => {
         if (!cevap.ok) {

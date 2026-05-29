@@ -123,6 +123,7 @@ export const sozluk = {
     testingConnection: "Testing connection...",
     connectionTestSuccess: "Connection test successful.",
     connectionTestFailed: "Connection test failed.",
+    loggingIn: "Logging in...",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -248,5 +249,6 @@ export const sozluk = {
     testingConnection: "Bağlantı test ediliyor...",
     connectionTestSuccess: "Bağlantı testi başarılı.",
     connectionTestFailed: "Bağlantı testi başarısız.",
+    loggingIn: "Giriş yapılıyor...",
   },
 };
