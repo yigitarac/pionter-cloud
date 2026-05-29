@@ -232,8 +232,7 @@ type SunucuSabitleBilgileri struct {
 }
 
 type SunucuTestBilgileri struct {
-	PionterKullanici string `json:"pionter_kullanici"`
-	PionterSifre     string `json:"pionter_sifre"`
+	Token string `json:"token"`
 
 	SunucuIP        string `json:"sunucu_ip"`
 	SunucuPort      string `json:"sunucu_port"`
@@ -1615,7 +1614,7 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veri.PionterKullanici = strings.TrimSpace(veri.PionterKullanici)
+	veri.Token = strings.TrimSpace(veri.Token)
 	veri.SunucuIP = strings.TrimSpace(veri.SunucuIP)
 	veri.SunucuPort = strings.TrimSpace(veri.SunucuPort)
 	veri.SunucuKullanici = strings.TrimSpace(veri.SunucuKullanici)
@@ -1628,8 +1627,7 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		veri.SunucuPort = "22"
 	}
 
-	if veri.PionterKullanici == "" ||
-		veri.PionterSifre == "" ||
+	if veri.Token == "" ||
 		veri.SunucuIP == "" ||
 		veri.SunucuKullanici == "" ||
 		veri.SunucuPort == "" ||
@@ -1672,9 +1670,9 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	_, err = tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
-		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
 	}
 
