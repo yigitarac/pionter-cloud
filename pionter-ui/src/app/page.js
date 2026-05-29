@@ -395,8 +395,7 @@ export default function AnaSayfa() {
     setYuklemeMesaji(t.uploadingFile);
 
     const formData = new FormData();
-    formData.append("kullaniciAdi", kullaniciAdi);
-    formData.append("sifre", sifre);
+    formData.append("token", oturumToken);
     formData.append("yol", mevcutYol);
     formData.append("server_id", seciliSunucu.id);
     formData.append("dosya", dosya);
