@@ -201,6 +201,7 @@ type YenidenAdlandirBilgileri struct {
 	YeniAd       string `json:"yeni_ad"`
 }
 type TasiBilgileri struct {
+	Token        string `json:"token"`
 	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
 	ServerID     int    `json:"server_id"`
@@ -800,7 +801,11 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
+		Token:            bilgiler.Token,
+		PionterKullanici: bilgiler.KullaniciAdi,
+		PionterSifre:     bilgiler.Sifre,
+	}, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusBadRequest)
 		return
