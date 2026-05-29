@@ -396,7 +396,11 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
-	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
+		Token:            bilgiler.Token,
+		PionterKullanici: bilgiler.KullaniciAdi,
+		PionterSifre:     bilgiler.Sifre,
+	}, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
 		return
