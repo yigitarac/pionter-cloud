@@ -66,8 +66,13 @@ func main() {
 			id SERIAL PRIMARY KEY,
 			user_id INTEGER REFERENCES kullanicilar(id) ON DELETE CASCADE,
 			token TEXT UNIQUE NOT NULL,
-			olusturma_tarihi TIMESTAMP NOT NULL DEFAULT NOW()
+			olusturma_tarihi TIMESTAMP NOT NULL DEFAULT NOW(),
+			son_gecerlilik_tarihi TIMESTAMP NOT NULL DEFAULT NOW() + INTERVAL '7 days'
 		);
+
+		ALTER TABLE oturumlar
+		ADD COLUMN IF NOT EXISTS son_gecerlilik_tarihi TIMESTAMP NOT NULL DEFAULT NOW() + INTERVAL '7 days';
+
 		ALTER TABLE kullanicilar
 		ADD COLUMN IF NOT EXISTS pionter_email TEXT;
 
@@ -908,6 +913,8 @@ func kullaniciGirisYap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	gecmisOturumlariTemizle()
+
 	token, err := oturumOlustur(userID)
 	if err != nil {
 		fmt.Println("Oturum oluşturma hatası:", err)
@@ -1724,8 +1731,8 @@ func oturumOlustur(userID int) (string, error) {
 	}
 
 	_, err = db.Exec(`
-		INSERT INTO oturumlar (user_id, token)
-		VALUES ($1, $2)
+		INSERT INTO oturumlar (user_id, token, son_gecerlilik_tarihi)
+		VALUES ($1, $2, NOW() + INTERVAL '7 days')
 	`, userID, token)
 
 	if err != nil {
@@ -1748,6 +1755,7 @@ func tokenIleKullaniciDogrula(token string) (int, error) {
 		SELECT user_id
 		FROM oturumlar
 		WHERE token = $1
+			AND son_gecerlilik_tarihi > NOW()
 	`, token).Scan(&userID)
 
 	if err != nil {
@@ -1787,4 +1795,14 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 	)
 
 	return k, err
+}
+func gecmisOturumlariTemizle() {
+	_, err := db.Exec(`
+		DELETE FROM oturumlar
+		WHERE son_gecerlilik_tarihi <= NOW()
+	`)
+
+	if err != nil {
+		fmt.Println("Geçmiş oturumlar temizlenemedi:", err)
+	}
 }
