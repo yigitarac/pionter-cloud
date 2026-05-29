@@ -129,6 +129,10 @@ export default function AnaSayfa() {
       body: JSON.stringify(gonderilecekVeri),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Dosyalar getirilemedi");
         }
@@ -159,6 +163,9 @@ export default function AnaSayfa() {
         setYuklemeMesaji("");
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Hata:", hata);
         setDosyalar([]);
         setDosyaMesaji(
@@ -299,6 +306,16 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
   };
 
+  const oturumHatasiKontrolEt = (cevap) => {
+    if (cevap.status === 401) {
+      oturumuTemizle();
+      toastGoster(t.sessionExpired, "error");
+      return true;
+    }
+
+    return false;
+  };
+
   const oturumuTemizle = () => {
     setOturumToken("");
     setGirisYapildi(false);
@@ -425,6 +442,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Dosya indirilemedi");
         }
@@ -444,6 +465,9 @@ export default function AnaSayfa() {
         setYuklemeMesaji("");
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log(hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -481,6 +505,10 @@ export default function AnaSayfa() {
       body: formData,
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (cevap.ok) {
           toastGoster(t.uploadSuccess, "success");
           klasoruYenile(mevcutYol);
@@ -492,6 +520,9 @@ export default function AnaSayfa() {
         }
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Yükleme Hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -890,6 +921,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Sunucular getirilemedi");
         }
@@ -914,6 +949,9 @@ export default function AnaSayfa() {
         setYuklemeMesaji("");
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Sunucular getirilemedi:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -1117,6 +1155,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Sunucu kaydedilemedi");
         }
@@ -1131,6 +1173,9 @@ export default function AnaSayfa() {
         setSunucuFormAcik(false);
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Sunucu kayıt hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -1192,6 +1237,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Sunucu güncellenemedi");
         }
@@ -1219,6 +1268,9 @@ export default function AnaSayfa() {
         sunucuDuzenlemeModaliniKapat();
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Sunucu güncelleme hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
