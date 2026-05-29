@@ -558,6 +558,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Klasör oluşturulamadı");
         }
@@ -569,6 +573,9 @@ export default function AnaSayfa() {
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Klasör oluşturma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -611,6 +618,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Silme başarısız");
         }
@@ -623,6 +634,9 @@ export default function AnaSayfa() {
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Silme hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -679,6 +693,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Yeniden adlandırma başarısız");
         }
@@ -696,6 +714,9 @@ export default function AnaSayfa() {
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Yeniden adlandırma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -723,6 +744,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Hedef klasörler getirilemedi");
         }
@@ -740,6 +765,9 @@ export default function AnaSayfa() {
         setHedefKlasorlerYukleniyor(false);
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Hedef klasörler getirilemedi:", hata);
         setHedefKlasorler([]);
         setHedefKlasorlerYukleniyor(false);
@@ -842,6 +870,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Taşıma başarısız");
         }
@@ -856,6 +888,9 @@ export default function AnaSayfa() {
         klasoruYenile(mevcutYol);
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Taşıma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
@@ -1019,6 +1054,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Sunucu sabitleme durumu güncellenemedi");
         }
@@ -1039,6 +1078,9 @@ export default function AnaSayfa() {
         );
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Sunucu sabitleme hatası:", hata);
         toastGoster(t.serverPinFailed, "error");
       });
@@ -1074,6 +1116,10 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
         if (!cevap.ok) {
           throw new Error("Sunucu silinemedi");
         }
@@ -1089,6 +1135,9 @@ export default function AnaSayfa() {
         setYuklemeMesaji("");
       })
       .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
         console.log("Sunucu silme hatası:", hata);
         setSilinecekSunucu(null);
         setYukleniyor(false);
