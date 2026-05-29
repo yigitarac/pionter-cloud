@@ -1,4 +1,9 @@
-export default function LoadingState({ mesaj }) {
+export default function LoadingState({
+  yukleniyor,
+  mesaj,
+  progress = null,
+  progressLabel = "Upload",
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-20">
       <svg
@@ -25,6 +30,21 @@ export default function LoadingState({ mesaj }) {
       <p className="text-sm text-[#7c6f64] dark:text-[#a89984] animate-pulse">
         {mesaj}
       </p>
+      {typeof progress === "number" && (
+        <div className="mt-4 w-full max-w-xs">
+          <div className="mb-1 flex justify-between text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+            <span>{progressLabel}</span>
+            <span>{progress}%</span>
+          </div>
+
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+            <div
+              className="h-full rounded-full bg-[#458588] dark:bg-[#83a598] transition-all duration-200"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

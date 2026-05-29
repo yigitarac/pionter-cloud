@@ -59,6 +59,7 @@ export default function AnaSayfa() {
   const [serverEditModalAcik, setServerEditModalAcik] = useState(false);
   const [duzenlenecekSunucu, setDuzenlenecekSunucu] = useState(null);
   const [oturumToken, setOturumToken] = useState("");
+  const [yuklemeYuzdesi, setYuklemeYuzdesi] = useState(null);
 
   const t = sozluk[dil];
 
@@ -287,6 +288,7 @@ export default function AnaSayfa() {
     setAcikMenuIndex(null);
     setYukleniyor(false);
     setYuklemeMesaji("");
+    setYuklemeYuzdesi(null);
     setHedefKlasorGezintiYolu("/");
     setServerDeleteModalAcik(false);
     setSilinecekSunucu(null);
@@ -355,6 +357,7 @@ export default function AnaSayfa() {
 
     setYukleniyor(false);
     setYuklemeMesaji("");
+    setYuklemeYuzdesi(null);
   };
 
   const cikisYap = () => {
@@ -483,16 +486,20 @@ export default function AnaSayfa() {
   const sunucuyaDosyaYukle = (dosya) => {
     if (yukleniyor) return;
     if (!dosya) return;
+
     if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
       toastGoster(t.invalidFileName, "error");
       return;
     }
+
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
       return;
     }
+
     setYukleniyor(true);
     setYuklemeMesaji(t.uploadingFile);
+    setYuklemeYuzdesi(0);
 
     const formData = new FormData();
     formData.append("token", oturumToken);
@@ -500,35 +507,52 @@ export default function AnaSayfa() {
     formData.append("server_id", seciliSunucu.id);
     formData.append("dosya", dosya);
 
-    fetch("http://localhost:8080/api/upload", {
-      method: "POST",
-      body: formData,
-    })
-      .then((cevap) => {
-        if (oturumHatasiKontrolEt(cevap)) {
-          throw new Error("Oturum geçersiz");
-        }
+    const xhr = new XMLHttpRequest();
 
-        if (cevap.ok) {
-          toastGoster(t.uploadSuccess, "success");
-          klasoruYenile(mevcutYol);
-        } else {
-          console.log("Yükleme başarısız!");
-          setYukleniyor(false);
-          setYuklemeMesaji("");
-          toastGoster(t.uploadFailed, "error");
-        }
-      })
-      .catch((hata) => {
-        if (hata.message === "Oturum geçersiz") {
-          return;
-        }
-        console.log("Yükleme Hatası:", hata);
-        setYukleniyor(false);
-        setYuklemeMesaji("");
-        toastGoster(t.uploadFailed, "error");
-      });
+    xhr.open("POST", "http://localhost:8080/api/upload");
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+
+      const yuzde = Math.round((event.loaded / event.total) * 100);
+      setYuklemeYuzdesi(yuzde);
+    };
+
+    xhr.onload = () => {
+      if (oturumHatasiKontrolEt(xhr)) {
+        setYuklemeYuzdesi(null);
+        return;
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        toastGoster(t.uploadSuccess, "success");
+
+        setYuklemeYuzdesi(null);
+        setYuklemeMesaji(t.loadingFiles);
+
+        hedefKlasorCacheRef.current = {};
+        klasoruYenile(mevcutYol);
+        return;
+      }
+
+      console.log("Yükleme başarısız:", xhr.status, xhr.responseText);
+      setYukleniyor(false);
+      setYuklemeMesaji("");
+      setYuklemeYuzdesi(null);
+      toastGoster(t.uploadFailed, "error");
+    };
+
+    xhr.onerror = () => {
+      console.log("Yükleme bağlantı hatası");
+      setYukleniyor(false);
+      setYuklemeMesaji("");
+      setYuklemeYuzdesi(null);
+      toastGoster(t.uploadFailed, "error");
+    };
+
+    xhr.send(formData);
   };
+
   const klasorOlustur = () => {
     if (yukleniyor) return;
     if (!seciliSunucu) {
@@ -2364,7 +2388,12 @@ export default function AnaSayfa() {
             </div>
 
             {yukleniyor ? (
-              <LoadingState mesaj={yuklemeMesaji || t.loading} />
+              <LoadingState
+                yukleniyor={yukleniyor}
+                mesaj={yuklemeMesaji || t.loading}
+                progress={yuklemeYuzdesi}
+                progressLabel={t.uploadProgress}
+              />
             ) : dosyalar.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
                 <svg

@@ -129,6 +129,7 @@ export const sozluk = {
     logoutSuccess: "Logged out successfully.",
     logoutFailed: "Logout failed.",
     sessionExpired: "Your session has expired. Please log in again.",
+    uploadProgress: "Upload",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -260,5 +261,6 @@ export const sozluk = {
     logoutSuccess: "Çıkış yapıldı.",
     logoutFailed: "Çıkış yapılamadı.",
     sessionExpired: "Oturum süren doldu. Lütfen tekrar giriş yap.",
+    uploadProgress: "Yükleme",
   },
 };
