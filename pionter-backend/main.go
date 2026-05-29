@@ -183,6 +183,7 @@ type KlasorOlusturBilgileri struct {
 	KlasorAdi    string `json:"klasor_adi"`
 }
 type SilmeBilgileri struct {
+	Token        string `json:"token"`
 	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
@@ -626,7 +627,11 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
+		Token:            bilgiler.Token,
+		PionterKullanici: bilgiler.KullaniciAdi,
+		PionterSifre:     bilgiler.Sifre,
+	}, bilgiler.ServerID)
 
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
