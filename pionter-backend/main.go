@@ -62,7 +62,7 @@ func main() {
 			sunucu_kullanici VARCHAR(50) NOT NULL,
 			baglanti_tipi VARCHAR(20) NOT NULL DEFAULT 'password',
 			sabitli BOOLEAN NOT NULL DEFAULT FALSE,
-			sunucu_sifre VARCHAR(500),
+			sunucu_sifre TEXT,
 			ssh_private_key TEXT,
 			izole_klasor VARCHAR(200) NOT NULL
 		);
@@ -73,6 +73,9 @@ func main() {
 			olusturma_tarihi TIMESTAMP NOT NULL DEFAULT NOW(),
 			son_gecerlilik_tarihi TIMESTAMP NOT NULL DEFAULT NOW() + INTERVAL '7 days'
 		);
+
+		ALTER TABLE sunucular
+		ALTER COLUMN sunucu_sifre TYPE TEXT;
 
 		ALTER TABLE oturumlar
 		ADD COLUMN IF NOT EXISTS son_gecerlilik_tarihi TIMESTAMP NOT NULL DEFAULT NOW() + INTERVAL '7 days';
@@ -1246,6 +1249,20 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	mevcutSunucuSifre, err = gizliVeriCoz(mevcutSunucuSifre)
+	if err != nil {
+		fmt.Println("Mevcut sunucu şifresi çözülemedi:", err)
+		http.Error(w, "Sunucu bilgileri okunamadı", http.StatusInternalServerError)
+		return
+	}
+
+	mevcutSSHPrivateKey, err = gizliVeriCoz(mevcutSSHPrivateKey)
+	if err != nil {
+		fmt.Println("Mevcut SSH private key çözülemedi:", err)
+		http.Error(w, "Sunucu bilgileri okunamadı", http.StatusInternalServerError)
+		return
+	}
+
 	if veri.BaglantiTipi == "password" {
 		if veri.SunucuSifre == "" {
 			if mevcutBaglantiTipi == "password" && mevcutSunucuSifre != "" {
@@ -1788,7 +1805,7 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 		FROM sunucular
 		WHERE id = $1 AND user_id = $2
 		LIMIT 1
-	`, serverID, userID).Scan(
+`, serverID, userID).Scan(
 		&k.IP,
 		&k.Port,
 		&k.SunucuKullanici,
@@ -1798,7 +1815,21 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 		&k.IzoleKlasor,
 	)
 
-	return k, err
+	if err != nil {
+		return k, err
+	}
+
+	k.SunucuSifre, err = gizliVeriCoz(k.SunucuSifre)
+	if err != nil {
+		return k, fmt.Errorf("sunucu şifresi çözülemedi: %w", err)
+	}
+
+	k.SSHPrivateKey, err = gizliVeriCoz(k.SSHPrivateKey)
+	if err != nil {
+		return k, fmt.Errorf("SSH private key çözülemedi: %w", err)
+	}
+
+	return k, nil
 }
 func gecmisOturumlariTemizle() {
 	_, err := db.Exec(`
