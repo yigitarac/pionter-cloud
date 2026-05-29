@@ -135,6 +135,13 @@ export const sozluk = {
     clearSelection: "Clear selection",
     selectItem: "Select item",
     unselectItem: "Unselect item",
+    deleteSelected: "Delete selected",
+    deleteSelectedTitle: "Delete selected items",
+    deleteSelectedConfirmText:
+      "Are you sure you want to delete selected item(s)?",
+    deletingSelectedItems: "Deleting selected items...",
+    selectedItemsDeleted: "Selected items deleted.",
+    bulkDeleteFailed: "Selected items could not be deleted.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -272,5 +279,11 @@ export const sozluk = {
     clearSelection: "Seçimi temizle",
     selectItem: "Öğeyi seç",
     unselectItem: "Seçimi kaldır",
+    deleteSelected: "Seçilenleri sil",
+    deleteSelectedTitle: "Seçili öğeleri sil",
+    deleteSelectedConfirmText: "Seçili öğeleri silmek istediğine emin misin?",
+    deletingSelectedItems: "Seçili öğeler siliniyor...",
+    selectedItemsDeleted: "Seçili öğeler silindi.",
+    bulkDeleteFailed: "Seçili öğeler silinemedi.",
   },
 };

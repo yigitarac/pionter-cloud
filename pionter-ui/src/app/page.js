@@ -1197,20 +1197,14 @@ export default function AnaSayfa() {
 
     setTopluSilmeModalAcik(false);
     setYukleniyor(true);
-    setYuklemeMesaji(
-      dil === "tr"
-        ? `Seçili öğeler siliniyor... (0/${seciliOgeler.length})`
-        : `Deleting selected items... (0/${seciliOgeler.length})`,
-    );
+    setYuklemeMesaji(`${t.deletingSelectedItems} (0/${seciliOgeler.length})`);
 
     try {
       for (let i = 0; i < seciliOgeler.length; i++) {
         const oge = seciliOgeler[i];
 
         setYuklemeMesaji(
-          dil === "tr"
-            ? `Seçili öğeler siliniyor... (${i + 1}/${seciliOgeler.length})`
-            : `Deleting selected items... (${i + 1}/${seciliOgeler.length})`,
+          `${t.deletingSelectedItems} (${i + 1}/${seciliOgeler.length})`,
         );
 
         const cevap = await fetch("http://localhost:8080/api/delete", {
@@ -1234,10 +1228,7 @@ export default function AnaSayfa() {
         }
       }
 
-      toastGoster(
-        dil === "tr" ? "Seçili öğeler silindi." : "Selected items deleted.",
-        "success",
-      );
+      toastGoster(t.selectedItemsDeleted, "success");
 
       secimleriTemizle();
       hedefKlasorCacheRef.current = {};
@@ -1250,7 +1241,7 @@ export default function AnaSayfa() {
       console.log("Toplu silme hatası:", hata);
       setYukleniyor(false);
       setYuklemeMesaji("");
-      toastGoster(t.deleteFailed, "error");
+      toastGoster(t.bulkDeleteFailed, "error");
     }
   };
 
@@ -1914,13 +1905,11 @@ export default function AnaSayfa() {
             className="w-full max-w-md rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] p-5 shadow-xl"
           >
             <h2 className="text-lg font-bold mb-2 text-[#3c3836] dark:text-[#ebdbb2]">
-              {dil === "tr" ? "Seçili öğeleri sil" : "Delete selected items"}
+              {t.deleteSelectedTitle}
             </h2>
 
             <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-5">
-              {dil === "tr"
-                ? `${seciliOgeAnahtarlari.length} öğeyi silmek istediğine emin misin?`
-                : `Are you sure you want to delete ${seciliOgeAnahtarlari.length} selected item(s)?`}
+              {seciliOgeAnahtarlari.length} - {t.deleteSelectedConfirmText}
             </p>
 
             <div className="flex justify-end gap-3">
@@ -2538,7 +2527,7 @@ export default function AnaSayfa() {
                     onClick={topluSilmeModaliniAc}
                     className="rounded-md bg-[#cc241d] px-3 py-1.5 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#9d0006] cursor-pointer"
                   >
-                    {dil === "tr" ? "Seçilenleri sil" : "Delete selected"}
+                    {t.deleteSelected}
                   </button>
 
                   <button
