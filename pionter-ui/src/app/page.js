@@ -434,8 +434,8 @@ export default function AnaSayfa() {
       toastGoster(t.folderNameEmpty, "error");
       return;
     }
-    if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
-      toastGoster(t.invalidFileName, "error");
+    if (gecersizDosyaVeyaKlasorAdiMi(temizKlasorAdi)) {
+      toastGoster(t.invalidFolderName, "error");
       return;
     }
     setYukleniyor(true);
@@ -444,8 +444,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        kullaniciAdi,
-        sifre,
+        token: oturumToken,
         yol: mevcutYol,
         server_id: seciliSunucu.id,
         klasor_adi: temizKlasorAdi,
@@ -546,7 +545,7 @@ export default function AnaSayfa() {
       return;
     }
 
-    if (gecersizDosyaVeyaKlasorAdiMi(dosya.name)) {
+    if (gecersizDosyaVeyaKlasorAdiMi(temizYeniAd)) {
       toastGoster(t.invalidFileName, "error");
       return;
     }
