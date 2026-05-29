@@ -131,6 +131,10 @@ export const sozluk = {
     sessionExpired: "Your session has expired. Please log in again.",
     uploadProgress: "Upload",
     multiUploadSuccess: "Files uploaded successfully.",
+    selectedItems: "item(s) selected",
+    clearSelection: "Clear selection",
+    selectItem: "Select item",
+    unselectItem: "Unselect item",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -264,5 +268,9 @@ export const sozluk = {
     sessionExpired: "Oturum süren doldu. Lütfen tekrar giriş yap.",
     uploadProgress: "Yükleme",
     multiUploadSuccess: "Dosyalar yüklendi.",
+    selectedItems: "öğe seçildi",
+    clearSelection: "Seçimi temizle",
+    selectItem: "Öğeyi seç",
+    unselectItem: "Seçimi kaldır",
   },
 };

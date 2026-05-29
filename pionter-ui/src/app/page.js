@@ -60,6 +60,7 @@ export default function AnaSayfa() {
   const [duzenlenecekSunucu, setDuzenlenecekSunucu] = useState(null);
   const [oturumToken, setOturumToken] = useState("");
   const [yuklemeYuzdesi, setYuklemeYuzdesi] = useState(null);
+  const [seciliOgeAnahtarlari, setSeciliOgeAnahtarlari] = useState([]);
 
   const t = sozluk[dil];
 
@@ -251,6 +252,7 @@ export default function AnaSayfa() {
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
     setMevcutYol(yeniYol);
     setAramaMetni("");
+    secimleriTemizle();
     klasoruYenile(yeniYol);
   };
 
@@ -261,6 +263,7 @@ export default function AnaSayfa() {
     if (yeniYol === "") yeniYol = "/";
     setMevcutYol(yeniYol);
     setAramaMetni("");
+    secimleriTemizle();
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
     klasoruYenile(yeniYol);
@@ -271,6 +274,7 @@ export default function AnaSayfa() {
 
     setMevcutYol(hedefYol);
     setAramaMetni("");
+    secimleriTemizle();
     setDosyaMesaji("");
     setAcikMenuIndex(null);
     setYukleniyor(true);
@@ -284,6 +288,7 @@ export default function AnaSayfa() {
     setDosyalar([]);
     setDosyaMesaji("");
     setAramaMetni("");
+    secimleriTemizle();
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
     setYukleniyor(false);
@@ -331,6 +336,7 @@ export default function AnaSayfa() {
     setDosyaMesaji("");
     setMevcutYol("/");
     setAramaMetni("");
+    secimleriTemizle();
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
 
@@ -403,6 +409,7 @@ export default function AnaSayfa() {
     setDosyalar([]);
     setDosyaMesaji("");
     setAramaMetni("");
+    secimleriTemizle();
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
 
@@ -498,8 +505,13 @@ export default function AnaSayfa() {
     }
 
     setYukleniyor(true);
+    const gorunenDosyaAdi =
+      dosya.name.length > 40 ? dosya.name.slice(0, 37) + "..." : dosya.name;
+
     setYuklemeMesaji(
-      toplam > 1 ? `${t.uploadingFile} (${sira}/${toplam})` : t.uploadingFile,
+      toplam > 1
+        ? `${t.uploadingFile} (${sira}/${toplam}) - ${gorunenDosyaAdi}`
+        : `${t.uploadingFile} - ${gorunenDosyaAdi}`,
     );
     setYuklemeYuzdesi(0);
 
@@ -1434,6 +1446,31 @@ export default function AnaSayfa() {
 
     return klasor.ad !== tasinacakDosya.ad;
   });
+
+  const dosyaAnahtariOlustur = (dosya) => {
+    return `${dosya.klasorMu ? "klasor" : "dosya"}:${dosya.ad}`;
+  };
+
+  const dosyaSeciliMi = (dosya) => {
+    return seciliOgeAnahtarlari.includes(dosyaAnahtariOlustur(dosya));
+  };
+
+  const dosyaSeciminiDegistir = (dosya) => {
+    const anahtar = dosyaAnahtariOlustur(dosya);
+
+    setSeciliOgeAnahtarlari((mevcutSecimler) => {
+      if (mevcutSecimler.includes(anahtar)) {
+        return mevcutSecimler.filter((secim) => secim !== anahtar);
+      }
+
+      return [...mevcutSecimler, anahtar];
+    });
+  };
+
+  const secimleriTemizle = () => {
+    setSeciliOgeAnahtarlari([]);
+  };
+
   const gosterilecekDosyalar = dosyalar
     .filter((dosya) =>
       dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
@@ -2375,6 +2412,21 @@ export default function AnaSayfa() {
                 className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
               />
             </div>
+            {seciliOgeAnahtarlari.length > 0 && (
+              <div className="mb-4 flex items-center justify-between rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] px-4 py-3">
+                <p className="text-sm font-bold text-[#3c3836] dark:text-[#ebdbb2]">
+                  {seciliOgeAnahtarlari.length} {t.selectedItems}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={secimleriTemizle}
+                  className="text-sm font-bold text-[#458588] dark:text-[#83a598] hover:underline cursor-pointer"
+                >
+                  {t.clearSelection}
+                </button>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
@@ -2483,6 +2535,23 @@ export default function AnaSayfa() {
                     onClick={() => klasoreGir(dosya)}
                     className="group relative flex flex-col items-center min-w-0 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4 transition-all hover:border-[#458588] dark:hover:border-[#83a598] hover:shadow-md cursor-pointer"
                   >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dosyaSeciminiDegistir(dosya);
+                      }}
+                      className={`absolute left-3 top-3 z-10 flex h-5 w-5 items-center justify-center rounded border text-xs font-bold transition-colors ${
+                        dosyaSeciliMi(dosya)
+                          ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
+                          : "border-[#a89984] bg-[#fbf1c7] text-transparent dark:border-[#665c54] dark:bg-[#282828]"
+                      }`}
+                      aria-label={
+                        dosyaSeciliMi(dosya) ? t.unselectItem : t.selectItem
+                      }
+                    >
+                      ✓
+                    </button>
                     {dosya.klasorMu ? (
                       <svg
                         className="w-16 h-16 text-[#458588] dark:text-[#83a598] mb-3 group-hover:scale-105 transition-transform"
