@@ -135,6 +135,7 @@ type KayitBilgileri struct {
 	PionterSifre     string `json:"pionter_sifre"`
 }
 type SunucuKayitBilgileri struct {
+	Token            string `json:"token"`
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 
@@ -148,6 +149,7 @@ type SunucuKayitBilgileri struct {
 	IzoleKlasor     string `json:"izole_klasor"`
 }
 type SunucuGuncelleBilgileri struct {
+	Token            string `json:"token"`
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 
@@ -203,11 +205,13 @@ type TasiBilgileri struct {
 	DosyaAdi     string `json:"dosya_adi"`
 }
 type SunucuSilBilgileri struct {
+	Token            string `json:"token"`
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 	ServerID         int    `json:"server_id"`
 }
 type SunucuSabitleBilgileri struct {
+	Token            string `json:"token"`
 	PionterKullanici string `json:"pionter_kullanici"`
 	PionterSifre     string `json:"pionter_sifre"`
 	ServerID         int    `json:"server_id"`
@@ -1002,9 +1006,13 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
+		Token:            veri.Token,
+		PionterKullanici: veri.PionterKullanici,
+		PionterSifre:     veri.PionterSifre,
+	})
 	if err != nil {
-		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
 		return
 	}
 
@@ -1086,9 +1094,13 @@ func sunucuSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
+		Token:            veri.Token,
+		PionterKullanici: veri.PionterKullanici,
+		PionterSifre:     veri.PionterSifre,
+	})
 	if err != nil {
-		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
 		return
 	}
 
@@ -1182,9 +1194,13 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
+		Token:            veri.Token,
+		PionterKullanici: veri.PionterKullanici,
+		PionterSifre:     veri.PionterSifre,
+	})
 	if err != nil {
-		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
 		return
 	}
 
@@ -1319,9 +1335,13 @@ func sunucuSabitle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+	userID, err := istektenKullaniciIDAl(KimlikIstekBilgileri{
+		Token:            veri.Token,
+		PionterKullanici: veri.PionterKullanici,
+		PionterSifre:     veri.PionterSifre,
+	})
 	if err != nil {
-		http.Error(w, "Kullanıcı bulunamadı veya şifre yanlış", http.StatusUnauthorized)
+		http.Error(w, "Oturum geçersiz veya kullanıcı bilgileri hatalı", http.StatusUnauthorized)
 		return
 	}
 
