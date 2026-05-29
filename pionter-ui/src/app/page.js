@@ -119,8 +119,7 @@ export default function AnaSayfa() {
       return;
     }
     const gonderilecekVeri = {
-      kullaniciAdi: kullaniciAdi,
-      sifre: sifre,
+      token: oturumToken,
       yol: hedefYol,
       server_id: sunucu.id,
     };
@@ -616,8 +615,7 @@ export default function AnaSayfa() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        kullaniciAdi,
-        sifre,
+        token: oturumToken,
         yol: hedefYol,
         server_id: seciliSunucu.id,
       }),
