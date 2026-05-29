@@ -175,6 +175,7 @@ type SunucuListeBilgileri struct {
 	Sabitli         bool   `json:"sabitli"`
 }
 type KlasorOlusturBilgileri struct {
+	Token        string `json:"token"`
 	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
@@ -549,7 +550,11 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz klasör adı", http.StatusBadRequest)
 		return
 	}
-	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
+		Token:            bilgiler.Token,
+		PionterKullanici: bilgiler.KullaniciAdi,
+		PionterSifre:     bilgiler.Sifre,
+	}, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
