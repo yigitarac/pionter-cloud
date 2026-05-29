@@ -483,7 +483,7 @@ export default function AnaSayfa() {
       });
   };
 
-  const sunucuyaDosyaYukle = (dosya) => {
+  const tekDosyaYukle = (dosya, sira = 1, toplam = 1) => {
     if (yukleniyor) return;
     if (!dosya) return;
 
@@ -498,7 +498,9 @@ export default function AnaSayfa() {
     }
 
     setYukleniyor(true);
-    setYuklemeMesaji(t.uploadingFile);
+    setYuklemeMesaji(
+      toplam > 1 ? `${t.uploadingFile} (${sira}/${toplam})` : t.uploadingFile,
+    );
     setYuklemeYuzdesi(0);
 
     const formData = new FormData();
@@ -507,50 +509,110 @@ export default function AnaSayfa() {
     formData.append("server_id", seciliSunucu.id);
     formData.append("dosya", dosya);
 
-    const xhr = new XMLHttpRequest();
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
 
-    xhr.open("POST", "http://localhost:8080/api/upload");
+      xhr.open("POST", "http://localhost:8080/api/upload");
 
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) return;
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
 
-      const yuzde = Math.round((event.loaded / event.total) * 100);
-      setYuklemeYuzdesi(yuzde);
-    };
+        const yuzde = Math.round((event.loaded / event.total) * 100);
+        setYuklemeYuzdesi(yuzde);
+      };
 
-    xhr.onload = () => {
-      if (oturumHatasiKontrolEt(xhr)) {
+      xhr.onload = () => {
+        if (oturumHatasiKontrolEt(xhr)) {
+          setYuklemeYuzdesi(null);
+          return;
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          toastGoster(t.uploadSuccess, "success");
+
+          setYuklemeYuzdesi(null);
+          setYuklemeMesaji(t.loadingFiles);
+
+          hedefKlasorCacheRef.current = {};
+          klasoruYenile(mevcutYol);
+          return;
+        }
+
+        console.log("Yükleme başarısız:", xhr.status, xhr.responseText);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
         setYuklemeYuzdesi(null);
+        toastGoster(t.uploadFailed, "error");
+      };
+
+      xhr.onerror = () => {
+        console.log("Yükleme bağlantı hatası");
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        setYuklemeYuzdesi(null);
+        toastGoster(t.uploadFailed, "error");
+      };
+
+      xhr.send(formData);
+    });
+  };
+
+  const dosyalariYukle = async (dosyaListesi) => {
+    if (yukleniyor) return;
+    if (!dosyaListesi || dosyaListesi.length === 0) return;
+
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    const yuklenecekDosyalar = Array.from(dosyaListesi);
+
+    const gecersizDosya = yuklenecekDosyalar.find((dosya) =>
+      gecersizDosyaVeyaKlasorAdiMi(dosya.name),
+    );
+
+    if (gecersizDosya) {
+      toastGoster(t.invalidFileName, "error");
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeYuzdesi(0);
+
+    try {
+      for (let i = 0; i < yuklenecekDosyalar.length; i++) {
+        await tekDosyaYukle(
+          yuklenecekDosyalar[i],
+          i + 1,
+          yuklenecekDosyalar.length,
+        );
+      }
+
+      toastGoster(
+        yuklenecekDosyalar.length > 1
+          ? dil === "tr"
+            ? "Dosyalar yüklendi."
+            : "Files uploaded successfully."
+          : t.uploadSuccess,
+        "success",
+      );
+
+      setYuklemeYuzdesi(null);
+      setYuklemeMesaji(t.loadingFiles);
+      hedefKlasorCacheRef.current = {};
+      klasoruYenile(mevcutYol);
+    } catch (hata) {
+      if (hata.message === "Oturum geçersiz") {
         return;
       }
 
-      if (xhr.status >= 200 && xhr.status < 300) {
-        toastGoster(t.uploadSuccess, "success");
-
-        setYuklemeYuzdesi(null);
-        setYuklemeMesaji(t.loadingFiles);
-
-        hedefKlasorCacheRef.current = {};
-        klasoruYenile(mevcutYol);
-        return;
-      }
-
-      console.log("Yükleme başarısız:", xhr.status, xhr.responseText);
+      console.log("Yükleme hatası:", hata);
       setYukleniyor(false);
       setYuklemeMesaji("");
       setYuklemeYuzdesi(null);
       toastGoster(t.uploadFailed, "error");
-    };
-
-    xhr.onerror = () => {
-      console.log("Yükleme bağlantı hatası");
-      setYukleniyor(false);
-      setYuklemeMesaji("");
-      setYuklemeYuzdesi(null);
-      toastGoster(t.uploadFailed, "error");
-    };
-
-    xhr.send(formData);
+    }
   };
 
   const klasorOlustur = () => {
@@ -952,13 +1014,14 @@ export default function AnaSayfa() {
     if (yukleniyor) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      sunucuyaDosyaYukle(e.dataTransfer.files[0]);
+      dosyalariYukle(e.dataTransfer.files);
     }
   };
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      sunucuyaDosyaYukle(e.target.files[0]);
+      dosyalariYukle(e.target.files);
+      e.target.value = "";
     }
   };
   const sunuculariGetir = (token = oturumToken) => {
@@ -2248,8 +2311,9 @@ export default function AnaSayfa() {
                 {t.orSelect}
               </p>
               <input
-                type="file"
                 ref={dosyaGirdiRef}
+                type="file"
+                multiple
                 onChange={butonlaSecildi}
                 className="hidden"
               />
