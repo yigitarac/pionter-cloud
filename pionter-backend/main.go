@@ -16,6 +16,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/pkg/sftp"
@@ -1805,4 +1809,107 @@ func gecmisOturumlariTemizle() {
 	if err != nil {
 		fmt.Println("Geçmiş oturumlar temizlenemedi:", err)
 	}
+}
+
+const sifreliVeriPrefix = "enc:v1:"
+
+func credentialEncryptionKeyAl() ([]byte, error) {
+	anahtarMetni := strings.TrimSpace(os.Getenv("CREDENTIAL_ENCRYPTION_KEY"))
+	if anahtarMetni == "" {
+		return nil, fmt.Errorf("CREDENTIAL_ENCRYPTION_KEY bulunamadı")
+	}
+
+	anahtar, err := base64.StdEncoding.DecodeString(anahtarMetni)
+	if err != nil {
+		return nil, fmt.Errorf("CREDENTIAL_ENCRYPTION_KEY base64 çözülemedi: %w", err)
+	}
+
+	if len(anahtar) != 32 {
+		return nil, fmt.Errorf("CREDENTIAL_ENCRYPTION_KEY 32 byte olmalı")
+	}
+
+	return anahtar, nil
+}
+
+func gizliVeriSifreliMi(veri string) bool {
+	return strings.HasPrefix(veri, sifreliVeriPrefix)
+}
+
+func gizliVeriSifrele(duzMetin string) (string, error) {
+	if duzMetin == "" {
+		return "", nil
+	}
+
+	anahtar, err := credentialEncryptionKeyAl()
+	if err != nil {
+		return "", err
+	}
+
+	blok, err := aes.NewCipher(anahtar)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(blok)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		return "", err
+	}
+
+	sifreliVeri := gcm.Seal(nil, nonce, []byte(duzMetin), nil)
+	birlesikVeri := append(nonce, sifreliVeri...)
+
+	return sifreliVeriPrefix + base64.StdEncoding.EncodeToString(birlesikVeri), nil
+}
+
+func gizliVeriCoz(veri string) (string, error) {
+	if veri == "" {
+		return "", nil
+	}
+
+	if !gizliVeriSifreliMi(veri) {
+		return veri, nil
+	}
+
+	anahtar, err := credentialEncryptionKeyAl()
+	if err != nil {
+		return "", err
+	}
+
+	blok, err := aes.NewCipher(anahtar)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(blok)
+	if err != nil {
+		return "", err
+	}
+
+	base64Veri := strings.TrimPrefix(veri, sifreliVeriPrefix)
+
+	birlesikVeri, err := base64.StdEncoding.DecodeString(base64Veri)
+	if err != nil {
+		return "", err
+	}
+
+	nonceBoyutu := gcm.NonceSize()
+	if len(birlesikVeri) < nonceBoyutu {
+		return "", fmt.Errorf("şifreli veri geçersiz")
+	}
+
+	nonce := birlesikVeri[:nonceBoyutu]
+	sifreliMetin := birlesikVeri[nonceBoyutu:]
+
+	duzMetin, err := gcm.Open(nil, nonce, sifreliMetin, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(duzMetin), nil
 }
