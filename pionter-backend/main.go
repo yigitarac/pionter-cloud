@@ -104,6 +104,7 @@ func main() {
 }
 
 type BaglantiBilgileri struct {
+	Token        string `json:"token"`
 	KullaniciAdi string `json:"kullaniciAdi"`
 	Sifre        string `json:"sifre"`
 	Yol          string `json:"yol"`
@@ -271,7 +272,11 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
-	kimlik, err := sunucuKimlikSorgula(bilgiler.KullaniciAdi, bilgiler.Sifre, bilgiler.ServerID)
+	kimlik, err := sunucuKimlikSorgulaKimlikIle(KimlikIstekBilgileri{
+		Token:            bilgiler.Token,
+		PionterKullanici: bilgiler.KullaniciAdi,
+		PionterSifre:     bilgiler.Sifre,
+	}, bilgiler.ServerID)
 	if err != nil {
 		fmt.Println("Kullanıcı bulunamadı veya şifre yanlış:", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -1795,4 +1800,36 @@ func istektenKullaniciIDAl(veri KimlikIstekBilgileri) (int, error) {
 	}
 
 	return kullaniciDogrula(veri.PionterKullanici, veri.PionterSifre)
+}
+func sunucuKimlikSorgulaKimlikIle(kimlikBilgileri KimlikIstekBilgileri, serverID int) (GizliKimlik, error) {
+	var k GizliKimlik
+
+	userID, err := istektenKullaniciIDAl(kimlikBilgileri)
+	if err != nil {
+		return k, err
+	}
+
+	err = db.QueryRow(`
+		SELECT
+			sunucu_ip,
+			sunucu_port,
+			sunucu_kullanici,
+			baglanti_tipi,
+			COALESCE(sunucu_sifre, ''),
+			COALESCE(ssh_private_key, ''),
+			izole_klasor
+		FROM sunucular
+		WHERE id = $1 AND user_id = $2
+		LIMIT 1
+	`, serverID, userID).Scan(
+		&k.IP,
+		&k.Port,
+		&k.SunucuKullanici,
+		&k.BaglantiTipi,
+		&k.SunucuSifre,
+		&k.SSHPrivateKey,
+		&k.IzoleKlasor,
+	)
+
+	return k, err
 }
