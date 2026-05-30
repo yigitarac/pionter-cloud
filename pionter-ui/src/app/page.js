@@ -2455,46 +2455,14 @@ export default function AnaSayfa() {
               </div>
             </div>
           )}
-          {seciliSunucu && (
-            <div
-              onDragOver={suruklemeUstte}
-              onDragLeave={suruklemeAyrildi}
-              onDrop={dosyaBirakildi}
-              className={`mb-6 p-8 rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-200 ${surukleniyor ? "border-[#458588] bg-[#458588]/10 dark:bg-[#83a598]/10 scale-[1.01]" : "border-[#d5c4a1] dark:border-[#504945] hover:border-[#a89984] dark:hover:border-[#7c6f64] bg-transparent"}`}
-            >
-              <svg
-                className={`w-12 h-12 mb-3 transition-colors ${surukleniyor ? "text-[#458588] dark:text-[#83a598]" : "text-[#928374] dark:text-[#a89984]"}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              <p className="text-sm font-medium mb-1">{t.dragDrop}</p>
-              <p className="text-xs text-[#928374] dark:text-[#a89984] mb-4">
-                {t.orSelect}
-              </p>
-              <input
-                ref={dosyaGirdiRef}
-                type="file"
-                multiple
-                onChange={butonlaSecildi}
-                className="hidden"
-              />
-              <button
-                onClick={() => dosyaGirdiRef.current.click()}
-                disabled={yukleniyor}
-                className="px-4 py-2 bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#3c3836] rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t.selectBtn}
-              </button>
-            </div>
-          )}
+          <input
+            ref={dosyaGirdiRef}
+            type="file"
+            multiple
+            onChange={butonlaSecildi}
+            className="hidden"
+          />
+
           <div className={seciliSunucu ? "" : "hidden"}>
             {seciliSunucu && (
               <div className="mb-6 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4">
@@ -2547,6 +2515,15 @@ export default function AnaSayfa() {
                 onChange={(e) => setAramaMetni(e.target.value)}
                 className="w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
               />
+
+              <button
+                type="button"
+                onClick={() => dosyaGirdiRef.current?.click()}
+                disabled={yukleniyor}
+                className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+              >
+                {t.upload}
+              </button>
 
               {gosterilecekDosyalar.length > 0 &&
                 !listelenenOgelerinHepsiSeciliMi() && (

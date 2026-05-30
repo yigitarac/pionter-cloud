@@ -143,6 +143,7 @@ export const sozluk = {
     selectedItemsDeleted: "Selected items deleted.",
     bulkDeleteFailed: "Selected items could not be deleted.",
     selectListed: "Select listed",
+    upload: "Upload",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -287,5 +288,6 @@ export const sozluk = {
     selectedItemsDeleted: "Seçili öğeler silindi.",
     bulkDeleteFailed: "Seçili öğeler silinemedi.",
     selectListed: "Listelenenleri seç",
+    upload: "Yükle",
   },
 };
