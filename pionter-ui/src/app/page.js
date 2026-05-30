@@ -1006,51 +1006,6 @@ export default function AnaSayfa() {
     return Array.from(e.dataTransfer?.types || []).includes("Files");
   };
 
-  const suruklemeBasladi = (e) => {
-    e.preventDefault();
-
-    if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
-      return;
-    }
-
-    dragCounterRef.current += 1;
-    setSurukleniyor(true);
-  };
-
-  const suruklemeUstte = (e) => {
-    e.preventDefault();
-
-    if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
-      return;
-    }
-
-    setSurukleniyor(true);
-  };
-
-  const suruklemeAyrildi = (e) => {
-    e.preventDefault();
-
-    dragCounterRef.current -= 1;
-
-    if (dragCounterRef.current <= 0) {
-      dragCounterRef.current = 0;
-      setSurukleniyor(false);
-    }
-  };
-
-  const dosyaBirakildi = (e) => {
-    e.preventDefault();
-
-    dragCounterRef.current = 0;
-    setSurukleniyor(false);
-
-    if (yukleniyor) return;
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      dosyalariYukle(e.dataTransfer.files);
-    }
-  };
-
   useEffect(() => {
     const pencereSuruklemeBasladi = (e) => {
       if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
