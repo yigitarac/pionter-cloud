@@ -597,6 +597,7 @@ export default function AnaSayfa() {
         "success",
       );
 
+      secimleriTemizle();
       setYuklemeYuzdesi(null);
       setYuklemeMesaji(t.loadingFiles);
       hedefKlasorCacheRef.current = {};
@@ -653,6 +654,7 @@ export default function AnaSayfa() {
 
         setYeniKlasorAdi("");
         toastGoster(t.folderCreateSuccess, "success");
+        secimleriTemizle();
         setYukleniyor(true);
         hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
@@ -715,6 +717,7 @@ export default function AnaSayfa() {
           dil === "tr" ? "Silme başarılı." : "Deleted successfully.",
           "success",
         );
+        secimleriTemizle();
         hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
@@ -795,6 +798,7 @@ export default function AnaSayfa() {
 
         setYenidenAdlandirilacakDosya(null);
         setYeniAd("");
+        secimleriTemizle();
         hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
@@ -969,6 +973,7 @@ export default function AnaSayfa() {
         );
 
         setTasinacakDosya(null);
+        secimleriTemizle();
         hedefKlasorCacheRef.current = {};
         klasoruYenile(mevcutYol);
       })
