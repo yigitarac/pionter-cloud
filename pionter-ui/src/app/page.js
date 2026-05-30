@@ -69,6 +69,10 @@ export default function AnaSayfa() {
 
   const t = sozluk[dil];
 
+  const secimleriTemizle = () => {
+    setSeciliOgeAnahtarlari([]);
+  };
+
   const yeniKayitOlustur = () => {
     if (yukleniyor) return;
 
@@ -1586,10 +1590,6 @@ export default function AnaSayfa() {
 
       return [...mevcutSecimler, anahtar];
     });
-  };
-
-  const secimleriTemizle = () => {
-    setSeciliOgeAnahtarlari([]);
   };
 
   const topluSilmeModaliniAc = () => {
