@@ -148,6 +148,11 @@ export const sozluk = {
     releaseMouseToUpload: "Release to start uploading",
     newFolder: "New folder",
     newFolderTitle: "Create new folder",
+    settings: "Settings",
+    language: "Language",
+    theme: "Theme",
+    darkMode: "Dark mode",
+    lightMode: "Light mode",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -297,5 +302,10 @@ export const sozluk = {
     releaseMouseToUpload: "Yüklemeyi başlatmak için bırak",
     newFolder: "Yeni klasör",
     newFolderTitle: "Yeni klasör oluştur",
+    settings: "Ayarlar",
+    language: "Dil",
+    theme: "Tema",
+    darkMode: "Koyu mod",
+    lightMode: "Açık mod",
   },
 };
