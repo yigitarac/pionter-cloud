@@ -1543,6 +1543,34 @@ export default function AnaSayfa() {
     return dosyalar.filter((dosya) => dosyaSeciliMi(dosya));
   };
 
+  const listelenenOgelerinHepsiSeciliMi = () => {
+    if (gosterilecekDosyalar.length === 0) {
+      return false;
+    }
+
+    return gosterilecekDosyalar.every((dosya) => dosyaSeciliMi(dosya));
+  };
+
+  const listelenenOgeleriSec = () => {
+    if (gosterilecekDosyalar.length === 0) {
+      return;
+    }
+
+    setSeciliOgeAnahtarlari((mevcutSecimler) => {
+      const yeniSecimler = [...mevcutSecimler];
+
+      gosterilecekDosyalar.forEach((dosya) => {
+        const anahtar = dosyaAnahtariOlustur(dosya);
+
+        if (!yeniSecimler.includes(anahtar)) {
+          yeniSecimler.push(anahtar);
+        }
+      });
+
+      return yeniSecimler;
+    });
+  };
+
   const gosterilecekDosyalar = dosyalar
     .filter((dosya) =>
       dosya.ad.toLowerCase().includes(aramaMetni.toLowerCase()),
@@ -2511,14 +2539,25 @@ export default function AnaSayfa() {
                 {t.createFolder}
               </button>
             </div>
-            <div className="mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <input
                 type="text"
                 placeholder={t.searchPlaceholder}
                 value={aramaMetni}
                 onChange={(e) => setAramaMetni(e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
+                className="w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
               />
+
+              {gosterilecekDosyalar.length > 0 &&
+                !listelenenOgelerinHepsiSeciliMi() && (
+                  <button
+                    type="button"
+                    onClick={listelenenOgeleriSec}
+                    className="shrink-0 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] px-4 py-3 text-sm font-bold text-[#3c3836] dark:text-[#ebdbb2] hover:border-[#458588] dark:hover:border-[#83a598] transition-colors cursor-pointer"
+                  >
+                    {t.selectListed}
+                  </button>
+                )}
             </div>
             {seciliOgeAnahtarlari.length > 0 && (
               <div className="mb-4 flex flex-col gap-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 dark:border-[#504945] dark:bg-[#3c3836] sm:flex-row sm:items-center sm:justify-between">
