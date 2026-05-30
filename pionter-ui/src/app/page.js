@@ -2592,24 +2592,25 @@ export default function AnaSayfa() {
               </div>
             )}
             {seciliSunucu && (
-              <div className="mb-6 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-[#7c6f64] dark:text-[#a89984]">
-                      {t.selectedServer}
-                    </p>
-                    <h2 className="text-lg font-bold">
-                      {seciliSunucu.takmaAd}
-                    </h2>
-                  </div>
+              <div className="mb-4 flex flex-col gap-3 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 dark:border-[#504945] dark:bg-[#3c3836] sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                    {t.selectedServer}
+                  </p>
 
-                  <button
-                    onClick={sunucularaDon}
-                    className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] transition-colors cursor-pointer"
-                  >
-                    {t.backToServers}
-                  </button>
+                  <h2 className="truncate text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                    {seciliSunucu.takmaAd}
+                  </h2>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={sunucularaDon}
+                  disabled={yukleniyor}
+                  className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                >
+                  {t.backToServers}
+                </button>
               </div>
             )}
             <div className="mb-4 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
