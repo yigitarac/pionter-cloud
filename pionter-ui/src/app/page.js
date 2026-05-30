@@ -2612,69 +2612,77 @@ export default function AnaSayfa() {
                 </div>
               </div>
             )}
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <input
-                type="text"
-                placeholder={t.searchPlaceholder}
-                value={aramaMetni}
-                onChange={(e) => setAramaMetni(e.target.value)}
-                className="w-full px-4 py-3 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-              />
+            <div className="mb-4 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                <input
+                  type="text"
+                  placeholder={t.searchPlaceholder}
+                  value={aramaMetni}
+                  onChange={(e) => setAramaMetni(e.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm text-[#3c3836] placeholder-[#928374] focus:outline-none dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:placeholder-[#a89984]"
+                />
 
-              <button
-                type="button"
-                onClick={() => dosyaGirdiRef.current?.click()}
-                disabled={yukleniyor}
-                className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
-              >
-                {t.upload}
-              </button>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {seciliOgeAnahtarlari.length > 0 ? (
+                    <>
+                      <span className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-3 text-sm font-bold text-[#3c3836] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                        {seciliOgeAnahtarlari.length} {t.selectedItems}
+                      </span>
 
-              <button
-                type="button"
-                onClick={() => setKlasorModalAcik(true)}
-                disabled={yukleniyor}
-                className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-              >
-                {t.newFolder}
-              </button>
+                      <button
+                        type="button"
+                        onClick={topluSilmeModaliniAc}
+                        disabled={yukleniyor}
+                        className="shrink-0 rounded-lg bg-[#cc241d] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#9d0006] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t.deleteSelected}
+                      </button>
 
-              {gosterilecekDosyalar.length > 0 &&
-                !listelenenOgelerinHepsiSeciliMi() && (
-                  <button
-                    type="button"
-                    onClick={listelenenOgeleriSec}
-                    className="shrink-0 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] px-4 py-3 text-sm font-bold text-[#3c3836] dark:text-[#ebdbb2] hover:border-[#458588] dark:hover:border-[#83a598] transition-colors cursor-pointer"
-                  >
-                    {t.selectListed}
-                  </button>
-                )}
-            </div>
-            {seciliOgeAnahtarlari.length > 0 && (
-              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 dark:border-[#504945] dark:bg-[#3c3836] sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-bold text-[#3c3836] dark:text-[#ebdbb2]">
-                  {seciliOgeAnahtarlari.length} {t.selectedItems}
-                </p>
+                      <button
+                        type="button"
+                        onClick={secimleriTemizle}
+                        disabled={yukleniyor}
+                        className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                      >
+                        {t.clearSelection}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => dosyaGirdiRef.current?.click()}
+                        disabled={yukleniyor}
+                        className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+                      >
+                        {t.upload}
+                      </button>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={topluSilmeModaliniAc}
-                    className="rounded-md bg-[#cc241d] px-3 py-1.5 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#9d0006] cursor-pointer"
-                  >
-                    {t.deleteSelected}
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => setKlasorModalAcik(true)}
+                        disabled={yukleniyor}
+                        className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                      >
+                        {t.newFolder}
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={secimleriTemizle}
-                    className="text-sm font-bold text-[#458588] hover:underline dark:text-[#83a598] cursor-pointer"
-                  >
-                    {t.clearSelection}
-                  </button>
+                      {gosterilecekDosyalar.length > 0 &&
+                        !listelenenOgelerinHepsiSeciliMi() && (
+                          <button
+                            type="button"
+                            onClick={listelenenOgeleriSec}
+                            className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                          >
+                            {t.selectListed}
+                          </button>
+                        )}
+                    </>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <button
