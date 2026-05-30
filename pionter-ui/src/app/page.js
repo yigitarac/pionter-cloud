@@ -63,6 +63,7 @@ export default function AnaSayfa() {
   const [yuklemeYuzdesi, setYuklemeYuzdesi] = useState(null);
   const [seciliOgeAnahtarlari, setSeciliOgeAnahtarlari] = useState([]);
   const [topluSilmeModalAcik, setTopluSilmeModalAcik] = useState(false);
+  const [klasorModalAcik, setKlasorModalAcik] = useState(false);
 
   const t = sozluk[dil];
 
@@ -292,6 +293,7 @@ export default function AnaSayfa() {
     setAramaMetni("");
     secimleriTemizle();
     setYeniKlasorAdi("");
+    setKlasorModalAcik(false);
     setAcikMenuIndex(null);
     setYukleniyor(false);
     setYuklemeMesaji("");
@@ -341,6 +343,7 @@ export default function AnaSayfa() {
     setAramaMetni("");
     secimleriTemizle();
     setYeniKlasorAdi("");
+    setKlasorModalAcik(false);
     setAcikMenuIndex(null);
 
     setSunucuFormAcik(false);
@@ -616,6 +619,11 @@ export default function AnaSayfa() {
     }
   };
 
+  const klasorModaliniKapat = () => {
+    setKlasorModalAcik(false);
+    setYeniKlasorAdi("");
+  };
+
   const klasorOlustur = () => {
     if (yukleniyor) return;
     if (!seciliSunucu) {
@@ -654,6 +662,7 @@ export default function AnaSayfa() {
         }
 
         setYeniKlasorAdi("");
+        setKlasorModalAcik(false);
         toastGoster(t.folderCreateSuccess, "success");
         secimleriTemizle();
         setYukleniyor(true);
@@ -1635,6 +1644,58 @@ export default function AnaSayfa() {
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <Toast toast={toast} />
+      {klasorModalAcik && (
+        <div
+          onClick={klasorModaliniKapat}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-5 text-[#3c3836] shadow-xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <h2 className="mb-2 text-lg font-bold text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.newFolderTitle}
+            </h2>
+
+            <input
+              type="text"
+              value={yeniKlasorAdi}
+              onChange={(e) => setYeniKlasorAdi(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  klasorOlustur();
+                }
+
+                if (e.key === "Escape") {
+                  klasorModaliniKapat();
+                }
+              }}
+              placeholder={t.folderNamePlaceholder}
+              className="w-full rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-2.5 text-sm text-[#3c3836] placeholder-[#928374] focus:outline-none dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:placeholder-[#a89984]"
+              autoFocus
+            />
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={klasorModaliniKapat}
+                className="rounded-lg bg-[#d5c4a1] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                onClick={klasorOlustur}
+                disabled={yukleniyor}
+                className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+              >
+                {t.createFolder}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {renameModalAcik && (
         <div
           onClick={() => {
@@ -2589,6 +2650,15 @@ export default function AnaSayfa() {
                 className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
               >
                 {t.upload}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setKlasorModalAcik(true)}
+                disabled={yukleniyor}
+                className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+              >
+                {t.newFolder}
               </button>
 
               {gosterilecekDosyalar.length > 0 &&

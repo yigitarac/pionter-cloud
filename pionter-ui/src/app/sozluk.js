@@ -146,6 +146,8 @@ export const sozluk = {
     upload: "Upload",
     dropFilesToUpload: "Drop files to upload",
     releaseMouseToUpload: "Release to start uploading",
+    newFolder: "New folder",
+    newFolderTitle: "Create new folder",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -293,5 +295,7 @@ export const sozluk = {
     upload: "Yükle",
     dropFilesToUpload: "Yüklemek için dosyaları bırak",
     releaseMouseToUpload: "Yüklemeyi başlatmak için bırak",
+    newFolder: "Yeni klasör",
+    newFolderTitle: "Yeni klasör oluştur",
   },
 };
