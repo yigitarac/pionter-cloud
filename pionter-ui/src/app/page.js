@@ -2612,28 +2612,6 @@ export default function AnaSayfa() {
                 </div>
               </div>
             )}
-            <div className="mb-4 flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder={t.newFolderPlaceholder}
-                value={yeniKlasorAdi}
-                onChange={(e) => setYeniKlasorAdi(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    klasorOlustur();
-                  }
-                }}
-                className="flex-1 px-4 py-2.5 bg-[#ebdbb2] dark:bg-[#3c3836] rounded-lg border border-[#d5c4a1] dark:border-[#504945] text-sm text-[#3c3836] dark:text-[#ebdbb2] placeholder-[#928374] dark:placeholder-[#a89984] focus:outline-none"
-              />
-
-              <button
-                onClick={klasorOlustur}
-                disabled={yukleniyor}
-                className="px-4 py-2.5 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t.createFolder}
-              </button>
-            </div>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <input
                 type="text"
