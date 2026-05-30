@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { sozluk } from "./sozluk";
 import {
   dosyaBoyutuYaz,
@@ -29,6 +29,7 @@ export default function AnaSayfa() {
   const [surukleniyor, setSurukleniyor] = useState(false);
   const dosyaGirdiRef = useRef(null);
   const toastTimeoutRef = useRef(null);
+  const dragCounterRef = useRef(0);
   const [sunucuFormAcik, setSunucuFormAcik] = useState(false);
   const [sunucuTakmaAd, setSunucuTakmaAd] = useState("");
   const [sunucuPort, setSunucuPort] = useState("22");
@@ -1001,18 +1002,46 @@ export default function AnaSayfa() {
     }, 3000);
   };
 
+  const dosyaSurukleniyorMu = (e) => {
+    return Array.from(e.dataTransfer?.types || []).includes("Files");
+  };
+
+  const suruklemeBasladi = (e) => {
+    e.preventDefault();
+
+    if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
+      return;
+    }
+
+    dragCounterRef.current += 1;
+    setSurukleniyor(true);
+  };
+
   const suruklemeUstte = (e) => {
     e.preventDefault();
+
+    if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
+      return;
+    }
+
     setSurukleniyor(true);
   };
 
   const suruklemeAyrildi = (e) => {
     e.preventDefault();
-    setSurukleniyor(false);
+
+    dragCounterRef.current -= 1;
+
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setSurukleniyor(false);
+    }
   };
 
   const dosyaBirakildi = (e) => {
     e.preventDefault();
+
+    dragCounterRef.current = 0;
     setSurukleniyor(false);
 
     if (yukleniyor) return;
@@ -1021,6 +1050,71 @@ export default function AnaSayfa() {
       dosyalariYukle(e.dataTransfer.files);
     }
   };
+
+  useEffect(() => {
+    const pencereSuruklemeBasladi = (e) => {
+      if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
+        return;
+      }
+
+      e.preventDefault();
+      dragCounterRef.current += 1;
+      setSurukleniyor(true);
+    };
+
+    const pencereSuruklemeUstte = (e) => {
+      if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
+        return;
+      }
+
+      e.preventDefault();
+      setSurukleniyor(true);
+    };
+
+    const pencereSuruklemeAyrildi = (e) => {
+      if (!seciliSunucu || yukleniyor || !dosyaSurukleniyorMu(e)) {
+        return;
+      }
+
+      e.preventDefault();
+      dragCounterRef.current -= 1;
+
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setSurukleniyor(false);
+      }
+    };
+
+    const pencereDosyaBirakildi = (e) => {
+      if (!seciliSunucu || !dosyaSurukleniyorMu(e)) {
+        return;
+      }
+
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setSurukleniyor(false);
+
+      if (yukleniyor) {
+        return;
+      }
+
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        dosyalariYukle(e.dataTransfer.files);
+      }
+    };
+
+    window.addEventListener("dragenter", pencereSuruklemeBasladi);
+    window.addEventListener("dragover", pencereSuruklemeUstte);
+    window.addEventListener("dragleave", pencereSuruklemeAyrildi);
+    window.addEventListener("drop", pencereDosyaBirakildi);
+
+    return () => {
+      window.removeEventListener("dragenter", pencereSuruklemeBasladi);
+      window.removeEventListener("dragover", pencereSuruklemeUstte);
+      window.removeEventListener("dragleave", pencereSuruklemeAyrildi);
+      window.removeEventListener("drop", pencereDosyaBirakildi);
+    };
+  }, [seciliSunucu, yukleniyor, mevcutYol, oturumToken]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -2463,7 +2557,24 @@ export default function AnaSayfa() {
             className="hidden"
           />
 
-          <div className={seciliSunucu ? "" : "hidden"}>
+          <div
+            className={
+              seciliSunucu ? "min-h-[calc(100vh-8rem)] pb-10" : "hidden"
+            }
+          >
+            {surukleniyor && seciliSunucu && !yukleniyor && (
+              <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-4">
+                <div className="rounded-2xl border-2 border-dashed border-[#83a598] bg-[#282828] px-8 py-6 text-center shadow-2xl">
+                  <p className="text-lg font-bold text-[#ebdbb2]">
+                    {t.dropFilesToUpload}
+                  </p>
+
+                  <p className="mt-2 text-sm text-[#a89984]">
+                    {t.releaseMouseToUpload}
+                  </p>
+                </div>
+              </div>
+            )}
             {seciliSunucu && (
               <div className="mb-6 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4">
                 <div className="flex items-center justify-between">

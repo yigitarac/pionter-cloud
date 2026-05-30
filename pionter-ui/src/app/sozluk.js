@@ -144,6 +144,8 @@ export const sozluk = {
     bulkDeleteFailed: "Selected items could not be deleted.",
     selectListed: "Select listed",
     upload: "Upload",
+    dropFilesToUpload: "Drop files to upload",
+    releaseMouseToUpload: "Release to start uploading",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -289,5 +291,7 @@ export const sozluk = {
     bulkDeleteFailed: "Seçili öğeler silinemedi.",
     selectListed: "Listelenenleri seç",
     upload: "Yükle",
+    dropFilesToUpload: "Yüklemek için dosyaları bırak",
+    releaseMouseToUpload: "Yüklemeyi başlatmak için bırak",
   },
 };
