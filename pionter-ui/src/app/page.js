@@ -65,6 +65,7 @@ export default function AnaSayfa() {
   const [topluSilmeModalAcik, setTopluSilmeModalAcik] = useState(false);
   const [klasorModalAcik, setKlasorModalAcik] = useState(false);
   const [ayarMenusuAcik, setAyarMenusuAcik] = useState(false);
+  const [sunucuPanelAcik, setSunucuPanelAcik] = useState(false);
 
   const t = sozluk[dil];
 
@@ -306,6 +307,7 @@ export default function AnaSayfa() {
     setDuzenlenecekSunucu(null);
     setTopluSilmeModalAcik(false);
     setAyarMenusuAcik(false);
+    setSunucuPanelAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -337,6 +339,7 @@ export default function AnaSayfa() {
     setSifre("");
     setEposta("");
     setAyarMenusuAcik(false);
+    setSunucuPanelAcik(false);
 
     setSeciliSunucu(null);
     setSunucular([]);
@@ -422,6 +425,7 @@ export default function AnaSayfa() {
     secimleriTemizle();
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
+    setSunucuPanelAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -1647,6 +1651,108 @@ export default function AnaSayfa() {
   return (
     <div className={karanlikMod ? "dark" : ""}>
       <Toast toast={toast} />
+      {sunucuPanelAcik && girisYapildi && (
+        <div className="fixed inset-0 z-50 flex">
+          <button
+            type="button"
+            onClick={() => setSunucuPanelAcik(false)}
+            className="absolute inset-0 bg-black/40"
+            aria-label={t.close}
+          />
+
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="relative z-10 flex h-full w-80 max-w-[85vw] flex-col border-r border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <div className="border-b border-[#d5c4a1] px-4 py-4 dark:border-[#504945]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                    PionterCloud
+                  </p>
+
+                  <h2 className="truncate text-lg font-black">{t.servers}</h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSunucuPanelAcik(false)}
+                  className="rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-3 py-2 text-sm font-bold transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:hover:border-[#83a598]"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {seciliSunucu && (
+              <div className="border-b border-[#d5c4a1] px-4 py-3 dark:border-[#504945]">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                  {t.currentServer}
+                </p>
+
+                <p className="mt-1 truncate text-sm font-bold text-[#458588] dark:text-[#83a598]">
+                  {seciliSunucu.takmaAd}
+                </p>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto p-3">
+              <div className="space-y-2">
+                {sunucular.map((sunucu) => {
+                  const aktifMi = seciliSunucu?.id === sunucu.id;
+
+                  return (
+                    <button
+                      key={sunucu.id}
+                      type="button"
+                      onClick={() => {
+                        setSunucuPanelAcik(false);
+
+                        if (!aktifMi) {
+                          sunucuSec(sunucu);
+                        }
+                      }}
+                      className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
+                        aktifMi
+                          ? "border-[#458588] bg-[#d5c4a1] dark:border-[#83a598] dark:bg-[#3c3836]"
+                          : "border-[#d5c4a1] bg-[#ebdbb2] hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:hover:border-[#83a598]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="shrink-0 text-sm text-[#d79921]">
+                          {sunucu.sabitli ? "★" : "•"}
+                        </span>
+
+                        <span className="min-w-0 truncate text-sm font-bold">
+                          {sunucu.takmaAd}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 truncate pl-5 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                        {sunucu.kullanici}@{sunucu.ip}:{sunucu.port || "22"}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="border-t border-[#d5c4a1] p-3 dark:border-[#504945]">
+              <button
+                type="button"
+                onClick={() => {
+                  setSunucuPanelAcik(false);
+                  sunucularaDon();
+                }}
+                disabled={yukleniyor}
+                className="w-full rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+              >
+                {t.manageServers}
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
       {klasorModalAcik && (
         <div
           onClick={klasorModaliniKapat}
@@ -2657,14 +2763,25 @@ export default function AnaSayfa() {
                   </h2>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={sunucularaDon}
-                  disabled={yukleniyor}
-                  className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                >
-                  {t.backToServers}
-                </button>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSunucuPanelAcik(true)}
+                    disabled={yukleniyor}
+                    className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+                  >
+                    {t.servers}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={sunucularaDon}
+                    disabled={yukleniyor}
+                    className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                  >
+                    {t.backToServers}
+                  </button>
+                </div>
               </div>
             )}
             <div className="mb-4 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
