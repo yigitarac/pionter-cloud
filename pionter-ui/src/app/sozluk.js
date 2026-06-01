@@ -163,6 +163,8 @@ export const sozluk = {
     movingSelectedItems: "Moving selected items",
     selectedItemsMoved: "Selected items moved successfully.",
     bulkMoveFailed: "Selected items could not be moved.",
+    selectedItemsPreview: "Selected items",
+    moreItems: "more item(s)",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -327,5 +329,7 @@ export const sozluk = {
     movingSelectedItems: "Seçili öğeler taşınıyor",
     selectedItemsMoved: "Seçili öğeler başarıyla taşındı.",
     bulkMoveFailed: "Seçili öğeler taşınamadı.",
+    selectedItemsPreview: "Seçili öğeler",
+    moreItems: "öğe daha",
   },
 };
