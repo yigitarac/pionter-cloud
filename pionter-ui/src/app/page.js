@@ -2451,7 +2451,10 @@ export default function AnaSayfa() {
               <div className="border-b border-[#d5c4a1]/80 px-3 py-3 dark:border-[#3c3836]">
                 <button
                   type="button"
-                  onClick={sunucularaDon}
+                  onClick={() => {
+                    sunucularaDon();
+                    setSolPanelAcik(false);
+                  }}
                   disabled={yukleniyor}
                   className="w-full rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                 >
@@ -2578,6 +2581,7 @@ export default function AnaSayfa() {
                   onClick={() => {
                     sunucularaDon();
                     setSunucuFormAcik(true);
+                    setSolPanelAcik(false);
                   }}
                   disabled={yukleniyor}
                   className="mt-5 flex h-11 w-full items-center justify-center rounded-xl border border-dashed border-[#a89984] bg-transparent text-xl font-black text-[#458588] transition-colors hover:border-[#458588] hover:bg-[#fbf1c7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:text-[#83a598] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
@@ -3042,7 +3046,10 @@ export default function AnaSayfa() {
 
                 <button
                   type="button"
-                  onClick={sunucularaDon}
+                  onClick={() => {
+                    sunucularaDon();
+                    setSolPanelAcik(false);
+                  }}
                   disabled={yukleniyor}
                   className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                 >
