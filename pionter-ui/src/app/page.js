@@ -1721,6 +1721,9 @@ export default function AnaSayfa() {
       toastGoster(t.selectedItemsMoved, "success");
 
       secimleriTemizle();
+      setTopluTasimaModalAcik(false);
+      setHedefKlasorGezintiYolu("/");
+      setHedefKlasorler([]);
       hedefKlasorCacheRef.current = {};
       klasoruYenile(mevcutYol);
     } catch (hata) {
@@ -1731,6 +1734,9 @@ export default function AnaSayfa() {
       console.log("Toplu taşıma hatası:", hata);
       setYukleniyor(false);
       setYuklemeMesaji("");
+      setTopluTasimaModalAcik(false);
+      setHedefKlasorGezintiYolu("/");
+      setHedefKlasorler([]);
       toastGoster(t.bulkMoveFailed, "error");
     }
   };
