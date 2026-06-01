@@ -2660,15 +2660,6 @@ export default function AnaSayfa() {
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setSunucuPanelAcik(true)}
-                    disabled={yukleniyor}
-                    className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
-                  >
-                    {t.servers}
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={sunucularaDon}
                     disabled={yukleniyor}
                     className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
