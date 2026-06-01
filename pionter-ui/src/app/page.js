@@ -65,6 +65,7 @@ export default function AnaSayfa() {
   const [topluSilmeModalAcik, setTopluSilmeModalAcik] = useState(false);
   const [klasorModalAcik, setKlasorModalAcik] = useState(false);
   const [ayarMenusuAcik, setAyarMenusuAcik] = useState(false);
+  const [solPanelAcik, setSolPanelAcik] = useState(false);
 
   const t = sozluk[dil];
 
@@ -310,6 +311,7 @@ export default function AnaSayfa() {
     setDuzenlenecekSunucu(null);
     setTopluSilmeModalAcik(false);
     setAyarMenusuAcik(false);
+    setSolPanelAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -341,6 +343,7 @@ export default function AnaSayfa() {
     setSifre("");
     setEposta("");
     setAyarMenusuAcik(false);
+    setSolPanelAcik(false);
 
     setSeciliSunucu(null);
     setSunucular([]);
@@ -2192,7 +2195,13 @@ export default function AnaSayfa() {
         }}
         className="min-h-screen bg-[#fbf1c7] dark:bg-[#282828] text-[#3c3836] dark:text-[#ebdbb2] font-sans transition-colors duration-200"
       >
-        <header className="sticky top-0 z-10 bg-[#fbf1c7] dark:bg-[#282828] border-b border-[#d5c4a1] dark:border-[#3c3836] px-6 py-4 flex justify-between items-center">
+        <header
+          className={
+            girisYapildi
+              ? "hidden"
+              : "sticky top-0 z-10 bg-[#fbf1c7] dark:bg-[#282828] border-b border-[#d5c4a1] dark:border-[#3c3836] px-6 py-4 flex justify-between items-center"
+          }
+        >
           <div className="flex items-center gap-3">
             <svg
               className="w-8 h-8 text-[#458588] dark:text-[#83a598]"
@@ -2216,9 +2225,31 @@ export default function AnaSayfa() {
               }}
               className="flex items-center gap-2 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#458588] text-xs font-black text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
-                {kullaniciAdi ? kullaniciAdi.charAt(0).toUpperCase() : "P"}
-              </span>
+              {girisYapildi ? (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#458588] text-xs font-black text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
+                  {kullaniciAdi ? kullaniciAdi.charAt(0).toUpperCase() : "P"}
+                </span>
+              ) : (
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.607 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"
+                  />
+                </svg>
+              )}
 
               <span className="hidden sm:inline">{t.settings}</span>
             </button>
@@ -2307,7 +2338,359 @@ export default function AnaSayfa() {
             )}
           </div>
         </header>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {girisYapildi && (
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className={`fixed left-0 top-0 bottom-0 z-30 hidden flex-col border-r border-[#d5c4a1]/80 bg-[#ebdbb2]/95 text-[#3c3836] shadow-xl backdrop-blur-xl transition-all duration-200 dark:border-[#504945] dark:bg-[#282828]/95 dark:text-[#ebdbb2] lg:flex ${
+              solPanelAcik ? "w-80" : "w-16"
+            }`}
+          >
+            <div
+              className={`flex h-16 items-center border-b border-[#d5c4a1]/80 dark:border-[#3c3836] ${
+                solPanelAcik ? "justify-between px-3" : "justify-center px-2"
+              }`}
+            >
+              {solPanelAcik ? (
+                <>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#458588] text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
+                      <svg
+                        className="h-5 w-5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M19.35 10.04A7.49 7.49 0 0 0 5.64 7.11 5.994 5.994 0 0 0 6 19h13a4.996 4.996 0 0 0 .35-8.96z" />
+                      </svg>
+                    </span>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black tracking-wide">
+                        PionterCloud
+                      </p>
+                      <p className="truncate text-xs text-[#7c6f64] dark:text-[#a89984]">
+                        {t.servers}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSolPanelAcik(false);
+                    }}
+                    className="group relative flex h-9 w-9 items-center justify-center overflow-visible rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                    aria-label={t.closeSidebar}
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="16"
+                        rx="2"
+                        strokeWidth="2"
+                      />
+                      <path d="M9 4v16" strokeWidth="2" />
+                    </svg>
+
+                    <span className="pointer-events-none absolute right-0 top-11 z-[9999] whitespace-nowrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-bold text-[#3c3836] opacity-0 shadow-xl transition-opacity group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                      {t.closeSidebar}
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSolPanelAcik(true);
+                  }}
+                  className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#458588] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#282828] dark:text-[#83a598] dark:hover:border-[#83a598]"
+                  title={t.openSidebar}
+                  aria-label={t.openSidebar}
+                >
+                  <svg
+                    className="h-5 w-5 group-hover:hidden"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M19.35 10.04A7.49 7.49 0 0 0 5.64 7.11 5.994 5.994 0 0 0 6 19h13a4.996 4.996 0 0 0 .35-8.96z" />
+                  </svg>
+
+                  <svg
+                    className="hidden h-5 w-5 group-hover:block"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="16"
+                      rx="2"
+                      strokeWidth="2"
+                    />
+                    <path d="M9 4v16" strokeWidth="2" />
+                  </svg>
+
+                  <span className="pointer-events-none absolute left-12 top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-bold text-[#3c3836] opacity-0 shadow-xl transition-opacity group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                    {t.openSidebar}
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {solPanelAcik && (
+              <div className="border-b border-[#d5c4a1]/80 px-3 py-3 dark:border-[#3c3836]">
+                <button
+                  type="button"
+                  onClick={sunucularaDon}
+                  disabled={yukleniyor}
+                  className="w-full rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                >
+                  {t.backToServers}
+                </button>
+              </div>
+            )}
+
+            <div
+              className={`flex-1 p-3 custom-scrollbar ${
+                solPanelAcik ? "overflow-y-auto" : "overflow-visible"
+              }`}
+            >
+              {solPanelAcik && (
+                <p className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                  {t.servers}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                {sunucular.map((sunucu) => {
+                  const aktifMi = seciliSunucu?.id === sunucu.id;
+                  const onizlemeOgeleri =
+                    aktifMi && dosyalar.length > 0 ? dosyalar.slice(0, 3) : [];
+
+                  return (
+                    <button
+                      key={sunucu.id}
+                      type="button"
+                      onClick={() => {
+                        if (!aktifMi) {
+                          sunucuSec(sunucu);
+                        }
+                      }}
+                      disabled={yukleniyor}
+                      className={`group relative w-full rounded-xl border text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        solPanelAcik
+                          ? "px-3 py-3"
+                          : "flex h-10 items-center justify-center p-0"
+                      } ${
+                        aktifMi
+                          ? "border-[#458588] bg-[#d5c4a1] dark:border-[#83a598] dark:bg-[#282828]"
+                          : "border-transparent hover:border-[#458588] hover:bg-[#fbf1c7] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
+                      }`}
+                    >
+                      <div
+                        className={`flex items-center ${solPanelAcik ? "gap-3" : "justify-center"}`}
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#458588] text-xs font-black text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
+                          {sunucu.sabitli
+                            ? "★"
+                            : sunucu.takmaAd?.charAt(0)?.toUpperCase() || "S"}
+                        </span>
+
+                        {!solPanelAcik && (
+                          <span className="pointer-events-none fixed left-[4.75rem] z-[999] whitespace-nowrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-bold text-[#3c3836] opacity-0 shadow-xl transition-opacity group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                            {sunucu.takmaAd}
+                          </span>
+                        )}
+
+                        {solPanelAcik && (
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-bold">
+                              {sunucu.takmaAd}
+                            </span>
+                            <span className="block truncate text-xs text-[#7c6f64] dark:text-[#a89984]">
+                              {sunucu.kullanici}@{sunucu.ip}:
+                              {sunucu.port || "22"}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+
+                      {solPanelAcik && aktifMi && (
+                        <div className="mt-3 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 dark:border-[#504945] dark:bg-[#1d2021]">
+                          <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                            {t.serverPreview}
+                          </p>
+
+                          {onizlemeOgeleri.length > 0 ? (
+                            <div className="space-y-1">
+                              {onizlemeOgeleri.map((oge) => (
+                                <p
+                                  key={`${oge.klasorMu ? "klasor" : "dosya"}:${oge.ad}`}
+                                  className="flex items-center gap-2 truncate text-xs text-[#3c3836] dark:text-[#ebdbb2]"
+                                >
+                                  {oge.klasorMu ? (
+                                    <svg
+                                      className="h-4 w-4 shrink-0 text-[#458588] dark:text-[#83a598]"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                                    </svg>
+                                  ) : (
+                                    <svg
+                                      className="h-4 w-4 shrink-0 text-[#a89984]"
+                                      fill="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                                    </svg>
+                                  )}
+
+                                  <span className="truncate">{oge.ad}</span>
+                                </p>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-[#928374] dark:text-[#a89984]">
+                              {t.noPreview}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {solPanelAcik && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sunucularaDon();
+                    setSunucuFormAcik(true);
+                  }}
+                  disabled={yukleniyor}
+                  className="mt-5 flex h-11 w-full items-center justify-center rounded-xl border border-dashed border-[#a89984] bg-transparent text-xl font-black text-[#458588] transition-colors hover:border-[#458588] hover:bg-[#fbf1c7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:text-[#83a598] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
+                  title={t.addServer}
+                  aria-label={t.addServer}
+                >
+                  +
+                </button>
+              )}
+            </div>
+
+            <div className="border-t border-[#d5c4a1]/80 px-2 py-3 dark:border-[#504945]">
+              {solPanelAcik ? (
+                <div className="rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#458588] text-xs font-black text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
+                      {kullaniciAdi
+                        ? kullaniciAdi.charAt(0).toUpperCase()
+                        : "P"}
+                    </span>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">
+                        {kullaniciAdi || "Pionter"}
+                      </p>
+                      <p className="truncate text-xs text-[#7c6f64] dark:text-[#a89984]">
+                        {t.settings}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDil(dil === "en" ? "tr" : "en")}
+                      className="rounded-lg bg-[#ebdbb2] px-2 py-2 text-xs font-bold transition-colors hover:bg-[#d5c4a1] dark:bg-[#282828] dark:hover:bg-[#504945]"
+                    >
+                      {dil === "en" ? "EN" : "TR"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setKaranlikMod(!karanlikMod)}
+                      className="flex items-center justify-center rounded-lg bg-[#ebdbb2] px-2 py-2 transition-colors hover:bg-[#d5c4a1] dark:bg-[#282828] dark:hover:bg-[#504945]"
+                      aria-label={karanlikMod ? t.darkMode : t.lightMode}
+                    >
+                      {karanlikMod ? (
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36-.7-.7M6.34 6.34l-.7-.7m12.02 0-.7.7M6.34 17.66l-.7.7M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"
+                          />
+                        </svg>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={cikisYap}
+                      disabled={yukleniyor}
+                      className="rounded-lg bg-[#ebdbb2] px-2 py-2 text-xs font-bold text-[#cc241d] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#282828] dark:hover:bg-[#504945]"
+                    >
+                      {t.logout}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setSolPanelAcik(true)}
+                    className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#458588] text-xs font-black text-[#fbf1c7] transition-colors hover:bg-[#076678] dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+                    aria-label={kullaniciAdi || "Profile"}
+                  >
+                    {kullaniciAdi ? kullaniciAdi.charAt(0).toUpperCase() : "P"}
+
+                    <span className="pointer-events-none fixed left-[4.75rem] z-[999] whitespace-nowrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-bold text-[#3c3836] opacity-0 shadow-xl transition-opacity group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                      {kullaniciAdi || "Profile"}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
+        <main
+          className={
+            girisYapildi
+              ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:pl-24 py-8"
+              : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+          }
+        >
           {girisYapildi && !seciliSunucu && (
             <div className="mb-8 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
@@ -2657,16 +3040,14 @@ export default function AnaSayfa() {
                   </h2>
                 </div>
 
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={sunucularaDon}
-                    disabled={yukleniyor}
-                    className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                  >
-                    {t.backToServers}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={sunucularaDon}
+                  disabled={yukleniyor}
+                  className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                >
+                  {t.backToServers}
+                </button>
               </div>
             )}
             <div className="mb-4 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
