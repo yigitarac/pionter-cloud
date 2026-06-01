@@ -159,6 +159,10 @@ export const sozluk = {
     openSidebar: "Open sidebar",
     closeSidebar: "Close sidebar",
     moveSelected: "Move selected",
+    bulkMoveModalTitle: "Move selected items",
+    movingSelectedItems: "Moving selected items",
+    selectedItemsMoved: "Selected items moved successfully.",
+    bulkMoveFailed: "Selected items could not be moved.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -319,5 +323,9 @@ export const sozluk = {
     openSidebar: "Kenar çubuğunu aç",
     closeSidebar: "Kenar çubuğunu kapat",
     moveSelected: "Seçilenleri taşı",
+    bulkMoveModalTitle: "Seçili öğeleri taşı",
+    movingSelectedItems: "Seçili öğeler taşınıyor",
+    selectedItemsMoved: "Seçili öğeler başarıyla taşındı.",
+    bulkMoveFailed: "Seçili öğeler taşınamadı.",
   },
 };

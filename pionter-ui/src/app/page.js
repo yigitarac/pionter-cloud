@@ -1635,6 +1635,149 @@ export default function AnaSayfa() {
     return dosyalar.filter((dosya) => dosyaSeciliMi(dosya));
   };
 
+  const topluTasimayiOnayla = async () => {
+    if (yukleniyor) return;
+
+    const seciliOgeler = seciliOgeleriGetir();
+
+    if (seciliOgeler.length === 0) {
+      setTopluTasimaModalAcik(false);
+      return;
+    }
+
+    const temizHedefYol = hedefKlasorGezintiYolu.trim();
+
+    if (!temizHedefYol) {
+      toastGoster(t.targetPathEmpty, "error");
+      return;
+    }
+
+    if (gecersizYolMu(temizHedefYol)) {
+      toastGoster(t.invalidTargetPath, "error");
+      return;
+    }
+
+    const hedefYol = temizHedefYol.startsWith("/")
+      ? temizHedefYol
+      : "/" + temizHedefYol;
+
+    if (hedefYol === mevcutYol) {
+      toastGoster(t.alreadyInThisFolder, "error");
+      return;
+    }
+
+    const hedefSeciliKlasorunIcindeMi = seciliOgeler.some((oge) => {
+      if (!oge.klasorMu) return false;
+
+      const ogeYolu =
+        mevcutYol === "/" ? "/" + oge.ad : mevcutYol + "/" + oge.ad;
+
+      return hedefYol === ogeYolu || hedefYol.startsWith(ogeYolu + "/");
+    });
+
+    if (hedefSeciliKlasorunIcindeMi) {
+      toastGoster(
+        dil === "tr"
+          ? "Bir klasör kendi içine veya kendi alt klasörüne taşınamaz."
+          : "A folder cannot be moved into itself or one of its subfolders.",
+        "error",
+      );
+      return;
+    }
+
+    setTopluTasimaModalAcik(false);
+    setYukleniyor(true);
+    setYuklemeMesaji(`${t.movingSelectedItems} (0/${seciliOgeler.length})`);
+
+    try {
+      for (let i = 0; i < seciliOgeler.length; i++) {
+        const oge = seciliOgeler[i];
+
+        setYuklemeMesaji(
+          `${t.movingSelectedItems} (${i + 1}/${seciliOgeler.length})`,
+        );
+
+        const cevap = await fetch("http://localhost:8080/api/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: oturumToken,
+            server_id: seciliSunucu.id,
+            kaynak_yol: mevcutYol,
+            hedef_yol: hedefYol,
+            dosya_adi: oge.ad,
+          }),
+        });
+
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Toplu taşıma başarısız");
+        }
+      }
+
+      toastGoster(t.selectedItemsMoved, "success");
+
+      secimleriTemizle();
+      hedefKlasorCacheRef.current = {};
+      klasoruYenile(mevcutYol);
+    } catch (hata) {
+      if (hata.message === "Oturum geçersiz") {
+        return;
+      }
+
+      console.log("Toplu taşıma hatası:", hata);
+      setYukleniyor(false);
+      setYuklemeMesaji("");
+      toastGoster(t.bulkMoveFailed, "error");
+    }
+  };
+
+  const topluTasimaSeciliOgeler = topluTasimaModalAcik
+    ? seciliOgeleriGetir()
+    : [];
+
+  const topluTasimaHedefiMevcutKlasorMu =
+    topluTasimaModalAcik && hedefKlasorGezintiYolu === mevcutYol;
+
+  const topluTasimaHedefiSeciliKlasorunIcindeMi =
+    topluTasimaModalAcik &&
+    topluTasimaSeciliOgeler.some((oge) => {
+      if (!oge.klasorMu) return false;
+
+      const ogeYolu =
+        mevcutYol === "/" ? "/" + oge.ad : mevcutYol + "/" + oge.ad;
+
+      return (
+        hedefKlasorGezintiYolu === ogeYolu ||
+        hedefKlasorGezintiYolu.startsWith(ogeYolu + "/")
+      );
+    });
+
+  const topluTasimaHedefKlasorlerGosterilecek = topluTasimaModalAcik
+    ? hedefKlasorler.filter((klasor) => {
+        if (hedefKlasorGezintiYolu !== mevcutYol) return true;
+
+        return !topluTasimaSeciliOgeler.some(
+          (oge) => oge.klasorMu && oge.ad === klasor.ad,
+        );
+      })
+    : [];
+
+  const aktifHedefKlasorlerGosterilecek = topluTasimaModalAcik
+    ? topluTasimaHedefKlasorlerGosterilecek
+    : hedefKlasorlerGosterilecek;
+
+  const aktifTasimaHedefiMevcutKlasorMu = topluTasimaModalAcik
+    ? topluTasimaHedefiMevcutKlasorMu
+    : moveHedefiMevcutKlasorMu;
+
+  const aktifTasimaHedefiTasinanKlasorunIcindeMi = topluTasimaModalAcik
+    ? topluTasimaHedefiSeciliKlasorunIcindeMi
+    : moveHedefiTasinanKlasorunIcindeMi;
+
   const listelenenOgelerinHepsiSeciliMi = () => {
     if (gosterilecekDosyalar.length === 0) {
       return false;
@@ -1794,10 +1937,11 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
-      {moveModalAcik && (
+      {(moveModalAcik || topluTasimaModalAcik) && (
         <div
           onClick={() => {
             setMoveModalAcik(false);
+            setTopluTasimaModalAcik(false);
             setTasinacakDosya(null);
             setHedefKlasorler([]);
             setHedefKlasorGezintiYolu("/");
@@ -1810,11 +1954,13 @@ export default function AnaSayfa() {
           >
             <div className="mb-4">
               <h2 className="text-lg font-bold text-[#3c3836] dark:text-[#ebdbb2]">
-                {t.moveModalTitle}
+                {topluTasimaModalAcik ? t.bulkMoveModalTitle : t.moveModalTitle}
               </h2>
 
               <p className="mt-1 text-sm text-[#7c6f64] dark:text-[#a89984] truncate">
-                {tasinacakDosya?.ad}
+                {topluTasimaModalAcik
+                  ? `${topluTasimaSeciliOgeler.length} ${t.selectedItems}`
+                  : tasinacakDosya?.ad}
               </p>
             </div>
 
@@ -1899,7 +2045,7 @@ export default function AnaSayfa() {
                     ? "Klasörler yükleniyor..."
                     : "Loading folders..."}
                 </p>
-              ) : hedefKlasorlerGosterilecek.length === 0 ? (
+              ) : aktifHedefKlasorlerGosterilecek.length === 0 ? (
                 <p className="text-xs text-[#928374] dark:text-[#a89984]">
                   {dil === "tr"
                     ? "Bu klasörde alt klasör yok. Buraya taşıyabilirsin."
@@ -1907,7 +2053,7 @@ export default function AnaSayfa() {
                 </p>
               ) : (
                 <div className="max-h-40 overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                  {hedefKlasorlerGosterilecek.map((klasor) => {
+                  {aktifHedefKlasorlerGosterilecek.map((klasor) => {
                     const klasorYolu =
                       hedefKlasorGezintiYolu === "/"
                         ? "/" + klasor.ad
@@ -1936,7 +2082,7 @@ export default function AnaSayfa() {
               )}
             </div>
 
-            {moveHedefiMevcutKlasorMu && (
+            {aktifTasimaHedefiMevcutKlasorMu && (
               <p className="mt-3 text-xs text-[#928374] dark:text-[#a89984]">
                 {dil === "tr"
                   ? "Bu öğe zaten bu klasörde."
@@ -1944,7 +2090,7 @@ export default function AnaSayfa() {
               </p>
             )}
 
-            {moveHedefiTasinanKlasorunIcindeMi && (
+            {aktifTasimaHedefiTasinanKlasorunIcindeMi && (
               <p className="mt-3 text-xs text-[#928374] dark:text-[#a89984]">
                 {dil === "tr"
                   ? "Bir klasör kendi içine veya kendi alt klasörüne taşınamaz."
@@ -1956,6 +2102,7 @@ export default function AnaSayfa() {
               <button
                 onClick={() => {
                   setMoveModalAcik(false);
+                  setTopluTasimaModalAcik(false);
                   setTasinacakDosya(null);
                   setHedefKlasorler([]);
                   setHedefKlasorGezintiYolu("/");
@@ -1966,11 +2113,13 @@ export default function AnaSayfa() {
               </button>
 
               <button
-                onClick={tasimayiOnayla}
+                onClick={
+                  topluTasimaModalAcik ? topluTasimayiOnayla : tasimayiOnayla
+                }
                 disabled={
                   yukleniyor ||
-                  moveHedefiMevcutKlasorMu ||
-                  moveHedefiTasinanKlasorunIcindeMi
+                  aktifTasimaHedefiMevcutKlasorMu ||
+                  aktifTasimaHedefiTasinanKlasorunIcindeMi
                 }
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
