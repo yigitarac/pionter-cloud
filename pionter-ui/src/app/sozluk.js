@@ -24,8 +24,7 @@ export const sozluk = {
     regSuccess: "Registration successful! You can now login.",
     regFail: "Registration failed. Username or email might be taken.",
     myServers: "My Servers",
-    serversDraftInfo:
-      "We are not saving real servers yet. For now, we are building the screen draft.",
+    serversDraftInfo: "Add your first server by clicking the box below.",
     addServer: "Add Server",
     noServersYet: "No servers added yet.",
     noServersInfo: "In the next task, we will make this form save a server.",
@@ -186,8 +185,7 @@ export const sozluk = {
     regSuccess: "Kayıt başarılı! Şimdi giriş yapabilirsiniz.",
     regFail: "Kayıt başarısız. Kullanıcı adı veya e-posta alınmış olabilir.",
     myServers: "Sunucularım",
-    serversDraftInfo:
-      "Henüz gerçek sunucu kaydı yapmıyoruz. Şimdilik ekran taslağını kuruyoruz.",
+    serversDraftInfo: "İlk sunucunu aşağıdaki kutuya tıklayarak ekle.",
     addServer: "Sunucu Ekle",
     noServersYet: "Henüz sunucu eklenmedi.",
     noServersInfo:

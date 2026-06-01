@@ -328,6 +328,14 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
   };
 
+  const sunucuEklemeEkraniniAc = () => {
+    if (yukleniyor) return;
+
+    sunucularaDon();
+    setSunucuFormAcik(true);
+    setSolPanelAcik(false);
+  };
+
   const oturumHatasiKontrolEt = (cevap) => {
     if (cevap.status === 401) {
       oturumuTemizle();
@@ -2495,6 +2503,42 @@ export default function AnaSayfa() {
               )}
 
               <div className="space-y-2">
+                {sunucular.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={sunucuEklemeEkraniniAc}
+                    disabled={yukleniyor}
+                    className={
+                      solPanelAcik
+                        ? "flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-[#a89984] bg-[#fbf1c7]/70 px-4 py-8 text-center transition-colors hover:border-[#458588] hover:bg-[#fbf1c7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828]/70 dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
+                        : "group relative mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-dashed border-[#a89984] text-xl font-black text-[#458588] transition-colors hover:border-[#458588] hover:bg-[#fbf1c7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:text-[#83a598] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
+                    }
+                    aria-label={t.addServer}
+                  >
+                    {solPanelAcik ? (
+                      <>
+                        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#458588] text-2xl font-black text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
+                          +
+                        </span>
+
+                        <span className="text-sm font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                          {t.addServer}
+                        </span>
+
+                        <span className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                          {t.noServersYet}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        +
+                        <span className="pointer-events-none fixed left-[4.75rem] z-[999] whitespace-nowrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-bold text-[#3c3836] opacity-0 shadow-xl transition-opacity group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                          {t.addServer}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                )}
                 {sunucular.map((sunucu) => {
                   const aktifMi = seciliSunucu?.id === sunucu.id;
                   const onizlemeOgeleri =
@@ -2510,20 +2554,34 @@ export default function AnaSayfa() {
                         }
                       }}
                       disabled={yukleniyor}
-                      className={`group relative w-full rounded-xl border text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`group relative rounded-xl text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                         solPanelAcik
-                          ? "px-3 py-3"
-                          : "flex h-10 items-center justify-center p-0"
-                      } ${
-                        aktifMi
-                          ? "border-[#458588] bg-[#d5c4a1] dark:border-[#83a598] dark:bg-[#282828]"
-                          : "border-transparent hover:border-[#458588] hover:bg-[#fbf1c7] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
+                          ? `w-full border px-3 py-3 ${
+                              aktifMi
+                                ? "border-[#458588] bg-[#d5c4a1] dark:border-[#83a598] dark:bg-[#282828]"
+                                : "border-transparent hover:border-[#458588] hover:bg-[#fbf1c7] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
+                            }`
+                          : `mx-auto flex h-10 w-10 items-center justify-center p-0 ${
+                              aktifMi
+                                ? "bg-[#458588] text-[#fbf1c7] hover:bg-[#076678] dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+                                : "bg-[#fbf1c7] text-[#3c3836] hover:bg-[#d5c4a1] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                            }`
                       }`}
                     >
                       <div
-                        className={`flex items-center ${solPanelAcik ? "gap-3" : "justify-center"}`}
+                        className={`flex items-center ${
+                          solPanelAcik
+                            ? "gap-3"
+                            : "h-full w-full justify-center"
+                        }`}
                       >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#458588] text-xs font-black text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]">
+                        <span
+                          className={`flex shrink-0 items-center justify-center rounded-xl text-xs font-black ${
+                            solPanelAcik
+                              ? "h-9 w-9 bg-[#458588] text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]"
+                              : "h-full w-full bg-transparent text-current"
+                          }`}
+                        >
                           {sunucu.sabitli
                             ? "★"
                             : sunucu.takmaAd?.charAt(0)?.toUpperCase() || "S"}
@@ -2595,14 +2653,10 @@ export default function AnaSayfa() {
                 })}
               </div>
 
-              {solPanelAcik && (
+              {solPanelAcik && sunucular.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    sunucularaDon();
-                    setSunucuFormAcik(true);
-                    setSolPanelAcik(false);
-                  }}
+                  onClick={sunucuEklemeEkraniniAc}
                   disabled={yukleniyor}
                   className="mt-5 flex h-11 w-full items-center justify-center rounded-xl border border-dashed border-[#a89984] bg-transparent text-xl font-black text-[#458588] transition-colors hover:border-[#458588] hover:bg-[#fbf1c7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:text-[#83a598] dark:hover:border-[#83a598] dark:hover:bg-[#282828]"
                   title={t.addServer}
@@ -2724,13 +2778,6 @@ export default function AnaSayfa() {
                     {t.serversDraftInfo}
                   </p>
                 </div>
-
-                <button
-                  onClick={() => setSunucuFormAcik(true)}
-                  className="bg-[#458588] dark:bg-[#83a598] hover:bg-[#076678] dark:hover:bg-[#458588] text-[#fbf1c7] dark:text-[#282828] px-4 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer"
-                >
-                  {t.addServer}
-                </button>
               </div>
               {sunucuFormAcik && (
                 <div className="mb-6 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] p-5">
@@ -2826,12 +2873,16 @@ export default function AnaSayfa() {
                 </div>
               )}
               {sunucular.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-[#a89984] dark:border-[#7c6f64] p-8 text-center">
-                  <p className="text-sm font-semibold mb-2">{t.noServersYet}</p>
-                  <p className="text-xs text-[#7c6f64] dark:text-[#a89984]">
-                    {t.noServersInfo}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={sunucuEklemeEkraniniAc}
+                  disabled={yukleniyor}
+                  title={t.addServer}
+                  aria-label={t.addServer}
+                  className="flex min-h-[110px] w-full items-center justify-center rounded-lg border border-dashed border-[#a89984] bg-transparent text-2xl font-black text-[#458588] transition-colors hover:border-[#458588] hover:bg-transparent disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#7c6f64] dark:text-[#83a598] dark:hover:border-[#83a598] dark:hover:bg-transparent"
+                >
+                  +
+                </button>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {sunucular.map((sunucu) => (
