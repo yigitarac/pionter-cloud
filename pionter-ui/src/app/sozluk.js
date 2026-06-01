@@ -159,6 +159,7 @@ export const sozluk = {
     noPreview: "No preview yet",
     openSidebar: "Open sidebar",
     closeSidebar: "Close sidebar",
+    moveSelected: "Move selected",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -319,5 +320,6 @@ export const sozluk = {
     noPreview: "Henüz önizleme yok",
     openSidebar: "Kenar çubuğunu aç",
     closeSidebar: "Kenar çubuğunu kapat",
+    moveSelected: "Seçilenleri taşı",
   },
 };

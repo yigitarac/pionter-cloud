@@ -66,6 +66,7 @@ export default function AnaSayfa() {
   const [klasorModalAcik, setKlasorModalAcik] = useState(false);
   const [ayarMenusuAcik, setAyarMenusuAcik] = useState(false);
   const [solPanelAcik, setSolPanelAcik] = useState(false);
+  const [topluTasimaModalAcik, setTopluTasimaModalAcik] = useState(false);
 
   const t = sozluk[dil];
 
@@ -312,6 +313,7 @@ export default function AnaSayfa() {
     setTopluSilmeModalAcik(false);
     setAyarMenusuAcik(false);
     setSolPanelAcik(false);
+    setTopluTasimaModalAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -344,6 +346,7 @@ export default function AnaSayfa() {
     setEposta("");
     setAyarMenusuAcik(false);
     setSolPanelAcik(false);
+    setTopluTasimaModalAcik(false);
 
     setSeciliSunucu(null);
     setSunucular([]);
@@ -429,6 +432,7 @@ export default function AnaSayfa() {
     secimleriTemizle();
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
+    setTopluTasimaModalAcik(false);
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -1589,6 +1593,22 @@ export default function AnaSayfa() {
 
       return [...mevcutSecimler, anahtar];
     });
+  };
+
+  const topluTasimaModaliniAc = () => {
+    if (yukleniyor) return;
+
+    const seciliOgeler = seciliOgeleriGetir();
+
+    if (seciliOgeler.length === 0) {
+      return;
+    }
+
+    setHedefKlasorGezintiYolu("/");
+    setHedefKlasorler([]);
+    hedefKlasorCacheRef.current = {};
+    setTopluTasimaModalAcik(true);
+    hedefKlasorleriGetir("/");
   };
 
   const topluSilmeModaliniAc = () => {
@@ -3073,6 +3093,15 @@ export default function AnaSayfa() {
                       <span className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-3 text-sm font-bold text-[#3c3836] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
                         {seciliOgeAnahtarlari.length} {t.selectedItems}
                       </span>
+
+                      <button
+                        type="button"
+                        onClick={topluTasimaModaliniAc}
+                        disabled={yukleniyor}
+                        className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+                      >
+                        {t.moveSelected}
+                      </button>
 
                       <button
                         type="button"
