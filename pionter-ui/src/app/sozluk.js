@@ -153,10 +153,6 @@ export const sozluk = {
     theme: "Theme",
     darkMode: "Dark mode",
     lightMode: "Light mode",
-    servers: "Servers",
-    manageServers: "Manage servers",
-    currentServer: "Current server",
-    close: "Close",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -311,9 +307,5 @@ export const sozluk = {
     theme: "Tema",
     darkMode: "Koyu mod",
     lightMode: "Açık mod",
-    servers: "Sunucular",
-    manageServers: "Sunucuları yönet",
-    currentServer: "Aktif sunucu",
-    close: "Kapat",
   },
 };
