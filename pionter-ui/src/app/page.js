@@ -3494,75 +3494,69 @@ export default function AnaSayfa() {
                     {t.statsLoadFailed}
                   </p>
                 ) : sunucuStats ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="flex min-h-[96px] flex-col rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
                       <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                         {t.cpuUsage}
                       </p>
                       <p className="mt-2 text-xl font-black">
                         {sunucuStats.cpu_yuzde}%
                       </p>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
-                        <div
-                          className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
-                          style={{
-                            width: `${yuzdeSinirla(sunucuStats.cpu_yuzde)}%`,
-                          }}
-                        />
+                      <div className="mt-auto pt-3">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+                          <div
+                            className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
+                            style={{
+                              width: `${yuzdeSinirla(sunucuStats.cpu_yuzde)}%`,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                    <div className="flex min-h-[96px] flex-col rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
                       <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                         {t.ramUsage}
                       </p>
                       <p className="mt-2 text-xl font-black">
                         {sunucuStats.ram_yuzde}%
                       </p>
-                      <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                      <p className="mt-2 text-xs text-[#7c6f64] dark:text-[#a89984]">
                         {megabaytYaz(sunucuStats.ram_kullanilan)} /{" "}
                         {megabaytYaz(sunucuStats.ram_toplam)} {t.used}
                       </p>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
-                        <div
-                          className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
-                          style={{
-                            width: `${yuzdeSinirla(sunucuStats.ram_yuzde)}%`,
-                          }}
-                        />
+                      <div className="mt-auto pt-3">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+                          <div
+                            className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
+                            style={{
+                              width: `${yuzdeSinirla(sunucuStats.ram_yuzde)}%`,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                    <div className="flex min-h-[96px] flex-col rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
                       <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                         {t.diskUsage}
                       </p>
                       <p className="mt-2 text-xl font-black">
                         {sunucuStats.disk_yuzde}%
                       </p>
-                      <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                      <p className="mt-2 text-xs text-[#7c6f64] dark:text-[#a89984]">
                         {megabaytYaz(sunucuStats.disk_kullanilan)} /{" "}
                         {megabaytYaz(sunucuStats.disk_toplam)} {t.used}
                       </p>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
-                        <div
-                          className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
-                          style={{
-                            width: `${yuzdeSinirla(sunucuStats.disk_yuzde)}%`,
-                          }}
-                        />
+                      <div className="mt-auto pt-3">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+                          <div
+                            className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
+                            style={{
+                              width: `${yuzdeSinirla(sunucuStats.disk_yuzde)}%`,
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
-                      <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
-                        {t.loadAverage}
-                      </p>
-                      <p className="mt-2 text-sm font-black">
-                        {sunucuStats.load_average || "-"}
-                      </p>
-                      <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
-                        1m / 5m / 15m
-                      </p>
                     </div>
 
                     <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
