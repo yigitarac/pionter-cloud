@@ -3498,6 +3498,11 @@ export default function AnaSayfa() {
                     <h2 className="truncate text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
                       {seciliSunucu.takmaAd}
                     </h2>
+                    {sunucuStats?.guncelleme_zamani && (
+                      <p className="mt-1 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                        {t.lastUpdated}: {sunucuStats.guncelleme_zamani}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex shrink-0 flex-wrap items-center gap-2">

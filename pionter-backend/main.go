@@ -274,6 +274,8 @@ type SunucuStatsCevabi struct {
 	Basarili bool   `json:"basarili"`
 	Mesaj    string `json:"mesaj"`
 
+	GuncellemeZamani string `json:"guncelleme_zamani"`
+
 	Uptime      string  `json:"uptime"`
 	LoadAverage string  `json:"load_average"`
 	CpuYuzde    float64 `json:"cpu_yuzde"`
@@ -1968,6 +1970,8 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 	cevap := SunucuStatsCevabi{
 		Basarili: true,
 		Mesaj:    "Sunucu bilgileri alındı",
+
+		GuncellemeZamani: time.Now().Format("15:04:05"),
 
 		Uptime:      uptimeCikti,
 		LoadAverage: loadAverageCikti,
