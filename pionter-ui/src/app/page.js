@@ -742,6 +742,9 @@ export default function AnaSayfa() {
 
     if (temizAd === ".env") return ".env";
     if (temizAd.endsWith(".env.example")) return ".env.example";
+    if (temizAd === "dockerfile") return ".dockerfile";
+    if (temizAd === "makefile") return ".makefile";
+    if (temizAd === "cmakelists.txt") return ".cmakelists";
 
     const sonNoktaIndex = temizAd.lastIndexOf(".");
 
@@ -781,6 +784,29 @@ export default function AnaSayfa() {
       ".yaml",
       ".xml",
       ".log",
+      ".py",
+      ".rs",
+      ".zig",
+      ".rb",
+      ".java",
+      ".kt",
+      ".kts",
+      ".php",
+      ".swift",
+      ".dart",
+      ".lua",
+      ".r",
+      ".scala",
+      ".sh",
+      ".bash",
+      ".zsh",
+      ".sql",
+      ".toml",
+      ".ini",
+      ".conf",
+      ".dockerfile",
+      ".makefile",
+      ".cmakelists",
     ].includes(dosyaUzantisiAl(dosyaAdi));
   };
 
@@ -842,6 +868,26 @@ export default function AnaSayfa() {
     if ([".yml", ".yaml"].includes(uzanti)) return "YAML";
     if (uzanti === ".xml") return "XML";
     if (uzanti === ".log") return "LOG";
+    if (uzanti === ".py") return "PY";
+    if (uzanti === ".rs") return "RS";
+    if (uzanti === ".zig") return "ZIG";
+    if (uzanti === ".rb") return "RB";
+    if (uzanti === ".java") return "JAVA";
+    if (uzanti === ".kt") return "KT";
+    if (uzanti === ".kts") return "KTS";
+    if (uzanti === ".php") return "PHP";
+    if (uzanti === ".swift") return "SWIFT";
+    if (uzanti === ".dart") return "DART";
+    if (uzanti === ".lua") return "LUA";
+    if (uzanti === ".r") return "R";
+    if (uzanti === ".scala") return "SCALA";
+    if ([".sh", ".bash", ".zsh"].includes(uzanti)) return "SH";
+    if (uzanti === ".sql") return "SQL";
+    if (uzanti === ".toml") return "TOML";
+    if ([".ini", ".conf"].includes(uzanti)) return "INI";
+    if (uzanti === ".dockerfile") return "DOCKER";
+    if (uzanti === ".makefile") return "MAKE";
+    if (uzanti === ".cmakelists") return "CMAKE";
 
     return "CODE";
   };
@@ -942,6 +988,182 @@ export default function AnaSayfa() {
           "border-[#d79921] bg-[#3b321d] text-[#fabd2f] dark:border-[#fabd2f] dark:bg-[#3b321d] dark:text-[#fabd2f]",
         rozetClass:
           "bg-[#fabd2f] text-[#282828] dark:bg-[#fabd2f] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    if (etiket === "PY") {
+      return {
+        sembol: "PY",
+        kagitClass:
+          "border-[#458588] bg-[#202f3b] text-[#fabd2f] dark:border-[#83a598] dark:bg-[#202f3b] dark:text-[#fabd2f]",
+        rozetClass:
+          "bg-[#fabd2f] text-[#282828] dark:bg-[#fabd2f] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "RS") {
+      return {
+        sembol: "RS",
+        kagitClass:
+          "border-[#d65d0e] bg-[#3b2a1f] text-[#fe8019] dark:border-[#fe8019] dark:bg-[#3b2a1f] dark:text-[#fe8019]",
+        rozetClass:
+          "bg-[#fe8019] text-[#282828] dark:bg-[#fe8019] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "ZIG") {
+      return {
+        sembol: "ZIG",
+        kagitClass:
+          "border-[#d79921] bg-[#3b321d] text-[#fabd2f] dark:border-[#fabd2f] dark:bg-[#3b321d] dark:text-[#fabd2f]",
+        rozetClass:
+          "bg-[#fabd2f] text-[#282828] dark:bg-[#fabd2f] dark:text-[#282828]",
+        sembolClass: "text-xs",
+      };
+    }
+
+    if (etiket === "RB") {
+      return {
+        sembol: "RB",
+        kagitClass:
+          "border-[#cc241d] bg-[#3b2422] text-[#fb4934] dark:border-[#fb4934] dark:bg-[#3b2422] dark:text-[#fb4934]",
+        rozetClass:
+          "bg-[#fb4934] text-[#282828] dark:bg-[#fb4934] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "JAVA") {
+      return {
+        sembol: "JAVA",
+        kagitClass:
+          "border-[#d65d0e] bg-[#202f3b] text-[#fe8019] dark:border-[#fe8019] dark:bg-[#202f3b] dark:text-[#fe8019]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-[11px]",
+      };
+    }
+
+    if (etiket === "KT" || etiket === "KTS") {
+      return {
+        sembol: etiket,
+        kagitClass:
+          "border-[#b16286] bg-[#35243a] text-[#d3869b] dark:border-[#d3869b] dark:bg-[#35243a] dark:text-[#d3869b]",
+        rozetClass:
+          "bg-[#fe8019] text-[#282828] dark:bg-[#fe8019] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "PHP") {
+      return {
+        sembol: "PHP",
+        kagitClass:
+          "border-[#665c54] bg-[#2d2a3a] text-[#a89984] dark:border-[#a89984] dark:bg-[#2d2a3a] dark:text-[#a89984]",
+        rozetClass:
+          "bg-[#a89984] text-[#282828] dark:bg-[#a89984] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "SWIFT") {
+      return {
+        sembol: "SW",
+        kagitClass:
+          "border-[#d65d0e] bg-[#3b2a1f] text-[#fe8019] dark:border-[#fe8019] dark:bg-[#3b2a1f] dark:text-[#fe8019]",
+        rozetClass:
+          "bg-[#fe8019] text-[#282828] dark:bg-[#fe8019] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "DART") {
+      return {
+        sembol: "DART",
+        kagitClass:
+          "border-[#458588] bg-[#1d3038] text-[#83a598] dark:border-[#83a598] dark:bg-[#1d3038] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-[11px]",
+      };
+    }
+
+    if (etiket === "LUA") {
+      return {
+        sembol: "LUA",
+        kagitClass:
+          "border-[#458588] bg-[#202f3b] text-[#83a598] dark:border-[#83a598] dark:bg-[#202f3b] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "R") {
+      return {
+        sembol: "R",
+        kagitClass:
+          "border-[#458588] bg-[#202f3b] text-[#83a598] dark:border-[#83a598] dark:bg-[#202f3b] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    if (etiket === "SCALA") {
+      return {
+        sembol: "SC",
+        kagitClass:
+          "border-[#cc241d] bg-[#3b2422] text-[#fb4934] dark:border-[#fb4934] dark:bg-[#3b2422] dark:text-[#fb4934]",
+        rozetClass:
+          "bg-[#fb4934] text-[#282828] dark:bg-[#fb4934] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "SH") {
+      return {
+        sembol: "$_",
+        kagitClass:
+          "border-[#689d6a] bg-[#1f3430] text-[#8ec07c] dark:border-[#8ec07c] dark:bg-[#1f3430] dark:text-[#8ec07c]",
+        rozetClass:
+          "bg-[#8ec07c] text-[#282828] dark:bg-[#8ec07c] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "SQL") {
+      return {
+        sembol: "DB",
+        kagitClass:
+          "border-[#458588] bg-[#223437] text-[#83a598] dark:border-[#83a598] dark:bg-[#223437] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (["TOML", "INI", "MAKE", "CMAKE"].includes(etiket)) {
+      return {
+        sembol: "⚙",
+        kagitClass:
+          "border-[#a89984] bg-[#3c3836] text-[#ebdbb2] dark:border-[#a89984] dark:bg-[#3c3836] dark:text-[#ebdbb2]",
+        rozetClass:
+          "bg-[#a89984] text-[#282828] dark:bg-[#a89984] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    if (etiket === "DOCKER") {
+      return {
+        sembol: "▣",
+        kagitClass:
+          "border-[#458588] bg-[#1d3038] text-[#83a598] dark:border-[#83a598] dark:bg-[#1d3038] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
         sembolClass: "text-lg",
       };
     }
@@ -1898,6 +2120,24 @@ export default function AnaSayfa() {
     // thumbnail loader kontrollü olarak cache/ref kullandığı için helper dependency'lerini eklemiyom
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [girisYapildi, seciliSunucu, oturumToken, dosyalar, mevcutYol]);
+
+  useEffect(() => {
+    if (!previewModalAcik) {
+      return;
+    }
+
+    const escapeIleKapat = (e) => {
+      if (e.key === "Escape") {
+        previewTemizle();
+      }
+    };
+
+    window.addEventListener("keydown", escapeIleKapat);
+
+    return () => {
+      window.removeEventListener("keydown", escapeIleKapat);
+    };
+  }, [previewModalAcik]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -3122,8 +3362,14 @@ export default function AnaSayfa() {
         </div>
       )}
       {previewModalAcik && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#504945] bg-[#282828] text-[#ebdbb2] shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          onClick={previewTemizle}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#504945] bg-[#282828] text-[#ebdbb2] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4 border-b border-[#504945] px-5 py-4">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#a89984]">

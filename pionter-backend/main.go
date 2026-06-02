@@ -1794,6 +1794,18 @@ func dosyaUzantisiAl(dosyaAdi string) string {
 		return ".env.example"
 	}
 
+	if temizAd == "dockerfile" {
+		return ".dockerfile"
+	}
+
+	if temizAd == "makefile" {
+		return ".makefile"
+	}
+
+	if temizAd == "cmakelists.txt" {
+		return ".cmakelists"
+	}
+
 	return path.Ext(temizAd)
 }
 
@@ -1822,6 +1834,29 @@ func textPreviewDestekleniyorMu(uzanti string) bool {
 		".yaml":        true,
 		".xml":         true,
 		".log":         true,
+		".py":          true,
+		".rs":          true,
+		".zig":         true,
+		".rb":          true,
+		".java":        true,
+		".kt":          true,
+		".kts":         true,
+		".php":         true,
+		".swift":       true,
+		".dart":        true,
+		".lua":         true,
+		".r":           true,
+		".scala":       true,
+		".sh":          true,
+		".bash":        true,
+		".zsh":         true,
+		".sql":         true,
+		".toml":        true,
+		".ini":         true,
+		".conf":        true,
+		".dockerfile":  true,
+		".makefile":    true,
+		".cmakelists":  true,
 	}
 
 	return desteklenenler[uzanti]
