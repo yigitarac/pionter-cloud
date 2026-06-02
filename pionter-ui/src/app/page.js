@@ -824,6 +824,116 @@ export default function AnaSayfa() {
     return "CODE";
   };
 
+  const kodDosyaIkonBilgisiAl = (etiket) => {
+    if (etiket === "JS" || etiket === "JSX") {
+      return {
+        sembol: etiket,
+        kagitClass:
+          "border-[#d79921] bg-[#3b321d] text-[#fabd2f] dark:border-[#fabd2f] dark:bg-[#3b321d] dark:text-[#fabd2f]",
+        rozetClass:
+          "bg-[#fabd2f] text-[#282828] dark:bg-[#fabd2f] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "TS" || etiket === "TSX") {
+      return {
+        sembol: etiket,
+        kagitClass:
+          "border-[#458588] bg-[#223437] text-[#83a598] dark:border-[#83a598] dark:bg-[#223437] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "GO") {
+      return {
+        sembol: "GO",
+        kagitClass:
+          "border-[#689d6a] bg-[#1f3430] text-[#8ec07c] dark:border-[#8ec07c] dark:bg-[#1f3430] dark:text-[#8ec07c]",
+        rozetClass:
+          "bg-[#8ec07c] text-[#282828] dark:bg-[#8ec07c] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "C") {
+      return {
+        sembol: "C",
+        kagitClass:
+          "border-[#458588] bg-[#202f3b] text-[#83a598] dark:border-[#83a598] dark:bg-[#202f3b] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    if (etiket === "C++") {
+      return {
+        sembol: "C++",
+        kagitClass:
+          "border-[#076678] bg-[#1d3038] text-[#83a598] dark:border-[#83a598] dark:bg-[#1d3038] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#458588] text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "C#") {
+      return {
+        sembol: "C#",
+        kagitClass:
+          "border-[#b16286] bg-[#35243a] text-[#d3869b] dark:border-[#d3869b] dark:bg-[#35243a] dark:text-[#d3869b]",
+        rozetClass:
+          "bg-[#d3869b] text-[#282828] dark:bg-[#d3869b] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
+    }
+
+    if (etiket === "HTML") {
+      return {
+        sembol: "<>",
+        kagitClass:
+          "border-[#d65d0e] bg-[#3b2a1f] text-[#fe8019] dark:border-[#fe8019] dark:bg-[#3b2a1f] dark:text-[#fe8019]",
+        rozetClass:
+          "bg-[#fe8019] text-[#282828] dark:bg-[#fe8019] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    if (etiket === "CSS") {
+      return {
+        sembol: "{}",
+        kagitClass:
+          "border-[#458588] bg-[#202b3b] text-[#83a598] dark:border-[#83a598] dark:bg-[#202b3b] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#83a598] text-[#282828] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    if (etiket === "JSON") {
+      return {
+        sembol: "{}",
+        kagitClass:
+          "border-[#d79921] bg-[#3b321d] text-[#fabd2f] dark:border-[#fabd2f] dark:bg-[#3b321d] dark:text-[#fabd2f]",
+        rozetClass:
+          "bg-[#fabd2f] text-[#282828] dark:bg-[#fabd2f] dark:text-[#282828]",
+        sembolClass: "text-lg",
+      };
+    }
+
+    return {
+      sembol: "<>",
+      kagitClass:
+        "border-[#b16286] bg-[#3a2834] text-[#d3869b] dark:border-[#d3869b] dark:bg-[#3a2834] dark:text-[#d3869b]",
+      rozetClass:
+        "bg-[#d3869b] text-[#282828] dark:bg-[#d3869b] dark:text-[#282828]",
+      sembolClass: "text-lg",
+    };
+  };
+
   const dosyaTipEtiketiAl = (dosya) => {
     if (!dosya || dosya.klasorMu) return "";
 
@@ -836,32 +946,119 @@ export default function AnaSayfa() {
     return "FILE";
   };
 
-  const dosyaTipRenkClassAl = (dosya) => {
+  const dosyaIkonBilgisiAl = (dosya) => {
     if (!dosya || dosya.klasorMu) {
-      return "border-[#458588] bg-[#d5c4a1] text-[#076678] dark:border-[#83a598] dark:bg-[#3c3836] dark:text-[#83a598]";
+      return {
+        etiket: "",
+        sembol: "",
+        grup: "folder",
+        kagitClass: "",
+        rozetClass: "",
+        sembolClass: "",
+      };
     }
 
     if (imageDosyasiMi(dosya.ad)) {
-      return "border-[#98971a] bg-[#d5c4a1] text-[#79740e] dark:border-[#b8bb26] dark:bg-[#3c3836] dark:text-[#b8bb26]";
+      return {
+        etiket: "IMG",
+        sembol: "◐",
+        grup: "image",
+        kagitClass:
+          "border-[#98971a] bg-[#d5c4a1] text-[#79740e] dark:border-[#b8bb26] dark:bg-[#32361a] dark:text-[#b8bb26]",
+        rozetClass:
+          "bg-[#98971a] text-[#fbf1c7] dark:bg-[#b8bb26] dark:text-[#282828]",
+        sembolClass: "text-2xl",
+      };
     }
 
     if (pdfDosyasiMi(dosya.ad)) {
-      return "border-[#cc241d] bg-[#d5c4a1] text-[#9d0006] dark:border-[#fb4934] dark:bg-[#3c3836] dark:text-[#fb4934]";
+      return {
+        etiket: "PDF",
+        sembol: "PDF",
+        grup: "pdf",
+        kagitClass:
+          "border-[#cc241d] bg-[#d5c4a1] text-[#9d0006] dark:border-[#fb4934] dark:bg-[#3b2422] dark:text-[#fb4934]",
+        rozetClass:
+          "bg-[#cc241d] text-[#fbf1c7] dark:bg-[#fb4934] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
     }
 
     if (officeDosyasiMi(dosya.ad)) {
-      return "border-[#458588] bg-[#d5c4a1] text-[#076678] dark:border-[#83a598] dark:bg-[#3c3836] dark:text-[#83a598]";
+      const etiket = officeDosyaEtiketiAl(dosya.ad);
+
+      return {
+        etiket,
+        sembol: etiket,
+        grup: "office",
+        kagitClass:
+          "border-[#458588] bg-[#d5c4a1] text-[#076678] dark:border-[#83a598] dark:bg-[#223437] dark:text-[#83a598]",
+        rozetClass:
+          "bg-[#458588] text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]",
+        sembolClass: "text-sm",
+      };
     }
 
     if (arsivDosyasiMi(dosya.ad)) {
-      return "border-[#d79921] bg-[#d5c4a1] text-[#b57614] dark:border-[#fabd2f] dark:bg-[#3c3836] dark:text-[#fabd2f]";
+      return {
+        etiket:
+          dosyaUzantisiAl(dosya.ad).replace(".", "").toUpperCase() || "ZIP",
+        sembol: "▦",
+        grup: "archive",
+        kagitClass:
+          "border-[#d79921] bg-[#d5c4a1] text-[#b57614] dark:border-[#fabd2f] dark:bg-[#3b321d] dark:text-[#fabd2f]",
+        rozetClass:
+          "bg-[#d79921] text-[#282828] dark:bg-[#fabd2f] dark:text-[#282828]",
+        sembolClass: "text-2xl",
+      };
     }
 
     if (textPreviewDosyasiMi(dosya.ad)) {
-      return "border-[#b16286] bg-[#d5c4a1] text-[#8f3f71] dark:border-[#d3869b] dark:bg-[#3c3836] dark:text-[#d3869b]";
+      const etiket = textDosyaEtiketiAl(dosya.ad);
+      const sadeTextDosyasi = [
+        "TXT",
+        "MD",
+        "LOG",
+        "ENV",
+        "YAML",
+        "XML",
+      ].includes(etiket);
+
+      if (sadeTextDosyasi) {
+        return {
+          etiket,
+          sembol: "≡",
+          grup: "text",
+          kagitClass:
+            "border-[#b16286] bg-[#3a2834] text-[#d3869b] dark:border-[#d3869b] dark:bg-[#3a2834] dark:text-[#d3869b]",
+          rozetClass:
+            "bg-[#d3869b] text-[#282828] dark:bg-[#d3869b] dark:text-[#282828]",
+          sembolClass: "text-2xl",
+        };
+      }
+
+      const kodIkonu = kodDosyaIkonBilgisiAl(etiket);
+
+      return {
+        etiket,
+        sembol: kodIkonu.sembol,
+        grup: "code",
+        kagitClass: kodIkonu.kagitClass,
+        rozetClass: kodIkonu.rozetClass,
+        sembolClass: kodIkonu.sembolClass,
+      };
     }
 
-    return "border-[#a89984] bg-[#d5c4a1] text-[#7c6f64] dark:border-[#665c54] dark:bg-[#3c3836] dark:text-[#a89984]";
+    return {
+      etiket: "FILE",
+      sembol: "≡",
+      grup: "file",
+      kagitClass:
+        "border-[#a89984] bg-[#d5c4a1] text-[#7c6f64] dark:border-[#665c54] dark:bg-[#3c3836] dark:text-[#a89984]",
+      rozetClass:
+        "bg-[#a89984] text-[#282828] dark:bg-[#665c54] dark:text-[#ebdbb2]",
+      sembolClass: "text-2xl",
+    };
   };
 
   const dosyaIkonuGoster = (dosya) => {
@@ -877,13 +1074,42 @@ export default function AnaSayfa() {
       );
     }
 
+    const ikon = dosyaIkonBilgisiAl(dosya);
+
     return (
-      <div
-        className={`mb-3 flex h-16 w-16 items-center justify-center rounded-xl border-2 text-xs font-black tracking-wide transition-transform group-hover:scale-105 ${dosyaTipRenkClassAl(
-          dosya,
-        )}`}
-      >
-        {dosyaTipEtiketiAl(dosya)}
+      <div className="relative mb-3 h-16 w-16 transition-transform group-hover:scale-105">
+        <div
+          className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border-2 shadow-sm ${ikon.kagitClass}`}
+        >
+          <div className="absolute right-0 top-0 h-5 w-5 overflow-hidden">
+            <div className="absolute right-0 top-0 h-0 w-0 border-l-[20px] border-t-[20px] border-l-transparent border-t-[#fbf1c7] dark:border-t-[#282828]" />
+          </div>
+
+          {ikon.grup === "archive" ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="absolute left-1/2 top-1 h-14 w-2 -translate-x-1/2 rounded-full bg-current opacity-40" />
+              <div className="absolute left-1/2 top-2 h-2 w-1 -translate-x-1/2 rounded-sm bg-current opacity-80" />
+              <div className="absolute left-1/2 top-5 h-2 w-1 -translate-x-1/2 rounded-sm bg-current opacity-80" />
+              <div className="absolute left-1/2 top-8 h-2 w-1 -translate-x-1/2 rounded-sm bg-current opacity-80" />
+            </div>
+          ) : ikon.grup === "text" ? (
+            <div className="flex w-9 flex-col gap-1">
+              <span className="h-1 rounded-full bg-current opacity-80" />
+              <span className="h-1 rounded-full bg-current opacity-60" />
+              <span className="h-1 rounded-full bg-current opacity-40" />
+            </div>
+          ) : (
+            <span className={`font-black leading-none ${ikon.sembolClass}`}>
+              {ikon.sembol}
+            </span>
+          )}
+
+          <span
+            className={`absolute bottom-1 left-1 rounded px-1.5 py-0.5 text-[9px] font-black leading-none tracking-wide ${ikon.rozetClass}`}
+          >
+            {ikon.etiket}
+          </span>
+        </div>
       </div>
     );
   };
