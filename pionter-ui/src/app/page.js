@@ -1114,6 +1114,32 @@ export default function AnaSayfa() {
     );
   };
 
+  const dosyaMiniIkonuGoster = (dosya) => {
+    if (!dosya) return null;
+
+    if (dosya.klasorMu) {
+      return (
+        <svg
+          className="h-4 w-4 shrink-0 text-[#458588] dark:text-[#83a598]"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+        </svg>
+      );
+    }
+
+    const ikon = dosyaIkonBilgisiAl(dosya);
+
+    return (
+      <span
+        className={`inline-flex h-5 w-8 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded border text-[8px] font-black leading-none tracking-tight ${ikon.kagitClass}`}
+      >
+        {ikon.etiket}
+      </span>
+    );
+  };
+
   const dosyayiIndir = (dosya) => {
     if (yukleniyor) return;
     if (!seciliSunucu) {
@@ -2657,26 +2683,10 @@ export default function AnaSayfa() {
                   <div className="space-y-1">
                     {topluTasimaSeciliOgeler.slice(0, 5).map((oge) => (
                       <p
-                        key={`${oge.klasorMu ? "klasor" : "dosya"}:${oge.ad}`}
+                        key={dosyaAnahtariOlustur(oge)}
                         className="flex items-center gap-2 truncate text-xs text-[#3c3836] dark:text-[#ebdbb2]"
                       >
-                        {oge.klasorMu ? (
-                          <svg
-                            className="h-4 w-4 shrink-0 text-[#458588] dark:text-[#83a598]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="h-4 w-4 shrink-0 text-[#a89984]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                          </svg>
-                        )}
+                        {dosyaMiniIkonuGoster(oge)}
 
                         <span className="truncate">{oge.ad}</span>
                       </p>
@@ -2975,26 +2985,10 @@ export default function AnaSayfa() {
                 <div className="space-y-1">
                   {topluSilmeSeciliOgeler.slice(0, 5).map((oge) => (
                     <p
-                      key={`${oge.klasorMu ? "klasor" : "dosya"}:${oge.ad}`}
+                      key={dosyaAnahtariOlustur(oge)}
                       className="flex items-center gap-2 truncate text-xs text-[#3c3836] dark:text-[#ebdbb2]"
                     >
-                      {oge.klasorMu ? (
-                        <svg
-                          className="h-4 w-4 shrink-0 text-[#458588] dark:text-[#83a598]"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="h-4 w-4 shrink-0 text-[#a89984]"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                        </svg>
-                      )}
+                      {dosyaMiniIkonuGoster(oge)}
 
                       <span className="truncate">{oge.ad}</span>
                     </p>
