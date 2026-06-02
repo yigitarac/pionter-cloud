@@ -266,7 +266,17 @@ type SunucuStatsBilgileri struct {
 type SunucuStatsCevabi struct {
 	Basarili bool   `json:"basarili"`
 	Mesaj    string `json:"mesaj"`
-	Uptime   string `json:"uptime"`
+
+	Uptime      string `json:"uptime"`
+	LoadAverage string `json:"load_average"`
+
+	RamToplam     int     `json:"ram_toplam"`
+	RamKullanilan int     `json:"ram_kullanilan"`
+	RamYuzde      float64 `json:"ram_yuzde"`
+
+	DiskToplam     int     `json:"disk_toplam"`
+	DiskKullanilan int     `json:"disk_kullanilan"`
+	DiskYuzde      float64 `json:"disk_yuzde"`
 }
 
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
@@ -1598,6 +1608,56 @@ func sshKomutCalistir(client *ssh.Client, komut string) (string, error) {
 	return strings.TrimSpace(string(cikti)), nil
 }
 
+func yuzdeHesapla(kullanilan int, toplam int) float64 {
+	if toplam <= 0 {
+		return 0
+	}
+
+	yuzde := (float64(kullanilan) / float64(toplam)) * 100
+
+	return float64(int(yuzde*10)) / 10
+}
+
+func ramBilgisiCoz(cikti string) (int, int, float64, error) {
+	parcalar := strings.Fields(cikti)
+
+	if len(parcalar) < 2 {
+		return 0, 0, 0, fmt.Errorf("ram çıktısı geçersiz")
+	}
+
+	toplam, err := strconv.Atoi(parcalar[0])
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	kullanilan, err := strconv.Atoi(parcalar[1])
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	return toplam, kullanilan, yuzdeHesapla(kullanilan, toplam), nil
+}
+
+func diskBilgisiCoz(cikti string) (int, int, float64, error) {
+	parcalar := strings.Fields(cikti)
+
+	if len(parcalar) < 2 {
+		return 0, 0, 0, fmt.Errorf("disk çıktısı geçersiz")
+	}
+
+	toplam, err := strconv.Atoi(parcalar[0])
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	kullanilan, err := strconv.Atoi(parcalar[1])
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	return toplam, kullanilan, yuzdeHesapla(kullanilan, toplam), nil
+}
+
 func sunucuBaglantisiCalisiyorMu(kimlik GizliKimlik) error {
 	authMethods, err := sshAuthMethodOlustur(kimlik)
 	if err != nil {
@@ -1780,12 +1840,57 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loadAverageCikti, err := sshKomutCalistir(client, "cat /proc/loadavg | awk '{print $1, $2, $3}'")
+	if err != nil {
+		fmt.Println("Load average alınamadı:", err)
+		http.Error(w, "Sunucu bilgileri alınamadı", http.StatusBadGateway)
+		return
+	}
+
+	ramCikti, err := sshKomutCalistir(client, "free -m | awk '/Mem:/ {print $2, $3}'")
+	if err != nil {
+		fmt.Println("RAM bilgisi alınamadı:", err)
+		http.Error(w, "Sunucu bilgileri alınamadı", http.StatusBadGateway)
+		return
+	}
+
+	ramToplam, ramKullanilan, ramYuzde, err := ramBilgisiCoz(ramCikti)
+	if err != nil {
+		fmt.Println("RAM bilgisi çözülemedi:", err)
+		http.Error(w, "Sunucu bilgileri çözülemedi", http.StatusBadGateway)
+		return
+	}
+
+	diskCikti, err := sshKomutCalistir(client, "df -m / | awk 'NR==2 {print $2, $3}'")
+	if err != nil {
+		fmt.Println("Disk bilgisi alınamadı:", err)
+		http.Error(w, "Sunucu bilgileri alınamadı", http.StatusBadGateway)
+		return
+	}
+
+	diskToplam, diskKullanilan, diskYuzde, err := diskBilgisiCoz(diskCikti)
+	if err != nil {
+		fmt.Println("Disk bilgisi çözülemedi:", err)
+		http.Error(w, "Sunucu bilgileri çözülemedi", http.StatusBadGateway)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(SunucuStatsCevabi{
 		Basarili: true,
 		Mesaj:    "Sunucu bilgileri alındı",
-		Uptime:   uptimeCikti,
+
+		Uptime:      uptimeCikti,
+		LoadAverage: loadAverageCikti,
+
+		RamToplam:     ramToplam,
+		RamKullanilan: ramKullanilan,
+		RamYuzde:      ramYuzde,
+
+		DiskToplam:     diskToplam,
+		DiskKullanilan: diskKullanilan,
+		DiskYuzde:      diskYuzde,
 	})
 }
 
