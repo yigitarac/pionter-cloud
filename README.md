@@ -171,6 +171,35 @@ Known non-blocking lint warnings after v0.3:
 * `postcss.config.mjs` anonymous default export warning
 * React Hook dependency warning for the drag/drop upload effect in `page.js`
 
+## v0.4 Completed Summary
+
+v0.4 focused on adding a lightweight server monitoring panel for the selected server.
+
+Completed in v0.4:
+
+* Added `/api/server/stats` backend endpoint.
+* Added SSH-based server stats collection.
+* Added CPU usage calculation.
+* Added RAM usage information.
+* Added disk usage information.
+* Added clean uptime output.
+* Added server monitoring card to the selected server view.
+* Added CPU/RAM/Disk progress bars.
+* Added manual Refresh support.
+* Added silent auto refresh.
+* Added backend stats cache to reduce repeated SSH load.
+* Added Last updated timestamp.
+* Added SSH OK status badge.
+* Improved Turkish uppercase behavior with the `lang` attribute.
+* v0.4 final smoke test completed with no blocking errors.
+
+Known notes:
+
+* Monitoring currently targets Linux servers.
+* Auto refresh is frontend-driven.
+* Backend stats cache is in-memory.
+* Cache cleanup is deferred to a later refactor.
+
 ## Security Status
 
 PionterCloud is safer than the initial v0.1 local MVP, but it is still not production-ready.

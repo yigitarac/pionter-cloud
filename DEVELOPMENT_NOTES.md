@@ -211,6 +211,47 @@ Known non-blocking warnings after v0.3:
 
 v0.3 is considered complete.
 
+## v0.4 Server Monitoring Summary
+
+The v0.4 phase focused on adding basic server monitoring for the currently selected server.
+
+Completed in v0.4:
+
+* Added `/api/server/stats` endpoint.
+* Added stats request/response structs.
+* Added SSH command execution helper.
+* Added RAM parsing from `free -m`.
+* Added disk parsing from `df -m /`.
+* Added load average parsing from `/proc/loadavg`.
+* Added CPU usage calculation using two `/proc/stat` reads.
+* Changed uptime output to use `uptime -p`.
+* Added frontend stats state and fetch logic.
+* Added monitoring card inside the selected server panel.
+* Added CPU/RAM/Disk progress bars.
+* Removed Load Avg from the main UI to keep the panel simple.
+* Added SSH OK status badge.
+* Added Last updated timestamp.
+* Added manual refresh.
+* Added silent auto refresh every 60 seconds.
+* Auto refresh does not run while the browser tab is hidden.
+* Auto refresh does not replace the current stats card with loading state.
+* Added in-memory backend stats cache.
+* Manual refresh and first load use fresh stats.
+* Silent refresh can use cache.
+* Added Turkish uppercase fix by setting the root `lang` attribute.
+* Ran final v0.4 smoke test.
+
+Current limitations:
+
+* Monitoring is Linux-focused.
+* Stats are collected over SSH.
+* Each fresh stats request may open an SSH connection.
+* Backend cache is in-memory and resets when the backend restarts.
+* Cache cleanup is not implemented yet.
+* Historical charts are not implemented.
+* Alerting is not implemented.
+* Multi-server dashboard monitoring is not implemented.
+
 ## Current Authentication Behavior
 
 Current auth flow:
