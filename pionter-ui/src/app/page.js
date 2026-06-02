@@ -30,6 +30,7 @@ export default function AnaSayfa() {
   const dosyaGirdiRef = useRef(null);
   const toastTimeoutRef = useRef(null);
   const dragCounterRef = useRef(0);
+  const sunucuStatsIstekDevamEdiyorRef = useRef(false);
   const [sunucuFormAcik, setSunucuFormAcik] = useState(false);
   const [sunucuTakmaAd, setSunucuTakmaAd] = useState("");
   const [sunucuPort, setSunucuPort] = useState("22");
@@ -475,8 +476,8 @@ export default function AnaSayfa() {
     sunucuStatsGetir(sunucu);
   };
 
-  const sunucuStatsGetir = (sunucu = seciliSunucu) => {
-    if (sunucuStatsYukleniyor) return;
+  const sunucuStatsGetir = (sunucu = seciliSunucu, sessiz = false) => {
+    if (sunucuStatsIstekDevamEdiyorRef.current) return;
 
     if (!sunucu) {
       setSunucuStatsHatasi(
@@ -492,7 +493,14 @@ export default function AnaSayfa() {
       return;
     }
 
-    setSunucuStatsYukleniyor(true);
+    const sessizYenileme = sessiz;
+
+    sunucuStatsIstekDevamEdiyorRef.current = true;
+
+    if (!sessizYenileme) {
+      setSunucuStatsYukleniyor(true);
+    }
+
     setSunucuStatsHatasi("");
 
     fetch("http://localhost:8080/api/server/stats", {
@@ -525,17 +533,24 @@ export default function AnaSayfa() {
       })
       .catch((hata) => {
         if (hata.message === "Oturum geçersiz") {
+          setSunucuStatsYukleniyor(false);
           return;
         }
 
         console.log("Sunucu stats hatası:", hata);
-        setSunucuStats(null);
         setSunucuStatsYukleniyor(false);
-        setSunucuStatsHatasi(
-          dil === "tr"
-            ? "Sunucu bilgileri alınamadı."
-            : "Server stats could not be loaded.",
-        );
+
+        if (!sessizYenileme) {
+          setSunucuStats(null);
+          setSunucuStatsHatasi(
+            dil === "tr"
+              ? "Sunucu bilgileri alınamadı."
+              : "Server stats could not be loaded.",
+          );
+        }
+      })
+      .finally(() => {
+        sunucuStatsIstekDevamEdiyorRef.current = false;
       });
   };
 
@@ -1198,6 +1213,26 @@ export default function AnaSayfa() {
       window.removeEventListener("drop", pencereDosyaBirakildi);
     };
   }, [seciliSunucu, yukleniyor, mevcutYol, oturumToken]);
+
+  useEffect(() => {
+    if (!girisYapildi || !seciliSunucu || !oturumToken) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (document.hidden) return;
+      if (yukleniyor) return;
+
+      sunucuStatsGetir(seciliSunucu, true);
+    }, 60000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+
+    // sunucuStatsGetir her render'da yeniden oluştuğu için bilerek dependency'ye eklemiyom
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [girisYapildi, seciliSunucu, oturumToken, yukleniyor]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -3488,11 +3523,11 @@ export default function AnaSayfa() {
                   </div>
                 </div>
 
-                {sunucuStatsYukleniyor ? (
+                {sunucuStatsYukleniyor && !sunucuStats ? (
                   <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
                     {t.loadingStats}
                   </p>
-                ) : sunucuStatsHatasi ? (
+                ) : sunucuStatsHatasi && !sunucuStats ? (
                   <p className="text-sm font-bold text-[#cc241d]">
                     {t.statsLoadFailed}
                   </p>
