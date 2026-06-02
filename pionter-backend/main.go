@@ -1881,12 +1881,13 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 	}
 	defer client.Close()
 
-	uptimeCikti, err := sshKomutCalistir(client, "uptime")
+	uptimeCikti, err := sshKomutCalistir(client, "uptime -p")
 	if err != nil {
 		fmt.Println("Uptime komutu çalıştırılamadı:", err)
 		http.Error(w, "Sunucu bilgileri alınamadı", http.StatusBadGateway)
 		return
 	}
+	uptimeCikti = strings.TrimPrefix(uptimeCikti, "up ")
 
 	loadAverageCikti, err := sshKomutCalistir(client, "cat /proc/loadavg | awk '{print $1, $2, $3}'")
 	if err != nil {

@@ -67,6 +67,9 @@ export default function AnaSayfa() {
   const [ayarMenusuAcik, setAyarMenusuAcik] = useState(false);
   const [solPanelAcik, setSolPanelAcik] = useState(false);
   const [topluTasimaModalAcik, setTopluTasimaModalAcik] = useState(false);
+  const [sunucuStats, setSunucuStats] = useState(null);
+  const [sunucuStatsYukleniyor, setSunucuStatsYukleniyor] = useState(false);
+  const [sunucuStatsHatasi, setSunucuStatsHatasi] = useState("");
 
   const t = sozluk[dil];
 
@@ -314,6 +317,9 @@ export default function AnaSayfa() {
     setAyarMenusuAcik(false);
     setSolPanelAcik(false);
     setTopluTasimaModalAcik(false);
+    setSunucuStats(null);
+    setSunucuStatsYukleniyor(false);
+    setSunucuStatsHatasi("");
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -355,6 +361,9 @@ export default function AnaSayfa() {
     setAyarMenusuAcik(false);
     setSolPanelAcik(false);
     setTopluTasimaModalAcik(false);
+    setSunucuStats(null);
+    setSunucuStatsYukleniyor(false);
+    setSunucuStatsHatasi("");
 
     setSeciliSunucu(null);
     setSunucular([]);
@@ -441,6 +450,9 @@ export default function AnaSayfa() {
     setYeniKlasorAdi("");
     setAcikMenuIndex(null);
     setTopluTasimaModalAcik(false);
+    setSunucuStats(null);
+    setSunucuStatsYukleniyor(false);
+    setSunucuStatsHatasi("");
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -460,6 +472,81 @@ export default function AnaSayfa() {
     setYuklemeMesaji(t.loadingFiles);
 
     klasoruYenile("/", sunucu);
+    sunucuStatsGetir(sunucu);
+  };
+
+  const sunucuStatsGetir = (sunucu = seciliSunucu) => {
+    if (sunucuStatsYukleniyor) return;
+
+    if (!sunucu) {
+      setSunucuStatsHatasi(
+        dil === "tr" ? "Sunucu seçilmedi." : "No server selected.",
+      );
+      return;
+    }
+
+    if (!oturumToken) {
+      setSunucuStatsHatasi(
+        dil === "tr" ? "Oturum bulunamadı." : "Session not found.",
+      );
+      return;
+    }
+
+    setSunucuStatsYukleniyor(true);
+    setSunucuStatsHatasi("");
+
+    fetch("http://localhost:8080/api/server/stats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: sunucu.id,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Sunucu bilgileri alınamadı");
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        if (!veri.basarili) {
+          throw new Error("Sunucu bilgileri alınamadı");
+        }
+
+        setSunucuStats(veri);
+        setSunucuStatsYukleniyor(false);
+        setSunucuStatsHatasi("");
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
+
+        console.log("Sunucu stats hatası:", hata);
+        setSunucuStats(null);
+        setSunucuStatsYukleniyor(false);
+        setSunucuStatsHatasi(
+          dil === "tr"
+            ? "Sunucu bilgileri alınamadı."
+            : "Server stats could not be loaded.",
+        );
+      });
+  };
+
+  const megabaytYaz = (deger) => {
+    if (deger === null || deger === undefined) return "-";
+
+    if (deger >= 1024) {
+      return `${(deger / 1024).toFixed(1)} GB`;
+    }
+
+    return `${deger} MB`;
   };
 
   const dosyayiIndir = (dosya) => {
@@ -3374,6 +3461,96 @@ export default function AnaSayfa() {
                 >
                   {t.backToServers}
                 </button>
+              </div>
+            )}
+            {seciliSunucu && (
+              <div className="mb-6 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-4 text-[#3c3836] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2]">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-base font-black">{t.serverStatus}</h3>
+                    <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                      {seciliSunucu.takmaAd}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => sunucuStatsGetir()}
+                    disabled={sunucuStatsYukleniyor || yukleniyor}
+                    className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                  >
+                    {t.refreshStats}
+                  </button>
+                </div>
+
+                {sunucuStatsYukleniyor ? (
+                  <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
+                    {t.loadingStats}
+                  </p>
+                ) : sunucuStatsHatasi ? (
+                  <p className="text-sm font-bold text-[#cc241d]">
+                    {t.statsLoadFailed}
+                  </p>
+                ) : sunucuStats ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                        {t.cpuUsage}
+                      </p>
+                      <p className="mt-2 text-xl font-black">
+                        {sunucuStats.cpu_yuzde}%
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                        {t.ramUsage}
+                      </p>
+                      <p className="mt-2 text-xl font-black">
+                        {sunucuStats.ram_yuzde}%
+                      </p>
+                      <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                        {megabaytYaz(sunucuStats.ram_kullanilan)} /{" "}
+                        {megabaytYaz(sunucuStats.ram_toplam)} {t.used}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                        {t.diskUsage}
+                      </p>
+                      <p className="mt-2 text-xl font-black">
+                        {sunucuStats.disk_yuzde}%
+                      </p>
+                      <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                        {megabaytYaz(sunucuStats.disk_kullanilan)} /{" "}
+                        {megabaytYaz(sunucuStats.disk_toplam)} {t.used}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                        {t.loadAverage}
+                      </p>
+                      <p className="mt-2 text-sm font-black">
+                        {sunucuStats.load_average || "-"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                        {t.uptime}
+                      </p>
+                      <p className="mt-2 line-clamp-3 text-xs font-bold">
+                        {sunucuStats.uptime || "-"}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
+                    {t.loadingStats}
+                  </p>
+                )}
               </div>
             )}
             <div className="mb-4 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
