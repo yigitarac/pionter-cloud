@@ -509,6 +509,7 @@ export default function AnaSayfa() {
       body: JSON.stringify({
         token: oturumToken,
         server_id: sunucu.id,
+        force: !sessiz,
       }),
     })
       .then((cevap) => {

@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"crypto/rand"
@@ -27,7 +28,12 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// GLOBAL DEĞİŞKENLER
+
 var db *sql.DB
+var sunucuStatsCache = map[string]SunucuStatsCacheKaydi{}
+var sunucuStatsCacheMutex sync.Mutex
+var sunucuStatsCacheSuresi = 20 * time.Second
 
 func main() {
 	var err error
@@ -261,6 +267,7 @@ type TokenIstekBilgileri struct {
 type SunucuStatsBilgileri struct {
 	Token    string `json:"token"`
 	ServerID int    `json:"server_id"`
+	Force    bool   `json:"force"`
 }
 
 type SunucuStatsCevabi struct {
@@ -278,6 +285,11 @@ type SunucuStatsCevabi struct {
 	DiskToplam     int     `json:"disk_toplam"`
 	DiskKullanilan int     `json:"disk_kullanilan"`
 	DiskYuzde      float64 `json:"disk_yuzde"`
+}
+
+type SunucuStatsCacheKaydi struct {
+	Cevap         SunucuStatsCevabi
+	SonGuncelleme time.Time
 }
 
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
@@ -1859,6 +1871,21 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cacheAnahtari := fmt.Sprintf("%s:%d", bilgiler.Token, bilgiler.ServerID)
+
+	if !bilgiler.Force {
+		sunucuStatsCacheMutex.Lock()
+		cacheKaydi, cacheVarMi := sunucuStatsCache[cacheAnahtari]
+		sunucuStatsCacheMutex.Unlock()
+
+		if cacheVarMi && time.Since(cacheKaydi.SonGuncelleme) < sunucuStatsCacheSuresi {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cacheKaydi.Cevap)
+			return
+		}
+	}
+
 	authMethods, err := sshAuthMethodOlustur(kimlik)
 	if err != nil {
 		fmt.Println("Stats SSH auth hatası:", err)
@@ -1938,9 +1965,7 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(SunucuStatsCevabi{
+	cevap := SunucuStatsCevabi{
 		Basarili: true,
 		Mesaj:    "Sunucu bilgileri alındı",
 
@@ -1955,7 +1980,18 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 		DiskToplam:     diskToplam,
 		DiskKullanilan: diskKullanilan,
 		DiskYuzde:      diskYuzde,
-	})
+	}
+
+	sunucuStatsCacheMutex.Lock()
+	sunucuStatsCache[cacheAnahtari] = SunucuStatsCacheKaydi{
+		Cevap:         cevap,
+		SonGuncelleme: time.Now(),
+	}
+	sunucuStatsCacheMutex.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(cevap)
 }
 
 func sifreHashle(sifre string) (string, error) {
