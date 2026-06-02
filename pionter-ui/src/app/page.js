@@ -582,7 +582,20 @@ export default function AnaSayfa() {
   };
 
   const dosyaPreviewGetir = (dosya, sessiz = false) => {
-    if (!dosya || dosya.klasorMu) {
+    if (!previewAcilabilirMi(dosya)) {
+      if (!sessiz) {
+        setPreviewDosya(dosya);
+        setPreviewVerisi({
+          basarili: false,
+          tip: "unsupported",
+          dosya_adi: dosya?.ad || "",
+          mesaj: t.previewNotAvailable,
+        });
+        setPreviewYukleniyor(false);
+        setPreviewHatasi(t.previewNotAvailable);
+        setPreviewModalAcik(true);
+      }
+
       return Promise.resolve(null);
     }
 
@@ -700,6 +713,179 @@ export default function AnaSayfa() {
     if (sayi > 100) return 100;
 
     return sayi;
+  };
+
+  const dosyaUzantisiAl = (dosyaAdi) => {
+    const temizAd = dosyaAdi.toLowerCase().trim();
+
+    if (temizAd === ".env") return ".env";
+    if (temizAd.endsWith(".env.example")) return ".env.example";
+
+    const sonNoktaIndex = temizAd.lastIndexOf(".");
+
+    if (sonNoktaIndex === -1) return "";
+
+    return temizAd.slice(sonNoktaIndex);
+  };
+
+  const imageDosyasiMi = (dosyaAdi) => {
+    return [".png", ".jpg", ".jpeg", ".gif", ".webp"].includes(
+      dosyaUzantisiAl(dosyaAdi),
+    );
+  };
+
+  const textPreviewDosyasiMi = (dosyaAdi) => {
+    return [
+      ".txt",
+      ".md",
+      ".json",
+      ".js",
+      ".jsx",
+      ".ts",
+      ".tsx",
+      ".go",
+      ".c",
+      ".cpp",
+      ".cc",
+      ".cxx",
+      ".h",
+      ".hpp",
+      ".cs",
+      ".css",
+      ".html",
+      ".env",
+      ".env.example",
+      ".yml",
+      ".yaml",
+      ".xml",
+      ".log",
+    ].includes(dosyaUzantisiAl(dosyaAdi));
+  };
+
+  const pdfDosyasiMi = (dosyaAdi) => {
+    return dosyaUzantisiAl(dosyaAdi) === ".pdf";
+  };
+
+  const officeDosyasiMi = (dosyaAdi) => {
+    return [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"].includes(
+      dosyaUzantisiAl(dosyaAdi),
+    );
+  };
+
+  const arsivDosyasiMi = (dosyaAdi) => {
+    return [".zip", ".rar", ".7z", ".tar", ".gz"].includes(
+      dosyaUzantisiAl(dosyaAdi),
+    );
+  };
+
+  const previewAcilabilirMi = (dosya) => {
+    if (!dosya || dosya.klasorMu) return false;
+
+    return (
+      imageDosyasiMi(dosya.ad) ||
+      textPreviewDosyasiMi(dosya.ad) ||
+      pdfDosyasiMi(dosya.ad)
+    );
+  };
+
+  const officeDosyaEtiketiAl = (dosyaAdi) => {
+    const uzanti = dosyaUzantisiAl(dosyaAdi);
+
+    if ([".doc", ".docx"].includes(uzanti)) return "DOC";
+    if ([".xls", ".xlsx"].includes(uzanti)) return "XLS";
+    if ([".ppt", ".pptx"].includes(uzanti)) return "PPT";
+
+    return "OFFICE";
+  };
+
+  const textDosyaEtiketiAl = (dosyaAdi) => {
+    const uzanti = dosyaUzantisiAl(dosyaAdi);
+
+    if (uzanti === ".txt") return "TXT";
+    if (uzanti === ".md") return "MD";
+    if (uzanti === ".json") return "JSON";
+    if (uzanti === ".js") return "JS";
+    if (uzanti === ".jsx") return "JSX";
+    if (uzanti === ".ts") return "TS";
+    if (uzanti === ".tsx") return "TSX";
+    if (uzanti === ".go") return "GO";
+    if (uzanti === ".c") return "C";
+    if ([".cpp", ".cc", ".cxx"].includes(uzanti)) return "C++";
+    if ([".h", ".hpp"].includes(uzanti)) return "H";
+    if (uzanti === ".cs") return "C#";
+    if (uzanti === ".css") return "CSS";
+    if (uzanti === ".html") return "HTML";
+    if (uzanti === ".env") return "ENV";
+    if (uzanti === ".env.example") return "ENV";
+    if ([".yml", ".yaml"].includes(uzanti)) return "YAML";
+    if (uzanti === ".xml") return "XML";
+    if (uzanti === ".log") return "LOG";
+
+    return "CODE";
+  };
+
+  const dosyaTipEtiketiAl = (dosya) => {
+    if (!dosya || dosya.klasorMu) return "";
+
+    if (imageDosyasiMi(dosya.ad)) return "IMG";
+    if (pdfDosyasiMi(dosya.ad)) return "PDF";
+    if (officeDosyasiMi(dosya.ad)) return officeDosyaEtiketiAl(dosya.ad);
+    if (arsivDosyasiMi(dosya.ad)) return "ZIP";
+    if (textPreviewDosyasiMi(dosya.ad)) return textDosyaEtiketiAl(dosya.ad);
+
+    return "FILE";
+  };
+
+  const dosyaTipRenkClassAl = (dosya) => {
+    if (!dosya || dosya.klasorMu) {
+      return "border-[#458588] bg-[#d5c4a1] text-[#076678] dark:border-[#83a598] dark:bg-[#3c3836] dark:text-[#83a598]";
+    }
+
+    if (imageDosyasiMi(dosya.ad)) {
+      return "border-[#98971a] bg-[#d5c4a1] text-[#79740e] dark:border-[#b8bb26] dark:bg-[#3c3836] dark:text-[#b8bb26]";
+    }
+
+    if (pdfDosyasiMi(dosya.ad)) {
+      return "border-[#cc241d] bg-[#d5c4a1] text-[#9d0006] dark:border-[#fb4934] dark:bg-[#3c3836] dark:text-[#fb4934]";
+    }
+
+    if (officeDosyasiMi(dosya.ad)) {
+      return "border-[#458588] bg-[#d5c4a1] text-[#076678] dark:border-[#83a598] dark:bg-[#3c3836] dark:text-[#83a598]";
+    }
+
+    if (arsivDosyasiMi(dosya.ad)) {
+      return "border-[#d79921] bg-[#d5c4a1] text-[#b57614] dark:border-[#fabd2f] dark:bg-[#3c3836] dark:text-[#fabd2f]";
+    }
+
+    if (textPreviewDosyasiMi(dosya.ad)) {
+      return "border-[#b16286] bg-[#d5c4a1] text-[#8f3f71] dark:border-[#d3869b] dark:bg-[#3c3836] dark:text-[#d3869b]";
+    }
+
+    return "border-[#a89984] bg-[#d5c4a1] text-[#7c6f64] dark:border-[#665c54] dark:bg-[#3c3836] dark:text-[#a89984]";
+  };
+
+  const dosyaIkonuGoster = (dosya) => {
+    if (dosya.klasorMu) {
+      return (
+        <svg
+          className="mb-3 h-16 w-16 text-[#458588] transition-transform group-hover:scale-105 dark:text-[#83a598]"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+        </svg>
+      );
+    }
+
+    return (
+      <div
+        className={`mb-3 flex h-16 w-16 items-center justify-center rounded-xl border-2 text-xs font-black tracking-wide transition-transform group-hover:scale-105 ${dosyaTipRenkClassAl(
+          dosya,
+        )}`}
+      >
+        {dosyaTipEtiketiAl(dosya)}
+      </div>
+    );
   };
 
   const dosyayiIndir = (dosya) => {
@@ -3958,23 +4144,7 @@ export default function AnaSayfa() {
                     >
                       ✓
                     </button>
-                    {dosya.klasorMu ? (
-                      <svg
-                        className="w-16 h-16 text-[#458588] dark:text-[#83a598] mb-3 group-hover:scale-105 transition-transform"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-16 h-16 text-[#928374] dark:text-[#a89984] mb-3 group-hover:scale-105 transition-transform"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                      </svg>
-                    )}
+                    {dosyaIkonuGoster(dosya)}
                     <span
                       title={dosya.ad}
                       className="block text-sm font-medium text-center w-full max-w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]"
