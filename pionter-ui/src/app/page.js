@@ -3439,48 +3439,40 @@ export default function AnaSayfa() {
               </div>
             )}
             {seciliSunucu && (
-              <div className="mb-4 flex flex-col gap-3 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-3 dark:border-[#504945] dark:bg-[#3c3836] sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
-                    {t.selectedServer}
-                  </p>
-
-                  <h2 className="truncate text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
-                    {seciliSunucu.takmaAd}
-                  </h2>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    sunucularaDon();
-                    setSolPanelAcik(false);
-                  }}
-                  disabled={yukleniyor}
-                  className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                >
-                  {t.backToServers}
-                </button>
-              </div>
-            )}
-            {seciliSunucu && (
-              <div className="mb-6 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-4 text-[#3c3836] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2]">
+              <div className="mb-4 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-4 text-[#3c3836] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2]">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="text-base font-black">{t.serverStatus}</h3>
-                    <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
-                      {seciliSunucu.takmaAd}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                      {t.selectedServer}
                     </p>
+
+                    <h2 className="truncate text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                      {seciliSunucu.takmaAd}
+                    </h2>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => sunucuStatsGetir()}
-                    disabled={sunucuStatsYukleniyor || yukleniyor}
-                    className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                  >
-                    {t.refreshStats}
-                  </button>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => sunucuStatsGetir()}
+                      disabled={sunucuStatsYukleniyor || yukleniyor}
+                      className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                    >
+                      {t.refreshStats}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sunucularaDon();
+                        setSolPanelAcik(false);
+                      }}
+                      disabled={yukleniyor}
+                      className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                    >
+                      {t.backToServers}
+                    </button>
+                  </div>
                 </div>
 
                 {sunucuStatsYukleniyor ? (
@@ -3541,7 +3533,7 @@ export default function AnaSayfa() {
                       <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                         {t.uptime}
                       </p>
-                      <p className="mt-2 line-clamp-3 text-xs font-bold">
+                      <p className="mt-2 text-sm font-black">
                         {sunucuStats.uptime || "-"}
                       </p>
                     </div>
