@@ -2972,9 +2972,12 @@ export default function AnaSayfa() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold">{t.myServers}</h2>
-                  <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mt-1">
-                    {t.serversDraftInfo}
-                  </p>
+
+                  {sunucular.length === 0 && (
+                    <p className="mt-1 text-sm text-[#7c6f64] dark:text-[#a89984]">
+                      {t.serversDraftInfo}
+                    </p>
+                  )}
                 </div>
               </div>
               {sunucuFormAcik && (
