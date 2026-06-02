@@ -267,8 +267,9 @@ type SunucuStatsCevabi struct {
 	Basarili bool   `json:"basarili"`
 	Mesaj    string `json:"mesaj"`
 
-	Uptime      string `json:"uptime"`
-	LoadAverage string `json:"load_average"`
+	Uptime      string  `json:"uptime"`
+	LoadAverage string  `json:"load_average"`
+	CpuYuzde    float64 `json:"cpu_yuzde"`
 
 	RamToplam     int     `json:"ram_toplam"`
 	RamKullanilan int     `json:"ram_kullanilan"`
@@ -1658,6 +1659,53 @@ func diskBilgisiCoz(cikti string) (int, int, float64, error) {
 	return toplam, kullanilan, yuzdeHesapla(kullanilan, toplam), nil
 }
 
+func cpuBilgisiCoz(cikti string) (float64, error) {
+	parcalar := strings.Fields(cikti)
+
+	if len(parcalar) < 4 {
+		return 0, fmt.Errorf("cpu çıktısı geçersiz")
+	}
+
+	idle1, err := strconv.ParseFloat(parcalar[0], 64)
+	if err != nil {
+		return 0, err
+	}
+
+	total1, err := strconv.ParseFloat(parcalar[1], 64)
+	if err != nil {
+		return 0, err
+	}
+
+	idle2, err := strconv.ParseFloat(parcalar[2], 64)
+	if err != nil {
+		return 0, err
+	}
+
+	total2, err := strconv.ParseFloat(parcalar[3], 64)
+	if err != nil {
+		return 0, err
+	}
+
+	idleFarki := idle2 - idle1
+	totalFarki := total2 - total1
+
+	if totalFarki <= 0 {
+		return 0, fmt.Errorf("cpu toplam farkı geçersiz")
+	}
+
+	kullanim := (1 - idleFarki/totalFarki) * 100
+
+	if kullanim < 0 {
+		kullanim = 0
+	}
+
+	if kullanim > 100 {
+		kullanim = 100
+	}
+
+	return float64(int(kullanim*10)) / 10, nil
+}
+
 func sunucuBaglantisiCalisiyorMu(kimlik GizliKimlik) error {
 	authMethods, err := sshAuthMethodOlustur(kimlik)
 	if err != nil {
@@ -1847,6 +1895,20 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpuCikti, err := sshKomutCalistir(client, "awk '/^cpu / {idle=$5+$6; total=0; for (i=2;i<=8;i++) total+=$i; print idle, total}' /proc/stat; sleep 1; awk '/^cpu / {idle=$5+$6; total=0; for (i=2;i<=8;i++) total+=$i; print idle, total}' /proc/stat")
+	if err != nil {
+		fmt.Println("CPU bilgisi alınamadı:", err)
+		http.Error(w, "Sunucu bilgileri alınamadı", http.StatusBadGateway)
+		return
+	}
+
+	cpuYuzde, err := cpuBilgisiCoz(cpuCikti)
+	if err != nil {
+		fmt.Println("CPU bilgisi çözülemedi:", err)
+		http.Error(w, "Sunucu bilgileri çözülemedi", http.StatusBadGateway)
+		return
+	}
+
 	ramCikti, err := sshKomutCalistir(client, "free -m | awk '/Mem:/ {print $2, $3}'")
 	if err != nil {
 		fmt.Println("RAM bilgisi alınamadı:", err)
@@ -1883,6 +1945,7 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 
 		Uptime:      uptimeCikti,
 		LoadAverage: loadAverageCikti,
+		CpuYuzde:    cpuYuzde,
 
 		RamToplam:     ramToplam,
 		RamKullanilan: ramKullanilan,
