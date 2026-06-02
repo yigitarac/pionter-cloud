@@ -76,6 +76,7 @@ export default function AnaSayfa() {
   const [previewVerisi, setPreviewVerisi] = useState(null);
   const [previewYukleniyor, setPreviewYukleniyor] = useState(false);
   const [previewHatasi, setPreviewHatasi] = useState("");
+  const [thumbnailVerileri, setThumbnailVerileri] = useState({});
   const previewCacheRef = useRef({});
 
   const t = sozluk[dil];
@@ -341,6 +342,7 @@ export default function AnaSayfa() {
 
     previewTemizle();
     previewCacheRef.current = {};
+    setThumbnailVerileri({});
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -399,6 +401,7 @@ export default function AnaSayfa() {
 
     previewTemizle();
     previewCacheRef.current = {};
+    setThumbnailVerileri({});
 
     setSunucuFormAcik(false);
     sunucuFormunuTemizle();
@@ -484,6 +487,7 @@ export default function AnaSayfa() {
 
     previewTemizle();
     previewCacheRef.current = {};
+    setThumbnailVerileri({});
 
     setTopluSilmeModalAcik(false);
     setMoveModalAcik(false);
@@ -581,6 +585,16 @@ export default function AnaSayfa() {
       });
   };
 
+  const previewCacheAnahtariOlustur = (
+    dosya,
+    yol = mevcutYol,
+    sunucu = seciliSunucu,
+  ) => {
+    if (!dosya || !sunucu) return "";
+
+    return `${sunucu.id}:${yol}:${dosya.ad}`;
+  };
+
   const dosyaPreviewGetir = (dosya, sessiz = false) => {
     if (!previewAcilabilirMi(dosya)) {
       if (!sessiz) {
@@ -617,7 +631,7 @@ export default function AnaSayfa() {
       return Promise.resolve(null);
     }
 
-    const cacheAnahtari = `${seciliSunucu.id}:${mevcutYol}:${dosya.ad}`;
+    const cacheAnahtari = previewCacheAnahtariOlustur(dosya);
 
     if (previewCacheRef.current[cacheAnahtari]) {
       const cacheVerisi = previewCacheRef.current[cacheAnahtari];
@@ -1071,6 +1085,33 @@ export default function AnaSayfa() {
         >
           <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
         </svg>
+      );
+    }
+
+    const thumbnailAnahtari = previewCacheAnahtariOlustur(dosya);
+    const thumbnailVerisi = thumbnailAnahtari
+      ? thumbnailVerileri[thumbnailAnahtari]
+      : null;
+
+    if (
+      imageDosyasiMi(dosya.ad) &&
+      thumbnailVerisi?.basarili &&
+      thumbnailVerisi?.tip === "image" &&
+      thumbnailVerisi?.base64 &&
+      thumbnailVerisi?.mime
+    ) {
+      return (
+        <div className="relative mb-3 h-16 w-16 overflow-hidden rounded-lg border border-[#504945] bg-[#282828] shadow-sm transition-transform group-hover:scale-105">
+          <img
+            src={`data:${thumbnailVerisi.mime};base64,${thumbnailVerisi.base64}`}
+            alt={dosya.ad}
+            className="h-full w-full object-cover"
+          />
+
+          <span className="absolute bottom-1 left-1 rounded bg-[#282828]/80 px-1.5 py-0.5 text-[9px] font-black leading-none tracking-wide text-[#ebdbb2]">
+            IMG
+          </span>
+        </div>
       );
     }
 
@@ -1799,6 +1840,56 @@ export default function AnaSayfa() {
     // sunucuStatsGetir her render'da yeniden oluştuğu için bilerek dependency'ye eklemiyom
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [girisYapildi, seciliSunucu, oturumToken, yukleniyor]);
+
+  useEffect(() => {
+    if (!girisYapildi || !seciliSunucu || !oturumToken) {
+      return;
+    }
+
+    const imageDosyalari = dosyalar
+      .filter((dosya) => !dosya.klasorMu && imageDosyasiMi(dosya.ad))
+      .slice(0, 12);
+
+    imageDosyalari.forEach((dosya) => {
+      const cacheAnahtari = previewCacheAnahtariOlustur(dosya);
+
+      if (!cacheAnahtari) return;
+      if (thumbnailVerileri[cacheAnahtari]) return;
+
+      const mevcutCache = previewCacheRef.current[cacheAnahtari];
+
+      if (
+        mevcutCache?.basarili &&
+        mevcutCache?.tip === "image" &&
+        mevcutCache?.base64 &&
+        mevcutCache?.mime
+      ) {
+        setThumbnailVerileri((mevcut) => ({
+          ...mevcut,
+          [cacheAnahtari]: mevcutCache,
+        }));
+
+        return;
+      }
+
+      dosyaPreviewGetir(dosya, true).then((veri) => {
+        if (
+          veri?.basarili &&
+          veri?.tip === "image" &&
+          veri?.base64 &&
+          veri?.mime
+        ) {
+          setThumbnailVerileri((mevcut) => ({
+            ...mevcut,
+            [cacheAnahtari]: veri,
+          }));
+        }
+      });
+    });
+
+    // thumbnail loader kontrollü olarak cache/ref kullandığı için helper dependency'lerini eklemiyom
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [girisYapildi, seciliSunucu, oturumToken, dosyalar, mevcutYol]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
