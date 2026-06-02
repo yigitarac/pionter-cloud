@@ -252,6 +252,60 @@ Current limitations:
 * Alerting is not implemented.
 * Multi-server dashboard monitoring is not implemented.
 
+## v0.5A File Preview Summary
+
+The v0.5A phase focused on adding safe file previews and improving file type recognition in the UI.
+
+Backend changes:
+
+* Added `/api/file/preview`.
+* Added preview request and response structs.
+* Added file extension detection helper.
+* Added supported text/code file whitelist.
+* Added image file whitelist.
+* Added preview type detection.
+* Added text preview reader through SFTP.
+* Added image preview reader through SFTP.
+* Added base64 image response support.
+* Added preview limits:
+  * Text preview max: 1 MB
+  * Image preview max: 5 MB
+* Added support for special filenames:
+  * `.env`
+  * `.env.example`
+  * `Dockerfile`
+  * `Makefile`
+  * `CMakeLists.txt`
+
+Frontend changes:
+
+* Added preview modal state.
+* Added preview cache.
+* Added preview fetch function.
+* Added file type helper functions.
+* Added image thumbnail loading.
+* Added image thumbnail rendering inside file cards.
+* Added file preview modal.
+* Added outside-click close behavior.
+* Added Escape key close behavior.
+* Changed file click behavior:
+  * Folders open normally.
+  * Preview-supported files open in preview modal.
+  * Unsupported files keep download behavior.
+* Added file icon system v2.
+* Added language-specific code icon colors.
+* Added fixed-width mini icons for bulk move/delete modals.
+* Added expanded language/config file support.
+
+Current limitations:
+
+* PDF preview is not implemented yet.
+* Office document preview is not implemented yet.
+* Video/audio preview is not implemented yet.
+* Large files are intentionally blocked.
+* Thumbnail loading is simple and limited; future improvement can use IntersectionObserver.
+* Text editor/save support is not implemented yet.
+
 ## Current Authentication Behavior
 
 Current auth flow:

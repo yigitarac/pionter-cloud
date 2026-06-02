@@ -18,7 +18,8 @@ Current phase status:
 * v0.2 Security Gate: completed
 * v0.3 Core File Manager Polish: completed
 * v0.4 Server Monitoring: completed
-* v0.5 File Preview and Editor: planned
+* v0.5A File Preview: completed
+* v0.5B Basic Text Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
@@ -199,6 +200,54 @@ Known notes:
 * Auto refresh is frontend-driven.
 * Backend stats cache is in-memory.
 * Cache cleanup is deferred to a later refactor.
+
+## v0.5A Completed Summary
+
+v0.5A focused on adding a safe and lightweight file preview system.
+
+Completed in v0.5A:
+
+* Added `/api/file/preview` backend endpoint.
+* Added text/code file preview support.
+* Added image preview support.
+* Added preview size limits.
+* Added frontend preview state and cache.
+* Added image thumbnails in the file grid.
+* Added file preview modal.
+* Added modal close behavior with Close button, outside click, and Escape key.
+* Added file type icon system v2.
+* Added language-specific code file icon colors.
+* Added mini file icons in bulk move/delete modals.
+* Added support for common programming/config file types:
+  * JavaScript / TypeScript
+  * Go
+  * C / C++ / C#
+  * Python
+  * Rust
+  * Zig
+  * Ruby
+  * Java
+  * Kotlin
+  * PHP
+  * Swift
+  * Dart
+  * Lua
+  * R
+  * Scala
+  * Shell
+  * SQL
+  * Dockerfile
+  * Makefile
+  * CMakeLists
+  * TOML / INI / CONF
+* v0.5A preview smoke test completed.
+
+Known notes:
+
+* PDF preview currently shows a fallback message and download option.
+* Office files currently use distinct icons but do not have real preview.
+* Large text/image files are blocked by preview limits.
+* Image thumbnail loading is limited to the first visible batch for safety.
 
 ## Security Status
 
