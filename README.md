@@ -17,7 +17,7 @@ Current phase status:
 * v0.1 Local/Portfolio MVP: completed
 * v0.2 Security Gate: completed
 * v0.3 Core File Manager Polish: completed
-* v0.4 Server Monitoring: planned
+* v0.4 Server Monitoring: completed
 * v0.5 File Preview and Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
