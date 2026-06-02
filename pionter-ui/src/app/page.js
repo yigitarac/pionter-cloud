@@ -1926,7 +1926,10 @@ export default function AnaSayfa() {
       });
     });
   return (
-    <div className={karanlikMod ? "dark" : ""}>
+    <div
+      className={karanlikMod ? "dark" : ""}
+      lang={dil === "tr" ? "tr" : "en"}
+    >
       <Toast toast={toast} />
       {klasorModalAcik && (
         <div
@@ -3559,13 +3562,20 @@ export default function AnaSayfa() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
+                    <div className="flex min-h-[96px] flex-col rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
                       <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                         {t.uptime}
                       </p>
-                      <p className="mt-2 text-sm font-black">
+
+                      <p className="mt-2 line-clamp-2 text-sm font-black">
                         {sunucuStats.uptime || "-"}
                       </p>
+
+                      <div className="mt-auto pt-3">
+                        <span className="inline-flex items-center rounded-full bg-[#d5c4a1] px-2 py-0.5 text-xs font-bold text-[#3c3836] dark:bg-[#504945] dark:text-[#ebdbb2]">
+                          {t.serverReachable}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ) : (

@@ -175,6 +175,7 @@ export const sozluk = {
     uptime: "Uptime",
     loadAverage: "Load avg",
     used: "used",
+    serverReachable: "SSH OK",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -351,5 +352,6 @@ export const sozluk = {
     uptime: "Çalışma süresi",
     loadAverage: "Yük ortalaması",
     used: "kullanılıyor",
+    serverReachable: "SSH OK",
   },
 };
