@@ -549,6 +549,16 @@ export default function AnaSayfa() {
     return `${deger} MB`;
   };
 
+  const yuzdeSinirla = (deger) => {
+    const sayi = Number(deger);
+
+    if (Number.isNaN(sayi)) return 0;
+    if (sayi < 0) return 0;
+    if (sayi > 100) return 100;
+
+    return sayi;
+  };
+
   const dosyayiIndir = (dosya) => {
     if (yukleniyor) return;
     if (!seciliSunucu) {
@@ -3458,7 +3468,7 @@ export default function AnaSayfa() {
                       disabled={sunucuStatsYukleniyor || yukleniyor}
                       className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                     >
-                      {t.refreshStats}
+                      {sunucuStatsYukleniyor ? t.loadingStats : t.refreshStats}
                     </button>
 
                     <button
@@ -3492,8 +3502,15 @@ export default function AnaSayfa() {
                       <p className="mt-2 text-xl font-black">
                         {sunucuStats.cpu_yuzde}%
                       </p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+                        <div
+                          className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
+                          style={{
+                            width: `${yuzdeSinirla(sunucuStats.cpu_yuzde)}%`,
+                          }}
+                        />
+                      </div>
                     </div>
-
                     <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
                       <p className="text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                         {t.ramUsage}
@@ -3505,6 +3522,14 @@ export default function AnaSayfa() {
                         {megabaytYaz(sunucuStats.ram_kullanilan)} /{" "}
                         {megabaytYaz(sunucuStats.ram_toplam)} {t.used}
                       </p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+                        <div
+                          className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
+                          style={{
+                            width: `${yuzdeSinirla(sunucuStats.ram_yuzde)}%`,
+                          }}
+                        />
+                      </div>
                     </div>
 
                     <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
@@ -3518,6 +3543,14 @@ export default function AnaSayfa() {
                         {megabaytYaz(sunucuStats.disk_kullanilan)} /{" "}
                         {megabaytYaz(sunucuStats.disk_toplam)} {t.used}
                       </p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d5c4a1] dark:bg-[#504945]">
+                        <div
+                          className="h-full rounded-full bg-[#458588] dark:bg-[#83a598]"
+                          style={{
+                            width: `${yuzdeSinirla(sunucuStats.disk_yuzde)}%`,
+                          }}
+                        />
+                      </div>
                     </div>
 
                     <div className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-3 dark:border-[#504945] dark:bg-[#282828]">
@@ -3526,6 +3559,9 @@ export default function AnaSayfa() {
                       </p>
                       <p className="mt-2 text-sm font-black">
                         {sunucuStats.load_average || "-"}
+                      </p>
+                      <p className="mt-1 text-xs text-[#7c6f64] dark:text-[#a89984]">
+                        1m / 5m / 15m
                       </p>
                     </div>
 
