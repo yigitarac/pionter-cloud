@@ -177,6 +177,9 @@ export const sozluk = {
     used: "used",
     serverReachable: "SSH OK",
     lastUpdated: "Last updated",
+    loadingPreview: "Loading preview...",
+    previewLoadFailed: "File preview could not be loaded.",
+    previewNotAvailable: "Preview is not available for this file yet.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -355,5 +358,8 @@ export const sozluk = {
     used: "kullanılıyor",
     serverReachable: "SSH OK",
     lastUpdated: "Son güncelleme",
+    loadingPreview: "Önizleme yükleniyor...",
+    previewLoadFailed: "Dosya önizlemesi alınamadı.",
+    previewNotAvailable: "Bu dosya için önizleme henüz kullanılamıyor.",
   },
 };

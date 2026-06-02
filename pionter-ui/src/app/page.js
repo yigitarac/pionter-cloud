@@ -71,11 +71,25 @@ export default function AnaSayfa() {
   const [sunucuStats, setSunucuStats] = useState(null);
   const [sunucuStatsYukleniyor, setSunucuStatsYukleniyor] = useState(false);
   const [sunucuStatsHatasi, setSunucuStatsHatasi] = useState("");
+  const [previewModalAcik, setPreviewModalAcik] = useState(false);
+  const [previewDosya, setPreviewDosya] = useState(null);
+  const [previewVerisi, setPreviewVerisi] = useState(null);
+  const [previewYukleniyor, setPreviewYukleniyor] = useState(false);
+  const [previewHatasi, setPreviewHatasi] = useState("");
+  const previewCacheRef = useRef({});
 
   const t = sozluk[dil];
 
   const secimleriTemizle = () => {
     setSeciliOgeAnahtarlari([]);
+  };
+
+  const previewTemizle = () => {
+    setPreviewModalAcik(false);
+    setPreviewDosya(null);
+    setPreviewVerisi(null);
+    setPreviewYukleniyor(false);
+    setPreviewHatasi("");
   };
 
   const yeniKayitOlustur = () => {
@@ -267,6 +281,7 @@ export default function AnaSayfa() {
     setMevcutYol(yeniYol);
     setAramaMetni("");
     secimleriTemizle();
+    previewTemizle();
     klasoruYenile(yeniYol);
   };
 
@@ -278,6 +293,7 @@ export default function AnaSayfa() {
     setMevcutYol(yeniYol);
     setAramaMetni("");
     secimleriTemizle();
+    previewTemizle();
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
     klasoruYenile(yeniYol);
@@ -289,6 +305,7 @@ export default function AnaSayfa() {
     setMevcutYol(hedefYol);
     setAramaMetni("");
     secimleriTemizle();
+    previewTemizle();
     setDosyaMesaji("");
     setAcikMenuIndex(null);
     setYukleniyor(true);
@@ -321,6 +338,9 @@ export default function AnaSayfa() {
     setSunucuStats(null);
     setSunucuStatsYukleniyor(false);
     setSunucuStatsHatasi("");
+
+    previewTemizle();
+    previewCacheRef.current = {};
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -376,6 +396,9 @@ export default function AnaSayfa() {
     setYeniKlasorAdi("");
     setKlasorModalAcik(false);
     setAcikMenuIndex(null);
+
+    previewTemizle();
+    previewCacheRef.current = {};
 
     setSunucuFormAcik(false);
     sunucuFormunuTemizle();
@@ -458,6 +481,9 @@ export default function AnaSayfa() {
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
     setYeniAd("");
+
+    previewTemizle();
+    previewCacheRef.current = {};
 
     setTopluSilmeModalAcik(false);
     setMoveModalAcik(false);
@@ -552,6 +578,107 @@ export default function AnaSayfa() {
       })
       .finally(() => {
         sunucuStatsIstekDevamEdiyorRef.current = false;
+      });
+  };
+
+  const dosyaPreviewGetir = (dosya, sessiz = false) => {
+    if (!dosya || dosya.klasorMu) {
+      return Promise.resolve(null);
+    }
+
+    if (!seciliSunucu) {
+      if (!sessiz) {
+        setPreviewHatasi(t.selectServerFirst);
+      }
+
+      return Promise.resolve(null);
+    }
+
+    if (!oturumToken) {
+      if (!sessiz) {
+        setPreviewHatasi(
+          dil === "tr" ? "Oturum bulunamadı." : "Session not found.",
+        );
+      }
+
+      return Promise.resolve(null);
+    }
+
+    const cacheAnahtari = `${seciliSunucu.id}:${mevcutYol}:${dosya.ad}`;
+
+    if (previewCacheRef.current[cacheAnahtari]) {
+      const cacheVerisi = previewCacheRef.current[cacheAnahtari];
+
+      if (!sessiz) {
+        setPreviewDosya(dosya);
+        setPreviewVerisi(cacheVerisi);
+        setPreviewYukleniyor(false);
+        setPreviewHatasi("");
+        setPreviewModalAcik(true);
+      }
+
+      return Promise.resolve(cacheVerisi);
+    }
+
+    if (!sessiz) {
+      setPreviewDosya(dosya);
+      setPreviewVerisi(null);
+      setPreviewYukleniyor(true);
+      setPreviewHatasi("");
+      setPreviewModalAcik(true);
+    }
+
+    return fetch("http://localhost:8080/api/file/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: seciliSunucu.id,
+        yol: mevcutYol,
+        dosya_adi: dosya.ad,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Preview alınamadı");
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        previewCacheRef.current[cacheAnahtari] = veri;
+
+        if (!sessiz) {
+          setPreviewVerisi(veri);
+          setPreviewYukleniyor(false);
+
+          if (!veri.basarili) {
+            setPreviewHatasi(veri.mesaj || t.previewNotAvailable);
+          } else {
+            setPreviewHatasi("");
+          }
+        }
+
+        return veri;
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return null;
+        }
+
+        console.log("Preview hatası:", hata);
+
+        if (!sessiz) {
+          setPreviewVerisi(null);
+          setPreviewYukleniyor(false);
+          setPreviewHatasi(t.previewLoadFailed);
+        }
+
+        return null;
       });
   };
 
