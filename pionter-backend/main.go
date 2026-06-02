@@ -112,6 +112,7 @@ func main() {
 	http.HandleFunc("/api/move", dosyaVeyaKlasorTasi)
 	http.HandleFunc("/api/servers/pin", sunucuSabitle)
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
+	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -255,6 +256,17 @@ type GirisCevabi struct {
 
 type TokenIstekBilgileri struct {
 	Token string `json:"token"`
+}
+
+type SunucuStatsBilgileri struct {
+	Token    string `json:"token"`
+	ServerID int    `json:"server_id"`
+}
+
+type SunucuStatsCevabi struct {
+	Basarili bool   `json:"basarili"`
+	Mesaj    string `json:"mesaj"`
+	Uptime   string `json:"uptime"`
 }
 
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
@@ -1570,6 +1582,22 @@ func sshAuthMethodOlustur(kimlik GizliKimlik) ([]ssh.AuthMethod, error) {
 
 	return []ssh.AuthMethod{ssh.Password(kimlik.SunucuSifre)}, nil
 }
+
+func sshKomutCalistir(client *ssh.Client, komut string) (string, error) {
+	session, err := client.NewSession()
+	if err != nil {
+		return "", err
+	}
+	defer session.Close()
+
+	cikti, err := session.Output(komut)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(cikti)), nil
+}
+
 func sunucuBaglantisiCalisiyorMu(kimlik GizliKimlik) error {
 	authMethods, err := sshAuthMethodOlustur(kimlik)
 	if err != nil {
@@ -1696,6 +1724,69 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mesaj": "Sunucu bağlantısı başarılı"}`))
+}
+
+func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler SunucuStatsBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+
+	if bilgiler.Token == "" || bilgiler.ServerID <= 0 {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
+	if err != nil {
+		http.Error(w, "Oturum geçersiz veya sunucu bulunamadı", http.StatusUnauthorized)
+		return
+	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Stats SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         5 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Stats SSH bağlantı hatası:", err)
+		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+
+	uptimeCikti, err := sshKomutCalistir(client, "uptime")
+	if err != nil {
+		fmt.Println("Uptime komutu çalıştırılamadı:", err)
+		http.Error(w, "Sunucu bilgileri alınamadı", http.StatusBadGateway)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(SunucuStatsCevabi{
+		Basarili: true,
+		Mesaj:    "Sunucu bilgileri alındı",
+		Uptime:   uptimeCikti,
+	})
 }
 
 func sifreHashle(sifre string) (string, error) {
