@@ -1741,6 +1741,10 @@ export default function AnaSayfa() {
     }
   };
 
+  const topluSilmeSeciliOgeler = topluSilmeModalAcik
+    ? seciliOgeleriGetir()
+    : [];
+
   const topluTasimaSeciliOgeler = topluTasimaModalAcik
     ? seciliOgeleriGetir()
     : [];
@@ -2283,9 +2287,52 @@ export default function AnaSayfa() {
               {t.deleteSelectedTitle}
             </h2>
 
-            <p className="text-sm text-[#7c6f64] dark:text-[#a89984] mb-5">
-              {seciliOgeAnahtarlari.length} - {t.deleteSelectedConfirmText}
-            </p>
+            <div className="mb-5">
+              <p className="text-sm text-[#7c6f64] dark:text-[#a89984]">
+                {topluSilmeSeciliOgeler.length} - {t.deleteSelectedConfirmText}
+              </p>
+
+              <div className="mt-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                  {t.selectedItemsPreview}
+                </p>
+
+                <div className="space-y-1">
+                  {topluSilmeSeciliOgeler.slice(0, 5).map((oge) => (
+                    <p
+                      key={`${oge.klasorMu ? "klasor" : "dosya"}:${oge.ad}`}
+                      className="flex items-center gap-2 truncate text-xs text-[#3c3836] dark:text-[#ebdbb2]"
+                    >
+                      {oge.klasorMu ? (
+                        <svg
+                          className="h-4 w-4 shrink-0 text-[#458588] dark:text-[#83a598]"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-4 w-4 shrink-0 text-[#a89984]"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
+                        </svg>
+                      )}
+
+                      <span className="truncate">{oge.ad}</span>
+                    </p>
+                  ))}
+                </div>
+
+                {topluSilmeSeciliOgeler.length > 5 && (
+                  <p className="mt-2 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                    +{topluSilmeSeciliOgeler.length - 5} {t.moreItems}
+                  </p>
+                )}
+              </div>
+            </div>
 
             <div className="flex justify-end gap-3">
               <button
