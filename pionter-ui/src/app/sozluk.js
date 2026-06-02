@@ -180,6 +180,11 @@ export const sozluk = {
     loadingPreview: "Loading preview...",
     previewLoadFailed: "File preview could not be loaded.",
     previewNotAvailable: "Preview is not available for this file yet.",
+    filePreview: "File Preview",
+    downloadFile: "Download",
+    close: "Close",
+    pdfPreviewNotAvailable:
+      "PDF preview is not available yet. You can download the file instead.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -361,5 +366,10 @@ export const sozluk = {
     loadingPreview: "Önizleme yükleniyor...",
     previewLoadFailed: "Dosya önizlemesi alınamadı.",
     previewNotAvailable: "Bu dosya için önizleme henüz kullanılamıyor.",
+    filePreview: "Dosya Önizleme",
+    downloadFile: "İndir",
+    close: "Kapat",
+    pdfPreviewNotAvailable:
+      "PDF önizleme henüz kullanılamıyor. Dosyayı indirebilirsin.",
   },
 };

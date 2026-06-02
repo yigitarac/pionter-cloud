@@ -272,13 +272,21 @@ export default function AnaSayfa() {
 
   const klasoreGir = (dosya) => {
     if (!dosya.klasorMu) {
+      if (previewAcilabilirMi(dosya)) {
+        dosyaPreviewGetir(dosya);
+        return;
+      }
+
       dosyayiIndir(dosya);
       return;
     }
+
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
+
     let yeniYol =
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
+
     setMevcutYol(yeniYol);
     setAramaMetni("");
     secimleriTemizle();
@@ -3109,6 +3117,89 @@ export default function AnaSayfa() {
               >
                 {t.confirmDelete}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {previewModalAcik && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#504945] bg-[#282828] text-[#ebdbb2] shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-[#504945] px-5 py-4">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#a89984]">
+                  {t.filePreview}
+                </p>
+
+                <h3 className="mt-1 truncate text-lg font-black">
+                  {previewDosya?.ad || previewVerisi?.dosya_adi || "-"}
+                </h3>
+
+                {previewVerisi?.boyut !== undefined &&
+                  previewVerisi?.boyut !== null && (
+                    <p className="mt-1 text-xs text-[#a89984]">
+                      {dosyaBoyutuYaz(previewVerisi.boyut)}
+                    </p>
+                  )}
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                {previewDosya && (
+                  <button
+                    type="button"
+                    onClick={() => dosyayiIndir(previewDosya)}
+                    disabled={yukleniyor}
+                    className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#83a598] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {t.downloadFile}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={previewTemizle}
+                  className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#fb4934]"
+                >
+                  {t.close}
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[calc(85vh-96px)] overflow-auto p-5">
+              {previewYukleniyor ? (
+                <p className="text-sm text-[#a89984]">{t.loadingPreview}</p>
+              ) : previewHatasi ? (
+                <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
+                  <p className="text-sm font-bold text-[#fb4934]">
+                    {previewHatasi}
+                  </p>
+                </div>
+              ) : previewVerisi?.tip === "image" &&
+                previewVerisi?.base64 &&
+                previewVerisi?.mime ? (
+                <div className="flex justify-center">
+                  <img
+                    src={`data:${previewVerisi.mime};base64,${previewVerisi.base64}`}
+                    alt={previewVerisi.dosya_adi || previewDosya?.ad || ""}
+                    className="max-h-[65vh] max-w-full rounded-lg border border-[#504945] object-contain"
+                  />
+                </div>
+              ) : previewVerisi?.tip === "text" ? (
+                <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#504945] bg-[#1d2021] p-4 text-sm leading-relaxed text-[#ebdbb2]">
+                  {previewVerisi.icerik || ""}
+                </pre>
+              ) : previewVerisi?.tip === "pdf" ? (
+                <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
+                  <p className="text-sm text-[#ebdbb2]">
+                    {t.pdfPreviewNotAvailable}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
+                  <p className="text-sm text-[#ebdbb2]">
+                    {previewVerisi?.mesaj || t.previewNotAvailable}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
