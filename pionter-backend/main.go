@@ -35,6 +35,9 @@ var sunucuStatsCache = map[string]SunucuStatsCacheKaydi{}
 var sunucuStatsCacheMutex sync.Mutex
 var sunucuStatsCacheSuresi = 20 * time.Second
 
+const textPreviewLimit = 1 * 1024 * 1024
+const imagePreviewLimit = 5 * 1024 * 1024
+
 func main() {
 	var err error
 	godotenv.Load()
@@ -104,6 +107,7 @@ func main() {
 	fmt.Println("Veritabanına başarıyla bağlandım!")
 	http.HandleFunc("/api/files", dosyalariGetir)
 	http.HandleFunc("/api/download", dosyaIndir)
+	http.HandleFunc("/api/file/preview", dosyaPreviewGetir)
 	http.HandleFunc("/api/upload", dosyaYukle)
 	http.HandleFunc("/api/register", kullaniciKaydet)
 	http.HandleFunc("/api/login", kullaniciGirisYap)
@@ -127,6 +131,28 @@ type BaglantiBilgileri struct {
 	Token    string `json:"token"`
 	Yol      string `json:"yol"`
 	ServerID int    `json:"server_id"`
+}
+
+type DosyaPreviewBilgileri struct {
+	Token    string `json:"token"`
+	ServerID int    `json:"server_id"`
+	Yol      string `json:"yol"`
+	DosyaAdi string `json:"dosya_adi"`
+}
+
+type DosyaPreviewCevabi struct {
+	Basarili bool   `json:"basarili"`
+	Mesaj    string `json:"mesaj"`
+	Kod      string `json:"kod,omitempty"`
+
+	Tip      string `json:"tip"`
+	DosyaAdi string `json:"dosya_adi"`
+	Uzanti   string `json:"uzanti"`
+	Mime     string `json:"mime,omitempty"`
+
+	Icerik string `json:"icerik,omitempty"`
+	Base64 string `json:"base64,omitempty"`
+	Boyut  int64  `json:"boyut,omitempty"`
 }
 
 type DosyaBilgileri struct {
@@ -468,6 +494,70 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	defer acilanDosya.Close()
 	io.Copy(w, acilanDosya)
 }
+
+func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler DosyaPreviewBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+	bilgiler.Yol = strings.TrimSpace(bilgiler.Yol)
+	bilgiler.DosyaAdi = strings.TrimSpace(bilgiler.DosyaAdi)
+
+	if bilgiler.Token == "" || bilgiler.ServerID <= 0 || bilgiler.DosyaAdi == "" {
+		http.Error(w, "Eksik veya geçersiz veri", http.StatusBadRequest)
+		return
+	}
+
+	if !guvenliAdMi(bilgiler.DosyaAdi) {
+		http.Error(w, "Geçersiz dosya adı", http.StatusBadRequest)
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+		return
+	}
+
+	gercekKlasorYolu, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
+		return
+	}
+
+	_ = path.Join(gercekKlasorYolu, bilgiler.DosyaAdi)
+
+	uzanti := dosyaUzantisiAl(bilgiler.DosyaAdi)
+	tip := previewTipiBelirle(uzanti)
+
+	cevap := DosyaPreviewCevabi{
+		Basarili: true,
+		Mesaj:    "Preview endpoint hazır",
+		Tip:      tip,
+		DosyaAdi: bilgiler.DosyaAdi,
+		Uzanti:   uzanti,
+		Mime:     imageMimeBelirle(uzanti),
+	}
+
+	if tip == "unsupported" {
+		cevap.Basarili = false
+		cevap.Kod = "UNSUPPORTED_FILE_TYPE"
+		cevap.Mesaj = "Bu dosya türü henüz önizlenemiyor"
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(cevap)
+}
+
 func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
 
@@ -1593,6 +1683,117 @@ func guvenliAdMi(ad string) bool {
 	}
 	return true
 }
+
+func dosyaUzantisiAl(dosyaAdi string) string {
+	return strings.ToLower(path.Ext(dosyaAdi))
+}
+
+func textPreviewDestekleniyorMu(uzanti string) bool {
+	desteklenenler := map[string]bool{
+		".txt":         true,
+		".md":          true,
+		".json":        true,
+		".js":          true,
+		".jsx":         true,
+		".ts":          true,
+		".tsx":         true,
+		".go":          true,
+		".c":           true,
+		".cpp":         true,
+		".cc":          true,
+		".cxx":         true,
+		".h":           true,
+		".hpp":         true,
+		".cs":          true,
+		".css":         true,
+		".html":        true,
+		".env":         true,
+		".env.example": true,
+		".yml":         true,
+		".yaml":        true,
+		".xml":         true,
+		".log":         true,
+	}
+
+	return desteklenenler[uzanti]
+}
+
+func imagePreviewDestekleniyorMu(uzanti string) bool {
+	desteklenenler := map[string]bool{
+		".png":  true,
+		".jpg":  true,
+		".jpeg": true,
+		".gif":  true,
+		".webp": true,
+	}
+
+	return desteklenenler[uzanti]
+}
+
+func officeDosyasiMi(uzanti string) bool {
+	desteklenenler := map[string]bool{
+		".doc":  true,
+		".docx": true,
+		".xls":  true,
+		".xlsx": true,
+		".ppt":  true,
+		".pptx": true,
+	}
+
+	return desteklenenler[uzanti]
+}
+
+func arsivDosyasiMi(uzanti string) bool {
+	desteklenenler := map[string]bool{
+		".zip": true,
+		".rar": true,
+		".7z":  true,
+		".tar": true,
+		".gz":  true,
+	}
+
+	return desteklenenler[uzanti]
+}
+
+func imageMimeBelirle(uzanti string) string {
+	switch uzanti {
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	default:
+		return ""
+	}
+}
+
+func previewTipiBelirle(uzanti string) string {
+	if imagePreviewDestekleniyorMu(uzanti) {
+		return "image"
+	}
+
+	if textPreviewDestekleniyorMu(uzanti) {
+		return "text"
+	}
+
+	if uzanti == ".pdf" {
+		return "pdf"
+	}
+
+	if officeDosyasiMi(uzanti) {
+		return "office"
+	}
+
+	if arsivDosyasiMi(uzanti) {
+		return "archive"
+	}
+
+	return "unsupported"
+}
+
 func sshAuthMethodOlustur(kimlik GizliKimlik) ([]ssh.AuthMethod, error) {
 	if kimlik.BaglantiTipi == "ssh_key" {
 		signer, err := ssh.ParsePrivateKey([]byte(kimlik.SSHPrivateKey))
