@@ -533,7 +533,7 @@ func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = path.Join(gercekKlasorYolu, bilgiler.DosyaAdi)
+	gercekDosyaYolu := path.Join(gercekKlasorYolu, bilgiler.DosyaAdi)
 
 	uzanti := dosyaUzantisiAl(bilgiler.DosyaAdi)
 	tip := previewTipiBelirle(uzanti)
@@ -551,6 +551,105 @@ func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 		cevap.Basarili = false
 		cevap.Kod = "UNSUPPORTED_FILE_TYPE"
 		cevap.Mesaj = "Bu dosya türü henüz önizlenemiyor"
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cevap)
+		return
+	}
+
+	if tip != "text" && tip != "image" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cevap)
+		return
+	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Preview SSH auth hatası:", err)
+		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         5 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Preview SSH bağlantı hatası:", err)
+		http.Error(w, "SSH bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("Preview SFTP hatası:", err)
+		http.Error(w, "SFTP bağlantısı kurulamadı", http.StatusBadGateway)
+		return
+	}
+	defer sftpClient.Close()
+
+	if tip == "text" {
+		icerik, boyut, err := textDosyaPreviewOku(sftpClient, gercekDosyaYolu, textPreviewLimit)
+		if err != nil {
+			fmt.Println("Text preview hatası:", err)
+
+			cevap.Basarili = false
+			cevap.Icerik = ""
+			cevap.Boyut = boyut
+
+			if boyut > textPreviewLimit {
+				cevap.Kod = "FILE_TOO_LARGE"
+				cevap.Mesaj = "Dosya önizleme için çok büyük"
+			} else {
+				cevap.Kod = "PREVIEW_FAILED"
+				cevap.Mesaj = "Dosya önizlemesi alınamadı"
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cevap)
+			return
+		}
+
+		cevap.Mesaj = "Dosya önizlemesi alındı"
+		cevap.Icerik = icerik
+		cevap.Boyut = boyut
+	}
+
+	if tip == "image" {
+		base64Icerik, boyut, err := imageDosyaPreviewOku(sftpClient, gercekDosyaYolu, imagePreviewLimit)
+		if err != nil {
+			fmt.Println("Image preview hatası:", err)
+
+			cevap.Basarili = false
+			cevap.Base64 = ""
+			cevap.Boyut = boyut
+
+			if boyut > imagePreviewLimit {
+				cevap.Kod = "FILE_TOO_LARGE"
+				cevap.Mesaj = "Görsel önizleme için çok büyük"
+			} else {
+				cevap.Kod = "PREVIEW_FAILED"
+				cevap.Mesaj = "Görsel önizlemesi alınamadı"
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cevap)
+			return
+		}
+
+		cevap.Mesaj = "Görsel önizlemesi alındı"
+		cevap.Base64 = base64Icerik
+		cevap.Boyut = boyut
+		cevap.Mime = imageMimeBelirle(uzanti)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -1685,7 +1784,17 @@ func guvenliAdMi(ad string) bool {
 }
 
 func dosyaUzantisiAl(dosyaAdi string) string {
-	return strings.ToLower(path.Ext(dosyaAdi))
+	temizAd := strings.ToLower(strings.TrimSpace(dosyaAdi))
+
+	if temizAd == ".env" {
+		return ".env"
+	}
+
+	if strings.HasSuffix(temizAd, ".env.example") {
+		return ".env.example"
+	}
+
+	return path.Ext(temizAd)
 }
 
 func textPreviewDestekleniyorMu(uzanti string) bool {
@@ -1792,6 +1901,74 @@ func previewTipiBelirle(uzanti string) string {
 	}
 
 	return "unsupported"
+}
+
+func textDosyaPreviewOku(sftpClient *sftp.Client, dosyaYolu string, limit int64) (string, int64, error) {
+	dosyaBilgisi, err := sftpClient.Stat(dosyaYolu)
+	if err != nil {
+		return "", 0, err
+	}
+
+	if dosyaBilgisi.IsDir() {
+		return "", 0, fmt.Errorf("klasör önizlenemez")
+	}
+
+	boyut := dosyaBilgisi.Size()
+
+	if boyut > limit {
+		return "", boyut, fmt.Errorf("dosya önizleme için çok büyük")
+	}
+
+	acilanDosya, err := sftpClient.Open(dosyaYolu)
+	if err != nil {
+		return "", boyut, err
+	}
+	defer acilanDosya.Close()
+
+	icerikBytes, err := io.ReadAll(io.LimitReader(acilanDosya, limit+1))
+	if err != nil {
+		return "", boyut, err
+	}
+
+	if int64(len(icerikBytes)) > limit {
+		return "", boyut, fmt.Errorf("dosya önizleme için çok büyük")
+	}
+
+	return string(icerikBytes), boyut, nil
+}
+
+func imageDosyaPreviewOku(sftpClient *sftp.Client, dosyaYolu string, limit int64) (string, int64, error) {
+	dosyaBilgisi, err := sftpClient.Stat(dosyaYolu)
+	if err != nil {
+		return "", 0, err
+	}
+
+	if dosyaBilgisi.IsDir() {
+		return "", 0, fmt.Errorf("klasör önizlenemez")
+	}
+
+	boyut := dosyaBilgisi.Size()
+
+	if boyut > limit {
+		return "", boyut, fmt.Errorf("görsel önizleme için çok büyük")
+	}
+
+	acilanDosya, err := sftpClient.Open(dosyaYolu)
+	if err != nil {
+		return "", boyut, err
+	}
+	defer acilanDosya.Close()
+
+	icerikBytes, err := io.ReadAll(io.LimitReader(acilanDosya, limit+1))
+	if err != nil {
+		return "", boyut, err
+	}
+
+	if int64(len(icerikBytes)) > limit {
+		return "", boyut, fmt.Errorf("görsel önizleme için çok büyük")
+	}
+
+	return base64.StdEncoding.EncodeToString(icerikBytes), boyut, nil
 }
 
 func sshAuthMethodOlustur(kimlik GizliKimlik) ([]ssh.AuthMethod, error) {
