@@ -6,22 +6,19 @@ PionterCloud is a learning-focused full-stack project, but the goal is to keep t
 
 ## Current Project Status
 
-PionterCloud has passed the v0.1 local/portfolio MVP stage.
-
-The project is currently at the end of the v0.2 Security Gate phase.
+PionterCloud has passed the v0.1 local/portfolio MVP stage, completed the v0.2 Security Gate phase, and completed the v0.3 Core File Manager Polish phase.
 
 Current high-level status:
 
 * v0.1 Local/Portfolio MVP: completed
 * v0.2 Security Gate: completed
-* v0.3 Core File Manager Polish: active
+* v0.3 Core File Manager Polish: completed
 * v0.4 Server Monitoring: planned
 * v0.5 File Preview and Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
-
 
 ## Product Direction
 
@@ -74,6 +71,9 @@ Current frontend responsibilities:
 * Upload/download UI
 * Folder creation UI
 * Rename/delete/move modals
+* Bulk move and bulk delete modals
+* Multi-select toolbar
+* Sidebar navigation
 * Toast notifications
 * Loading states
 * Dark/light mode
@@ -157,6 +157,59 @@ v0.2 final smoke test status:
 
 v0.2 is considered complete.
 
+## v0.3 Core File Manager Polish Summary
+
+The v0.3 phase focused on making the file manager feel more like a real product interface and adding stable multi-item operations.
+
+Completed in v0.3:
+
+* Reworked the server navigation experience with a collapsible left sidebar.
+* Added a mini sidebar state and expanded sidebar state.
+* Added server previews inside the sidebar.
+* Moved profile/settings actions into the sidebar.
+* Improved dark/light sidebar styling.
+* Improved the My Servers empty-state UX.
+* Added multi-select support improvements.
+* Added a selection toolbar for selected files/folders.
+* Added Select listed/visible behavior.
+* Added Clear selection behavior.
+* Added Bulk delete flow.
+* Added Bulk move flow using the existing move modal infrastructure.
+* Added selected-item previews to the bulk move modal.
+* Added selected-item previews to the bulk delete modal.
+* Added state cleanup after bulk move operations.
+* Improved drag-and-drop upload behavior.
+* Improved upload, folder creation, and selection UX.
+* Ran a v0.3 smoke test covering:
+
+  * login
+  * server selection
+  * sidebar behavior
+  * folder navigation
+  * upload
+  * folder creation
+  * rename
+  * single move
+  * single delete
+  * bulk move
+  * bulk delete
+  * search selection
+  * Clear selection
+  * Back to Servers
+  * My Servers empty state
+
+v0.3 final validation:
+
+* `npm run lint` completed with 0 errors.
+* 2 non-blocking warnings remain.
+* Core v0.3 user flows passed manual smoke testing.
+
+Known non-blocking warnings after v0.3:
+
+* `postcss.config.mjs` has an anonymous default export warning.
+* `page.js` has a React Hook dependency warning for the drag/drop upload effect.
+
+v0.3 is considered complete.
 
 ## Current Authentication Behavior
 
@@ -280,6 +333,8 @@ Still needed:
 * Extract modal components.
 * Extract API helper functions.
 * Reduce repeated fetch/error/loading logic.
+* Clean up remaining lint warnings during a refactor pass.
+* Improve mobile/tablet sidebar behavior.
 
 Possible future frontend components:
 
@@ -298,6 +353,8 @@ Possible future frontend components:
 * `RenameModal`
 * `MoveModal`
 * `DeleteConfirmationModal`
+* `BulkActionToolbar`
+* `Sidebar`
 
 ## Current Backend Refactor Status
 
@@ -376,22 +433,10 @@ Current known technical debt:
 * No deployment guide yet.
 * No automated tests yet.
 * No CI pipeline yet.
+* Mobile/tablet sidebar behavior is deferred.
+* Lint warnings exist but no lint errors are currently present.
 
 ## Roadmap
-
-### v0.3 Core File Manager Polish
-
-Planned improvements:
-
-* Upload progress indicator
-* Better loading states
-* Multi-file selection
-* Bulk delete
-* Bulk move
-* Improved empty states
-* Improved error states
-* Better keyboard/UX interactions
-* More polished file cards and action menus
 
 ### v0.4 Server Monitoring
 
@@ -502,7 +547,7 @@ It is suitable for:
 * learning
 * local testing
 * portfolio development
-* controlled private testing after v0.2
+* controlled private testing after v0.2/v0.3
 
 It is not yet suitable for:
 

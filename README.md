@@ -10,20 +10,19 @@ Users add their own server, choose an isolated folder, and manage files on that 
 
 ## Current Status
 
-PionterCloud has completed its local/portfolio MVP stage and is currently finishing the v0.2 Security Gate phase.
+PionterCloud has completed its local/portfolio MVP stage, the v0.2 Security Gate phase, and the v0.3 Core File Manager Polish phase.
 
 Current phase status:
 
 * v0.1 Local/Portfolio MVP: completed
 * v0.2 Security Gate: completed
-* v0.3 Core File Manager Polish: active
+* v0.3 Core File Manager Polish: completed
 * v0.4 Server Monitoring: planned
 * v0.5 File Preview and Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
-
 
 ## What PionterCloud Does
 
@@ -38,7 +37,11 @@ PionterCloud lets users:
 * Rename files and folders
 * Delete files and empty folders
 * Move files and folders
+* Select multiple files and folders
+* Bulk delete selected files and folders
+* Bulk move selected files and folders
 * Pin frequently used servers
+* Use a collapsible left sidebar for server navigation
 * Use the interface in Turkish or English
 * Switch between dark and light mode
 
@@ -76,6 +79,7 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Password-based SSH authentication
 * SSH private key authentication
 * Isolated folder validation
+* Cleaner empty state when no servers exist
 
 ### File Manager
 
@@ -85,6 +89,7 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Search/filter files in the current folder
 * Folders-first alphabetical sorting
 * Upload files
+* Multi-file upload
 * Download files
 * Create folders
 * Delete files and empty folders
@@ -92,6 +97,12 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Move files and folders
 * Nested target folder picker for move
 * Safeguards against moving folders into themselves
+* Multi-select support
+* Select listed/visible items
+* Clear selection
+* Bulk delete selected items
+* Bulk move selected items
+* Preview selected items inside bulk move and bulk delete modals
 * File metadata display
 
   * file size
@@ -100,18 +111,65 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 ### UI/UX
 
 * Toast notifications
+
 * Loading states
+
 * Custom modal dialogs
 
   * rename modal
   * move modal
   * delete confirmation modal
+  * bulk move modal
+  * bulk delete confirmation modal
   * server delete confirmation modal
   * server edit modal
+
 * Click outside to close menus and modals
+
 * Drag and drop upload
+
+* Upload progress indicator
+
+* Collapsible left sidebar
+
+* Server preview inside the sidebar
+
+* Profile/settings controls moved into the sidebar
+
+* Improved My Servers empty state
+
 * Dark/light mode
+
 * Turkish/English language switch
+
+## v0.3 Completed Summary
+
+v0.3 focused on improving the core file manager experience and making multi-item operations usable.
+
+Completed in v0.3:
+
+* Collapsible left sidebar for server navigation
+* Server preview inside the sidebar
+* Profile/settings controls moved into the sidebar
+* Cleaner My Servers empty state
+* Multi-select toolbar for file and folder selections
+* Select listed/visible items
+* Clear selection behavior
+* Bulk delete support
+* Bulk move support
+* Shared move modal behavior for single-item and bulk move flows
+* Selected-item preview inside bulk move modal
+* Selected-item preview inside bulk delete modal
+* State cleanup after bulk operations
+* Improved drag-and-drop upload behavior
+* Improved upload/new-folder/selection UX
+* v0.3 smoke test completed
+* `npm run lint` completed with 0 errors and 2 non-blocking warnings
+
+Known non-blocking lint warnings after v0.3:
+
+* `postcss.config.mjs` anonymous default export warning
+* React Hook dependency warning for the drag/drop upload effect in `page.js`
 
 ## Security Status
 
@@ -292,19 +350,6 @@ Main goals:
 
 ## Roadmap
 
-### v0.3 Core File Manager Polish
-
-Planned improvements:
-
-* Upload progress indicator
-* Better loading states
-* Multi-file selection
-* Bulk delete
-* Bulk move
-* Improved empty states
-* Improved error states
-* Better file card/action menu polish
-
 ### v0.4 Server Monitoring
 
 Planned improvements:
@@ -411,6 +456,8 @@ Current limitations:
 * No automated tests yet.
 * No CI pipeline yet.
 * No deployment guide yet.
+* Mobile/tablet sidebar behavior is deferred.
+* Lint warnings exist but no lint errors are currently present.
 
 ## License
 
