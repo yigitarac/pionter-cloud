@@ -281,6 +281,20 @@ export default function AnaSayfa() {
     return "border-[#d5c4a1] bg-[#ebdbb2] text-[#7c6f64] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#a89984]";
   };
 
+  const gorunenPaylasimYoluAl = (yol) => {
+    const temizYol = String(yol || "").trim();
+
+    if (!temizYol || temizYol === "/") {
+      return t.homeFolder;
+    }
+
+    if (temizYol.startsWith("/")) {
+      return `${t.homeFolder}${temizYol}`;
+    }
+
+    return `${t.homeFolder}/${temizYol}`;
+  };
+
   const shareLinkleriGetir = () => {
     if (!oturumToken) {
       toastGoster(t.sessionExpired, "error");
@@ -4472,7 +4486,7 @@ export default function AnaSayfa() {
                                 <p className="sm:col-span-2">
                                   {t.path}:{" "}
                                   <span className="break-all text-[#3c3836] dark:text-[#ebdbb2]">
-                                    {link.dosya_yolu}
+                                    {gorunenPaylasimYoluAl(link.dosya_yolu)}
                                   </span>
                                 </p>
                               </div>
@@ -4540,8 +4554,8 @@ export default function AnaSayfa() {
 
             {iptalEdilecekShareLink && (
               <div className="mb-5 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
-                <p className="break-words text-sm font-black text-[#3c3836] dark:text-[#ebdbb2]">
-                  {iptalEdilecekShareLink.dosya_adi}
+                <p className="mt-1 break-all text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                  {gorunenPaylasimYoluAl(iptalEdilecekShareLink.dosya_yolu)}
                 </p>
 
                 <p className="mt-1 break-all text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
