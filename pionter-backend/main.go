@@ -147,6 +147,8 @@ func main() {
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
 	http.HandleFunc("/api/share/create", paylasimLinkiOlustur)
+	http.HandleFunc("/api/share/list", paylasimLinkleriniListele)
+	http.HandleFunc("/api/share/revoke", paylasimLinkiniIptalEt)
 	http.HandleFunc("/api/share/info/", paylasimBilgisiGetir)
 	http.HandleFunc("/api/share/preview/", paylasimPreviewGetir)
 	http.HandleFunc("/api/share/download/", paylasimDosyasiIndir)
@@ -377,6 +379,43 @@ type PaylasimBilgisiCevabi struct {
 	PaylasanKullanici   string `json:"paylasan_kullanici,omitempty"`
 	SonGecerlilikTarihi string `json:"son_gecerlilik_tarihi,omitempty"`
 	Suresiz             bool   `json:"suresiz"`
+}
+
+type PaylasimLinkiListeleBilgileri struct {
+	Token string `json:"token"`
+}
+
+type PaylasimLinkiListeOgesi struct {
+	ID                  int    `json:"id"`
+	ServerID            int    `json:"server_id"`
+	SunucuTakmaAd       string `json:"sunucu_takma_ad"`
+	DosyaAdi            string `json:"dosya_adi"`
+	DosyaYolu           string `json:"dosya_yolu"`
+	OlusturmaTarihi     string `json:"olusturma_tarihi"`
+	SonGecerlilikTarihi string `json:"son_gecerlilik_tarihi,omitempty"`
+	Suresiz             bool   `json:"suresiz"`
+	IptalEdildi         bool   `json:"iptal_edildi"`
+	SuresiDoldu         bool   `json:"suresi_doldu"`
+	Durum               string `json:"durum"`
+}
+
+type PaylasimLinkiListeCevabi struct {
+	Basarili bool                      `json:"basarili"`
+	Mesaj    string                    `json:"mesaj"`
+	Kod      string                    `json:"kod,omitempty"`
+	Linkler  []PaylasimLinkiListeOgesi `json:"linkler"`
+}
+
+type PaylasimLinkiIptalBilgileri struct {
+	Token   string `json:"token"`
+	ShareID int    `json:"share_id"`
+}
+
+type PaylasimLinkiIptalCevabi struct {
+	Basarili bool   `json:"basarili"`
+	Mesaj    string `json:"mesaj"`
+	Kod      string `json:"kod,omitempty"`
+	ShareID  int    `json:"share_id,omitempty"`
 }
 
 type SunucuStatsBilgileri struct {
@@ -640,6 +679,18 @@ func paylasimBilgisiCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimB
 	json.NewEncoder(w).Encode(cevap)
 }
 
+func paylasimLinkiListeCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimLinkiListeCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
+func paylasimLinkiIptalCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimLinkiIptalCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
 func dosyaListeHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -699,6 +750,18 @@ func paylasimTokeniGecerliFormattaMi(token string) bool {
 		!strings.Contains(token, "\\") &&
 		!strings.Contains(token, "..") &&
 		!strings.Contains(token, "⁄")
+}
+
+func paylasimLinkDurumuHesapla(iptalEdildi bool, sonGecerlilik sql.NullTime) (string, bool) {
+	if iptalEdildi {
+		return "revoked", false
+	}
+
+	if sonGecerlilik.Valid && time.Now().After(sonGecerlilik.Time) {
+		return "expired", true
+	}
+
+	return "active", false
 }
 
 func paylasimSuresiHesapla(sure string) (*time.Time, error) {
@@ -1306,6 +1369,207 @@ func paylasimLinkiOlustur(w http.ResponseWriter, r *http.Request) {
 		DosyaAdi:            bilgiler.DosyaAdi,
 		DosyaYolu:           dosyaYolu,
 		SonGecerlilikTarihi: sonGecerlilikMetni,
+	})
+}
+
+func paylasimLinkleriniListele(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler PaylasimLinkiListeleBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+
+	if bilgiler.Token == "" {
+		paylasimLinkiListeCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiListeCevabi{
+			Basarili: false,
+			Mesaj:    "Eksik veya geçersiz veri",
+			Kod:      "INVALID_REQUEST",
+			Linkler:  []PaylasimLinkiListeOgesi{},
+		})
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		paylasimLinkiListeCevabiYaz(w, http.StatusUnauthorized, PaylasimLinkiListeCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş",
+			Kod:      "UNAUTHORIZED",
+			Linkler:  []PaylasimLinkiListeOgesi{},
+		})
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT
+			sl.id,
+			sl.server_id,
+			COALESCE(s.sunucu_takma_ad, ''),
+			sl.dosya_adi,
+			sl.dosya_yolu,
+			sl.olusturma_tarihi,
+			sl.son_gecerlilik_tarihi,
+			sl.iptal_edildi
+		FROM share_links sl
+		LEFT JOIN sunucular s ON s.id = sl.server_id
+		WHERE sl.user_id = $1
+		ORDER BY sl.olusturma_tarihi DESC
+	`, userID)
+
+	if err != nil {
+		fmt.Println("Paylaşım linkleri listeleme hatası:", err)
+		paylasimLinkiListeCevabiYaz(w, http.StatusInternalServerError, PaylasimLinkiListeCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linkleri getirilemedi",
+			Kod:      "SHARE_LINKS_LIST_FAILED",
+			Linkler:  []PaylasimLinkiListeOgesi{},
+		})
+		return
+	}
+	defer rows.Close()
+
+	linkler := []PaylasimLinkiListeOgesi{}
+
+	for rows.Next() {
+		var id int
+		var serverID int
+		var sunucuTakmaAd string
+		var dosyaAdi string
+		var dosyaYolu string
+		var olusturmaTarihi time.Time
+		var sonGecerlilik sql.NullTime
+		var iptalEdildi bool
+
+		err = rows.Scan(
+			&id,
+			&serverID,
+			&sunucuTakmaAd,
+			&dosyaAdi,
+			&dosyaYolu,
+			&olusturmaTarihi,
+			&sonGecerlilik,
+			&iptalEdildi,
+		)
+
+		if err != nil {
+			fmt.Println("Paylaşım linki satır okuma hatası:", err)
+			continue
+		}
+
+		durum, suresiDoldu := paylasimLinkDurumuHesapla(iptalEdildi, sonGecerlilik)
+
+		sonGecerlilikMetni := ""
+		if sonGecerlilik.Valid {
+			sonGecerlilikMetni = sonGecerlilik.Time.Format("2006-01-02 15:04")
+		}
+
+		linkler = append(linkler, PaylasimLinkiListeOgesi{
+			ID:                  id,
+			ServerID:            serverID,
+			SunucuTakmaAd:       sunucuTakmaAd,
+			DosyaAdi:            dosyaAdi,
+			DosyaYolu:           dosyaYolu,
+			OlusturmaTarihi:     olusturmaTarihi.Format("2006-01-02 15:04"),
+			SonGecerlilikTarihi: sonGecerlilikMetni,
+			Suresiz:             !sonGecerlilik.Valid,
+			IptalEdildi:         iptalEdildi,
+			SuresiDoldu:         suresiDoldu,
+			Durum:               durum,
+		})
+	}
+
+	if err = rows.Err(); err != nil {
+		fmt.Println("Paylaşım linkleri rows hatası:", err)
+		paylasimLinkiListeCevabiYaz(w, http.StatusInternalServerError, PaylasimLinkiListeCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linkleri getirilemedi",
+			Kod:      "SHARE_LINKS_LIST_FAILED",
+			Linkler:  []PaylasimLinkiListeOgesi{},
+		})
+		return
+	}
+
+	paylasimLinkiListeCevabiYaz(w, http.StatusOK, PaylasimLinkiListeCevabi{
+		Basarili: true,
+		Mesaj:    "Paylaşım linkleri getirildi",
+		Linkler:  linkler,
+	})
+}
+
+func paylasimLinkiniIptalEt(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler PaylasimLinkiIptalBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+
+	if bilgiler.Token == "" || bilgiler.ShareID <= 0 {
+		paylasimLinkiIptalCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiIptalCevabi{
+			Basarili: false,
+			Mesaj:    "Eksik veya geçersiz veri",
+			Kod:      "INVALID_REQUEST",
+		})
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		paylasimLinkiIptalCevabiYaz(w, http.StatusUnauthorized, PaylasimLinkiIptalCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş",
+			Kod:      "UNAUTHORIZED",
+		})
+		return
+	}
+
+	sonuc, err := db.Exec(`
+		UPDATE share_links
+		SET iptal_edildi = TRUE
+		WHERE id = $1 AND user_id = $2
+	`, bilgiler.ShareID, userID)
+
+	if err != nil {
+		fmt.Println("Paylaşım linki iptal hatası:", err)
+		paylasimLinkiIptalCevabiYaz(w, http.StatusInternalServerError, PaylasimLinkiIptalCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linki iptal edilemedi",
+			Kod:      "SHARE_LINK_REVOKE_FAILED",
+		})
+		return
+	}
+
+	etkilenenSatir, err := sonuc.RowsAffected()
+	if err != nil {
+		fmt.Println("Paylaşım linki iptal rows affected hatası:", err)
+	}
+
+	if etkilenenSatir == 0 {
+		paylasimLinkiIptalCevabiYaz(w, http.StatusNotFound, PaylasimLinkiIptalCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linki bulunamadı",
+			Kod:      "SHARE_LINK_NOT_FOUND",
+		})
+		return
+	}
+
+	paylasimLinkiIptalCevabiYaz(w, http.StatusOK, PaylasimLinkiIptalCevabi{
+		Basarili: true,
+		Mesaj:    "Paylaşım linki iptal edildi",
+		ShareID:  bilgiler.ShareID,
 	})
 }
 
