@@ -88,6 +88,8 @@ export default function AnaSayfa() {
     useState("");
 
   const t = sozluk[dil];
+  const miniTooltipClass =
+    "pointer-events-none absolute left-1/2 top-full z-40 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-1 text-xs font-bold text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]";
 
   const secimleriTemizle = () => {
     setSeciliOgeAnahtarlari([]);
@@ -286,6 +288,8 @@ export default function AnaSayfa() {
   };
 
   const klasoreGir = (dosya) => {
+    if (yukleniyor) return;
+
     if (!dosya.klasorMu) {
       if (previewAcilabilirMi(dosya)) {
         dosyaPreviewGetir(dosya);
@@ -310,6 +314,7 @@ export default function AnaSayfa() {
   };
 
   const oncekiKlasoreDon = () => {
+    if (yukleniyor) return;
     if (mevcutYol === "/") return;
     let index = mevcutYol.lastIndexOf("/");
     let yeniYol = mevcutYol.substring(0, index);
@@ -324,6 +329,8 @@ export default function AnaSayfa() {
   };
 
   const yolaGit = (hedefYol) => {
+    if (yukleniyor) return;
+
     if (hedefYol === mevcutYol) return;
 
     setMevcutYol(hedefYol);
@@ -2736,6 +2743,272 @@ export default function AnaSayfa() {
     return seciliOgeler.length > 0 ? seciliOgeler : [kaynakDosya];
   };
 
+  const dragPreviewRenkleriAl = (oge) => {
+    if (oge.klasorMu) {
+      return {
+        border: karanlikMod ? "#83a598" : "#458588",
+        bg: karanlikMod ? "#223437" : "#d5c4a1",
+        text: karanlikMod ? "#83a598" : "#076678",
+        badgeBg: karanlikMod ? "#83a598" : "#458588",
+        badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+      };
+    }
+
+    if (imageDosyasiMi(oge.ad)) {
+      return {
+        border: karanlikMod ? "#b8bb26" : "#98971a",
+        bg: karanlikMod ? "#32361a" : "#d5c4a1",
+        text: karanlikMod ? "#b8bb26" : "#79740e",
+        badgeBg: karanlikMod ? "#b8bb26" : "#98971a",
+        badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+      };
+    }
+
+    if (pdfDosyasiMi(oge.ad)) {
+      return {
+        border: karanlikMod ? "#fb4934" : "#cc241d",
+        bg: karanlikMod ? "#3b2422" : "#d5c4a1",
+        text: karanlikMod ? "#fb4934" : "#9d0006",
+        badgeBg: karanlikMod ? "#fb4934" : "#cc241d",
+        badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+      };
+    }
+
+    if (officeDosyasiMi(oge.ad)) {
+      return {
+        border: karanlikMod ? "#83a598" : "#458588",
+        bg: karanlikMod ? "#223437" : "#d5c4a1",
+        text: karanlikMod ? "#83a598" : "#076678",
+        badgeBg: karanlikMod ? "#83a598" : "#458588",
+        badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+      };
+    }
+
+    if (arsivDosyasiMi(oge.ad)) {
+      return {
+        border: karanlikMod ? "#fabd2f" : "#d79921",
+        bg: karanlikMod ? "#3b321d" : "#d5c4a1",
+        text: karanlikMod ? "#fabd2f" : "#b57614",
+        badgeBg: karanlikMod ? "#fabd2f" : "#d79921",
+        badgeText: "#282828",
+      };
+    }
+
+    if (textPreviewDosyasiMi(oge.ad)) {
+      const etiket = textDosyaEtiketiAl(oge.ad);
+
+      if (["JS", "JSX", "JSON", "ZIG"].includes(etiket)) {
+        return {
+          border: karanlikMod ? "#fabd2f" : "#d79921",
+          bg: karanlikMod ? "#3b321d" : "#d5c4a1",
+          text: karanlikMod ? "#fabd2f" : "#b57614",
+          badgeBg: karanlikMod ? "#fabd2f" : "#d79921",
+          badgeText: "#282828",
+        };
+      }
+
+      if (
+        ["TS", "TSX", "GO", "C", "C++", "SQL", "LUA", "R", "DART"].includes(
+          etiket,
+        )
+      ) {
+        return {
+          border: karanlikMod ? "#83a598" : "#458588",
+          bg: karanlikMod ? "#223437" : "#d5c4a1",
+          text: karanlikMod ? "#83a598" : "#076678",
+          badgeBg: karanlikMod ? "#83a598" : "#458588",
+          badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+        };
+      }
+
+      if (["PY", "RS", "JAVA", "SWIFT"].includes(etiket)) {
+        return {
+          border: karanlikMod ? "#fe8019" : "#d65d0e",
+          bg: karanlikMod ? "#3b2a1f" : "#d5c4a1",
+          text: karanlikMod ? "#fe8019" : "#af3a03",
+          badgeBg: karanlikMod ? "#fe8019" : "#d65d0e",
+          badgeText: "#282828",
+        };
+      }
+
+      if (["RB", "SCALA"].includes(etiket)) {
+        return {
+          border: karanlikMod ? "#fb4934" : "#cc241d",
+          bg: karanlikMod ? "#3b2422" : "#d5c4a1",
+          text: karanlikMod ? "#fb4934" : "#9d0006",
+          badgeBg: karanlikMod ? "#fb4934" : "#cc241d",
+          badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+        };
+      }
+
+      return {
+        border: karanlikMod ? "#d3869b" : "#b16286",
+        bg: karanlikMod ? "#3a2834" : "#d5c4a1",
+        text: karanlikMod ? "#d3869b" : "#8f3f71",
+        badgeBg: karanlikMod ? "#d3869b" : "#b16286",
+        badgeText: karanlikMod ? "#282828" : "#fbf1c7",
+      };
+    }
+
+    return {
+      border: karanlikMod ? "#665c54" : "#a89984",
+      bg: karanlikMod ? "#3c3836" : "#d5c4a1",
+      text: karanlikMod ? "#a89984" : "#7c6f64",
+      badgeBg: karanlikMod ? "#665c54" : "#a89984",
+      badgeText: karanlikMod ? "#ebdbb2" : "#282828",
+    };
+  };
+
+  const suruklemeOnizlemeElementiOlustur = (ogeler) => {
+    const toplam = ogeler.length;
+    const gosterilecekOgeler = ogeler.slice(0, 5);
+    const kartGenislik = 170;
+    const kartYukseklik = 156;
+
+    const kapsayici = document.createElement("div");
+
+    kapsayici.style.position = "fixed";
+    kapsayici.style.left = "-1000px";
+    kapsayici.style.top = "-1000px";
+    kapsayici.style.width = `${kartGenislik + 70}px`;
+    kapsayici.style.height = `${kartYukseklik + 40}px`;
+    kapsayici.style.pointerEvents = "none";
+    kapsayici.style.zIndex = "99999";
+
+    [...gosterilecekOgeler].reverse().forEach((oge, tersIndex) => {
+      const index = gosterilecekOgeler.length - 1 - tersIndex;
+      const kart = document.createElement("div");
+
+      const solaKayma = index * 12;
+      const yukariKayma = index * 6;
+      const renkler = dragPreviewRenkleriAl(oge);
+
+      kart.style.position = "absolute";
+      kart.style.left = `${solaKayma}px`;
+      kart.style.top = `${yukariKayma}px`;
+      kart.style.width = `${kartGenislik}px`;
+      kart.style.height = `${kartYukseklik}px`;
+      kart.style.borderRadius = "14px";
+      kart.style.border = `1px solid ${renkler.border}`;
+      kart.style.background = karanlikMod ? "#3c3836" : "#ebdbb2";
+      kart.style.boxShadow =
+        index === 0
+          ? "0 20px 38px rgba(0, 0, 0, 0.34)"
+          : "0 12px 24px rgba(0, 0, 0, 0.22)";
+      kart.style.display = "flex";
+      kart.style.flexDirection = "column";
+      kart.style.alignItems = "center";
+      kart.style.justifyContent = "center";
+      kart.style.padding = "16px";
+      kart.style.opacity = `${1 - index * 0.08}`;
+      kart.style.overflow = "hidden";
+
+      const ikonAlani = document.createElement("div");
+
+      ikonAlani.style.width = "64px";
+      ikonAlani.style.height = "64px";
+      ikonAlani.style.marginBottom = "12px";
+      ikonAlani.style.display = "flex";
+      ikonAlani.style.alignItems = "center";
+      ikonAlani.style.justifyContent = "center";
+      ikonAlani.style.flexShrink = "0";
+
+      if (oge.klasorMu) {
+        ikonAlani.innerHTML = `
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="${renkler.text}" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+          </svg>
+        `;
+      } else {
+        const etiket = dosyaTipEtiketiAl(oge) || "FILE";
+
+        ikonAlani.style.position = "relative";
+        ikonAlani.style.borderRadius = "10px";
+        ikonAlani.style.border = `2px solid ${renkler.border}`;
+        ikonAlani.style.background = renkler.bg;
+        ikonAlani.style.color = renkler.text;
+        ikonAlani.style.fontSize = etiket.length > 4 ? "10px" : "13px";
+        ikonAlani.style.fontWeight = "900";
+        ikonAlani.style.letterSpacing = "-0.03em";
+        ikonAlani.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.18)";
+        ikonAlani.textContent = etiket;
+
+        const kivrim = document.createElement("div");
+
+        kivrim.style.position = "absolute";
+        kivrim.style.right = "0";
+        kivrim.style.top = "0";
+        kivrim.style.width = "0";
+        kivrim.style.height = "0";
+        kivrim.style.borderLeft = "18px solid transparent";
+        kivrim.style.borderTop = karanlikMod
+          ? "18px solid #282828"
+          : "18px solid #fbf1c7";
+
+        ikonAlani.appendChild(kivrim);
+      }
+
+      const ad = document.createElement("div");
+
+      ad.textContent = oge.ad;
+      ad.style.width = "100%";
+      ad.style.overflow = "hidden";
+      ad.style.textOverflow = "ellipsis";
+      ad.style.whiteSpace = "nowrap";
+      ad.style.textAlign = "center";
+      ad.style.fontSize = "13px";
+      ad.style.fontWeight = "800";
+      ad.style.color = karanlikMod ? "#ebdbb2" : "#3c3836";
+
+      const altBilgi = document.createElement("div");
+
+      altBilgi.textContent = oge.klasorMu ? "-" : dosyaBoyutuYaz(oge.boyut);
+      altBilgi.style.marginTop = "6px";
+      altBilgi.style.width = "100%";
+      altBilgi.style.overflow = "hidden";
+      altBilgi.style.textOverflow = "ellipsis";
+      altBilgi.style.whiteSpace = "nowrap";
+      altBilgi.style.textAlign = "center";
+      altBilgi.style.fontSize = "11px";
+      altBilgi.style.fontWeight = "700";
+      altBilgi.style.color = karanlikMod ? "#a89984" : "#7c6f64";
+
+      kart.appendChild(ikonAlani);
+      kart.appendChild(ad);
+      kart.appendChild(altBilgi);
+
+      kapsayici.appendChild(kart);
+    });
+
+    if (toplam > 1) {
+      const rozet = document.createElement("div");
+
+      rozet.textContent = `${toplam}`;
+      rozet.style.position = "absolute";
+      rozet.style.left = `${Math.min(gosterilecekOgeler.length, 5) * 12 + kartGenislik - 18}px`;
+      rozet.style.top = "8px";
+      rozet.style.minWidth = "34px";
+      rozet.style.height = "28px";
+      rozet.style.borderRadius = "999px";
+      rozet.style.background = "#98971a";
+      rozet.style.color = "#fbf1c7";
+      rozet.style.display = "flex";
+      rozet.style.alignItems = "center";
+      rozet.style.justifyContent = "center";
+      rozet.style.padding = "0 9px";
+      rozet.style.fontSize = "12px";
+      rozet.style.fontWeight = "900";
+      rozet.style.border = "1px solid #79740e";
+      rozet.style.boxShadow = "0 8px 18px rgba(0, 0, 0, 0.28)";
+
+      kapsayici.appendChild(rozet);
+    }
+
+    document.body.appendChild(kapsayici);
+
+    return kapsayici;
+  };
+
   const surukleyerekOgeleriHedefYolaTasi = async (kaynakAnahtar, hedefYol) => {
     suruklemeStateTemizle();
 
@@ -2831,13 +3104,26 @@ export default function AnaSayfa() {
     }
 
     const anahtar = dosyaAnahtariOlustur(dosya);
+    const suruklenecekOgeler = suruklenecekOgeleriGetir(anahtar);
 
     setSuruklenenOgeAnahtari(anahtar);
     setSuruklemeHedefiAnahtari("");
+    setBreadcrumbSuruklemeHedefYolu("");
 
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("application/x-pionter-item-key", anahtar);
     e.dataTransfer.setData("text/plain", dosya.ad);
+
+    if (suruklenecekOgeler.length > 0) {
+      const onizlemeElementi =
+        suruklemeOnizlemeElementiOlustur(suruklenecekOgeler);
+
+      e.dataTransfer.setDragImage(onizlemeElementi, 36, 32);
+
+      window.setTimeout(() => {
+        onizlemeElementi.remove();
+      }, 0);
+    }
   };
 
   const suruklemeStateTemizle = () => {
@@ -5082,26 +5368,31 @@ export default function AnaSayfa() {
 
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
               <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
-                <button
-                  title={t.upFolder}
-                  onClick={oncekiKlasoreDon}
-                  className="mr-4 p-1.5 rounded-md hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-                  disabled={mevcutYol === "/"}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="group relative inline-flex">
+                  <button
+                    disabled={yukleniyor || mevcutYol === "/"}
+                    onClick={oncekiKlasoreDon}
+                    aria-label={t.upFolder}
+                    className="mr-4 p-1.5 rounded-md hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                      />
+                    </svg>
+                  </button>
+                  {!yukleniyor && mevcutYol !== "/" && (
+                    <span className={miniTooltipClass}>{t.upFolder}</span>
+                  )}
+                </div>
                 <span className="opacity-70 mr-2">{t.currentPath}</span>
 
                 <div className="flex items-center gap-1 min-w-0 flex-wrap">
@@ -5110,23 +5401,34 @@ export default function AnaSayfa() {
                       {t.homeFolder}
                     </span>
                   ) : (
-                    <button
-                      onClick={() => yolaGit("/")}
-                      onDragOver={(e) => breadcrumbUstundeSurukle(e, "/")}
-                      onDragEnter={(e) => breadcrumbUstundeSurukle(e, "/")}
-                      onDragLeave={(e) => breadcrumbAyril(e, "/")}
-                      onDrop={(e) => breadcrumbYolunaBirak(e, "/")}
-                      className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
-                        breadcrumbSuruklemeHedefYolu === "/"
-                          ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
-                          : mevcutYol === "/"
-                            ? "text-[#458588] dark:text-[#83a598]"
-                            : "text-[#928374] hover:bg-[#d5c4a1] hover:text-[#458588] dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
-                      }`}
-                      title={t.dropHereToMove}
-                    >
-                      {t.homeFolder}
-                    </button>
+                    <div className="group relative inline-flex">
+                      <button
+                        disabled={yukleniyor}
+                        onClick={() => yolaGit("/")}
+                        onDragOver={(e) => breadcrumbUstundeSurukle(e, "/")}
+                        onDragEnter={(e) => breadcrumbUstundeSurukle(e, "/")}
+                        onDragLeave={(e) => breadcrumbAyril(e, "/")}
+                        onDrop={(e) => breadcrumbYolunaBirak(e, "/")}
+                        aria-label={t.homeFolder}
+                        className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
+                          breadcrumbSuruklemeHedefYolu === "/"
+                            ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
+                            : yukleniyor
+                              ? "cursor-not-allowed text-[#665c54] dark:text-[#7c6f64]"
+                              : mevcutYol === "/"
+                                ? "text-[#458588] dark:text-[#83a598]"
+                                : "text-[#928374] hover:bg-[#d5c4a1] hover:text-[#458588] dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
+                        }`}
+                      >
+                        {t.homeFolder}
+                      </button>
+
+                      {!yukleniyor && mevcutYol !== "/" && (
+                        <span className={miniTooltipClass}>
+                          {t.dropHereToMove}
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   {yolParcalari.map((parca, index) => {
@@ -5147,27 +5449,38 @@ export default function AnaSayfa() {
                             {parca}
                           </span>
                         ) : (
-                          <button
-                            onClick={() => yolaGit(hedefYol)}
-                            onDragOver={(e) =>
-                              breadcrumbUstundeSurukle(e, hedefYol)
-                            }
-                            onDragEnter={(e) =>
-                              breadcrumbUstundeSurukle(e, hedefYol)
-                            }
-                            onDragLeave={(e) => breadcrumbAyril(e, hedefYol)}
-                            onDrop={(e) => breadcrumbYolunaBirak(e, hedefYol)}
-                            className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
-                              breadcrumbSuruklemeHedefYolu === hedefYol
-                                ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
-                                : hedefYol === mevcutYol
-                                  ? "text-[#458588] dark:text-[#83a598]"
-                                  : "text-[#928374] hover:bg-[#d5c4a1] hover:text-[#458588] dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
-                            }`}
-                            title={t.dropHereToMove}
-                          >
-                            {parca}
-                          </button>
+                          <div className="group relative inline-flex">
+                            <button
+                              disabled={yukleniyor}
+                              onClick={() => yolaGit(hedefYol)}
+                              onDragOver={(e) =>
+                                breadcrumbUstundeSurukle(e, hedefYol)
+                              }
+                              onDragEnter={(e) =>
+                                breadcrumbUstundeSurukle(e, hedefYol)
+                              }
+                              onDragLeave={(e) => breadcrumbAyril(e, hedefYol)}
+                              onDrop={(e) => breadcrumbYolunaBirak(e, hedefYol)}
+                              aria-label={parca}
+                              className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
+                                breadcrumbSuruklemeHedefYolu === hedefYol
+                                  ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
+                                  : yukleniyor
+                                    ? "cursor-not-allowed text-[#665c54] dark:text-[#7c6f64]"
+                                    : hedefYol === mevcutYol
+                                      ? "text-[#458588] dark:text-[#83a598]"
+                                      : "text-[#928374] hover:bg-[#d5c4a1] hover:text-[#458588] dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
+                              }`}
+                            >
+                              {parca}
+                            </button>
+
+                            {!yukleniyor && hedefYol !== mevcutYol && (
+                              <span className={miniTooltipClass}>
+                                {t.dropHereToMove}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     );
