@@ -17,7 +17,7 @@ Current high-level status:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6 Real SSH Terminal: completed
+* v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
@@ -32,7 +32,7 @@ The product direction is evolving toward:
 * secure web-based file manager
 * server monitoring panel
 * lightweight web editor
-* optional real SSH terminal access
+* optional terminal access
 * optional AI-assisted file/code explanation features
 
 The project should continue to prioritize correctness, security, and maintainability over speed.
@@ -61,7 +61,6 @@ Current backend responsibilities:
 * Rename
 * Move
 * Server credential encryption and decryption
-* Authenticated WebSocket SSH terminal sessions 
 
 ### Frontend
 
@@ -91,8 +90,6 @@ Current frontend responsibilities:
 * Edit / Save / Cancel Edit flow for supported text/code files
 * Ctrl+S / Cmd+S save shortcut
 * Unsaved-change warnings for editor changes
-* xterm.js terminal modal UI
-* Terminal safety warning modal
 
 ### Database
 
@@ -428,160 +425,6 @@ Known limitations / future improvements:
 * Future polish should add PionterCloud Gruvbox Dark and Gruvbox Light Monaco themes.
 * Future polish may add language-specific color tuning for Monaco and the file UI.
 * Advanced editor features should be lazy-loaded or optional so the file manager does not become heavy.
-
-## v0.6 Real SSH Terminal Security Design
-
-The v0.6 phase will add optional real SSH terminal access.
-
-This feature is intentionally planned as a real terminal, not as a restricted command runner.
-
-Core decision:
-
-* PionterCloud will open a real SSH shell session for the selected server.
-* The terminal will use the saved SSH credentials of the selected server.
-* The SSH username stored for that server determines terminal permissions.
-* PionterCloud will not grant extra root or sudo permissions.
-
-Root / non-root behavior:
-
-* If the saved SSH user is `root`, the terminal runs as root.
-* If the saved SSH user is a normal Linux user, the terminal runs as that user.
-* If a normal user tries to run commands that require root privileges, Linux should return permission errors.
-* If a normal user tries to use `sudo`, the server's own sudo configuration decides whether it works.
-* PionterCloud should not bypass Linux permissions.
-
-Isolated folder behavior:
-
-* The configured isolated folder will be used as the terminal's starting directory when possible.
-* The isolated folder is not a security sandbox for terminal sessions.
-* Since the terminal is a real shell, users may leave the isolated folder with commands such as `cd ..` or `cd /` if their SSH user has permission.
-* This must be clearly explained in the terminal warning modal.
-
-Warning modal policy:
-
-* Before opening the terminal, show a warning modal.
-* The modal should explain that the terminal runs real commands on the selected server.
-* The modal should explain that root SSH users run commands as root.
-* The modal should explain that normal SSH users are limited by normal Linux permissions.
-* The modal should explain that the isolated folder is only the starting directory.
-* The modal should include a "do not show again" checkbox.
-* The "do not show again" preference can initially be stored in localStorage.
-
-Initial technical plan:
-
-* Backend:
-  * Add a WebSocket endpoint for terminal sessions.
-  * Authenticate the terminal request with the current session token.
-  * Resolve the selected server through `server_id`.
-  * Reuse the existing saved SSH credential flow.
-  * Open an SSH client.
-  * Request a PTY.
-  * Start a shell in the isolated folder when possible.
-  * Pipe WebSocket input to SSH stdin.
-  * Pipe SSH stdout/stderr output to WebSocket messages.
-  * Close SSH and WebSocket resources when the session ends.
-
-* Frontend:
-  * Add xterm.js.
-  * Add terminal modal state.
-  * Add terminal warning modal state.
-  * Add "do not show again" localStorage behavior.
-  * Open a WebSocket terminal session after warning confirmation.
-  * Render terminal output through xterm.js.
-  * Send keyboard input to the backend WebSocket.
-  * Close terminal when the modal closes.
-  * Close terminal when logging out or switching servers.
-
-Initial scope:
-
-* Single terminal session for the selected server.
-* Real interactive shell.
-* PTY support.
-* Terminal warning modal.
-* Do-not-show-again checkbox.
-* Manual close/disconnect.
-
-Deferred:
-
-* Command history persistence.
-* Terminal audit logs.
-* Multiple terminal tabs.
-* Terminal session restore.
-* Command allowlist/blocklist.
-* AI terminal control.
-* chroot/container sandboxing.
-* Production-grade terminal policy controls.
-
-Important note:
-
-## v0.6 Real SSH Terminal Implementation Summary
-
-The v0.6 phase added the first working version of real SSH terminal access.
-
-Backend changes:
-
-* Added `github.com/gorilla/websocket`.
-* Added `/api/terminal/ws` WebSocket endpoint.
-* Added terminal WebSocket upgrader for local development origins.
-* Added terminal message struct for auth, input, output, resize, error, ready, and close messages.
-* Added token-authenticated terminal startup flow.
-* Reused existing saved server credential lookup.
-* Reused existing SSH authentication method creation.
-* Opened SSH client sessions using the saved SSH user.
-* Requested PTY support with `xterm-256color`.
-* Started the shell in the configured isolated folder when possible.
-* Streamed WebSocket input messages to SSH stdin.
-* Streamed SSH stdout/stderr back to the frontend over WebSocket.
-* Added terminal resize support through SSH window-change messages.
-* Added terminal close cleanup for WebSocket, SSH session, and SSH client resources.
-
-Frontend changes:
-
-* Added `@xterm/xterm`.
-* Added `@xterm/addon-fit`.
-* Imported xterm CSS globally.
-* Added terminal modal state.
-* Added terminal warning modal state.
-* Added "do not show again" localStorage behavior.
-* Added terminal open/confirm/close lifecycle.
-* Added xterm.js terminal rendering.
-* Added xterm fit addon support.
-* Added terminal input forwarding to the backend WebSocket.
-* Added WebSocket output handling for terminal data, ready, error, and close messages.
-* Added terminal connection status UI.
-* Added terminal warning modal explaining root/non-root behavior and isolated-folder limitations.
-* Added terminal cleanup on logout and server switch.
-
-Manual validation:
-
-* Terminal warning modal opens before the first terminal session.
-* Cancel prevents opening the terminal.
-* Confirm opens the terminal modal.
-* Terminal connects to the selected server.
-* `pwd` runs successfully.
-* `whoami` shows the saved SSH user.
-* `ls` returns real shell output.
-* The terminal starts in the isolated folder when possible.
-* Users can leave the isolated folder because the terminal is a real shell.
-* Manual terminal close works.
-* Terminal closes on logout.
-* Terminal closes on server switch.
-* "Do not show again" hides the warning on later opens.
-* Backend and frontend startup tests passed.
-
-Known limitations / future improvements:
-
-* Terminal access is currently treated as a trusted-user feature.
-* The isolated folder is the starting directory only, not a security sandbox.
-* Terminal command history is not stored yet.
-* Terminal audit logs are not implemented yet.
-* Multi-tab terminal sessions are not implemented yet.
-* Terminal session restore is not implemented yet.
-* Command filtering is not implemented yet.
-* AI terminal control is deferred.
-* Production-grade terminal policy controls are deferred.
-
-The terminal feature is powerful and should be treated as a trusted-user feature in the early versions of PionterCloud.
 
 ## Current Authentication Behavior
 

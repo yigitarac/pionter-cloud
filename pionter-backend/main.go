@@ -21,7 +21,6 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 
-	"github.com/gorilla/websocket"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/pkg/sftp"
@@ -35,21 +34,6 @@ var db *sql.DB
 var sunucuStatsCache = map[string]SunucuStatsCacheKaydi{}
 var sunucuStatsCacheMutex sync.Mutex
 var sunucuStatsCacheSuresi = 20 * time.Second
-
-var terminalWSUpgrader = websocket.Upgrader{
-	ReadBufferSize:  4096,
-	WriteBufferSize: 4096,
-	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-
-		if origin == "" {
-			return true
-		}
-
-		return strings.HasPrefix(origin, "http://localhost:") ||
-			strings.HasPrefix(origin, "http://127.0.0.1:")
-	},
-}
 
 const textPreviewLimit = 1 * 1024 * 1024
 const imagePreviewLimit = 5 * 1024 * 1024
@@ -141,7 +125,6 @@ func main() {
 	http.HandleFunc("/api/servers/pin", sunucuSabitle)
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
-	http.HandleFunc("/api/terminal/ws", terminalWebSocket)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -324,15 +307,6 @@ type GirisCevabi struct {
 
 type TokenIstekBilgileri struct {
 	Token string `json:"token"`
-}
-
-type TerminalMesaji struct {
-	Tip      string `json:"tip"`
-	Token    string `json:"token,omitempty"`
-	ServerID int    `json:"server_id,omitempty"`
-	Data     string `json:"data,omitempty"`
-	Cols     int    `json:"cols,omitempty"`
-	Rows     int    `json:"rows,omitempty"`
 }
 
 type SunucuStatsBilgileri struct {
@@ -538,250 +512,6 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	}
 	defer acilanDosya.Close()
 	io.Copy(w, acilanDosya)
-}
-
-func terminalWebSocketYaz(conn *websocket.Conn, yazmaMutex *sync.Mutex, tip string, data string) error {
-	yazmaMutex.Lock()
-	defer yazmaMutex.Unlock()
-
-	return conn.WriteJSON(TerminalMesaji{
-		Tip:  tip,
-		Data: data,
-	})
-}
-
-func terminalPipeOku(conn *websocket.Conn, yazmaMutex *sync.Mutex, okuyucu io.Reader) {
-	buffer := make([]byte, 4096)
-
-	for {
-		n, err := okuyucu.Read(buffer)
-		if n > 0 {
-			yazmaErr := terminalWebSocketYaz(conn, yazmaMutex, "data", string(buffer[:n]))
-			if yazmaErr != nil {
-				return
-			}
-		}
-
-		if err != nil {
-			return
-		}
-	}
-}
-
-func shellArgTekTirnak(deger string) string {
-	return "'" + strings.ReplaceAll(deger, "'", "'\"'\"'") + "'"
-}
-
-func terminalBaslangicKomutuOlustur(baslangicYolu string) string {
-	return "cd " + shellArgTekTirnak(baslangicYolu) + " 2>/dev/null || cd ~; exec ${SHELL:-/bin/sh} -l"
-}
-
-func terminalWebSocket(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Sadece GET desteklenir", http.StatusMethodNotAllowed)
-		return
-	}
-
-	conn, err := terminalWSUpgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println("Terminal WebSocket upgrade hatası:", err)
-		return
-	}
-
-	var yazmaMutex sync.Mutex
-	kapatmaOnce := sync.Once{}
-
-	kapat := func() {
-		kapatmaOnce.Do(func() {
-			conn.Close()
-		})
-	}
-
-	defer kapat()
-
-	conn.SetReadLimit(64 * 1024)
-
-	_, ilkMesajHam, err := conn.ReadMessage()
-	if err != nil {
-		fmt.Println("Terminal auth mesajı okunamadı:", err)
-		return
-	}
-
-	var ilkMesaj TerminalMesaji
-	err = json.Unmarshal(ilkMesajHam, &ilkMesaj)
-	if err != nil {
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal auth mesajı okunamadı.")
-		return
-	}
-
-	ilkMesaj.Tip = strings.TrimSpace(ilkMesaj.Tip)
-	ilkMesaj.Token = strings.TrimSpace(ilkMesaj.Token)
-
-	if ilkMesaj.Tip != "auth" || ilkMesaj.Token == "" || ilkMesaj.ServerID <= 0 {
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal auth bilgileri eksik veya geçersiz.")
-		return
-	}
-
-	cols := ilkMesaj.Cols
-	rows := ilkMesaj.Rows
-
-	if cols <= 0 {
-		cols = 120
-	}
-
-	if rows <= 0 {
-		rows = 30
-	}
-
-	kimlik, err := sunucuKimlikSorgulaTokenIle(ilkMesaj.Token, ilkMesaj.ServerID)
-	if err != nil {
-		fmt.Println("Terminal yetki hatası:", err)
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Yetkisiz giriş veya sunucu bulunamadı.")
-		return
-	}
-
-	gercekBaslangicYolu, err := guvenliYolOlustur(kimlik.IzoleKlasor, "/")
-	if err != nil {
-		fmt.Println("Terminal başlangıç yolu hatası:", err)
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal başlangıç yolu geçersiz.")
-		return
-	}
-
-	authMethods, err := sshAuthMethodOlustur(kimlik)
-	if err != nil {
-		fmt.Println("Terminal SSH auth hatası:", err)
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "SSH kimlik doğrulama hazırlanamadı.")
-		return
-	}
-
-	config := &ssh.ClientConfig{
-		User:            kimlik.SunucuKullanici,
-		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
-	}
-
-	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
-	if err != nil {
-		fmt.Println("Terminal SSH bağlantı hatası:", err)
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "SSH bağlantısı kurulamadı.")
-		return
-	}
-
-	session, err := client.NewSession()
-	if err != nil {
-		fmt.Println("Terminal SSH session hatası:", err)
-		client.Close()
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "SSH terminal oturumu oluşturulamadı.")
-		return
-	}
-
-	kapat = func() {
-		kapatmaOnce.Do(func() {
-			session.Close()
-			client.Close()
-			conn.Close()
-		})
-	}
-
-	stdin, err := session.StdinPipe()
-	if err != nil {
-		fmt.Println("Terminal stdin hatası:", err)
-		kapat()
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal stdin hazırlanamadı.")
-		return
-	}
-
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		fmt.Println("Terminal stdout hatası:", err)
-		kapat()
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal stdout hazırlanamadı.")
-		return
-	}
-
-	stderr, err := session.StderrPipe()
-	if err != nil {
-		fmt.Println("Terminal stderr hatası:", err)
-		kapat()
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal stderr hazırlanamadı.")
-		return
-	}
-
-	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,
-		ssh.TTY_OP_ISPEED: 14400,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
-
-	err = session.RequestPty("xterm-256color", rows, cols, modes)
-	if err != nil {
-		fmt.Println("Terminal PTY hatası:", err)
-		kapat()
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal PTY oluşturulamadı.")
-		return
-	}
-
-	baslangicKomutu := terminalBaslangicKomutuOlustur(gercekBaslangicYolu)
-
-	err = session.Start(baslangicKomutu)
-	if err != nil {
-		fmt.Println("Terminal shell başlatma hatası:", err)
-		kapat()
-		terminalWebSocketYaz(conn, &yazmaMutex, "error", "Terminal shell başlatılamadı.")
-		return
-	}
-
-	terminalWebSocketYaz(conn, &yazmaMutex, "ready", "")
-	terminalWebSocketYaz(
-		conn,
-		&yazmaMutex,
-		"data",
-		fmt.Sprintf("\r\nPionterCloud terminal connected as %s.\r\nStarting directory: %s\r\n\r\n", kimlik.SunucuKullanici, gercekBaslangicYolu),
-	)
-
-	go terminalPipeOku(conn, &yazmaMutex, stdout)
-	go terminalPipeOku(conn, &yazmaMutex, stderr)
-
-	go func() {
-		err := session.Wait()
-		if err != nil && !strings.Contains(err.Error(), "session already closed") {
-			terminalWebSocketYaz(conn, &yazmaMutex, "data", "\r\nTerminal session ended.\r\n")
-		}
-
-		kapat()
-	}()
-
-	for {
-		_, mesajHam, err := conn.ReadMessage()
-		if err != nil {
-			break
-		}
-
-		var mesaj TerminalMesaji
-		err = json.Unmarshal(mesajHam, &mesaj)
-		if err != nil {
-			continue
-		}
-
-		switch mesaj.Tip {
-		case "input":
-			if mesaj.Data != "" {
-				_, _ = io.WriteString(stdin, mesaj.Data)
-			}
-
-		case "resize":
-			if mesaj.Cols > 0 && mesaj.Rows > 0 {
-				_ = session.WindowChange(mesaj.Rows, mesaj.Cols)
-			}
-
-		case "close":
-			kapat()
-			return
-		}
-	}
-
-	kapat()
 }
 
 func dosyaKaydetCevabiYaz(w http.ResponseWriter, status int, cevap DosyaKaydetCevabi) {

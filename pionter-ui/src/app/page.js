@@ -101,19 +101,6 @@ export default function AnaSayfa() {
   const [suruklemeHedefiAnahtari, setSuruklemeHedefiAnahtari] = useState("");
   const [breadcrumbSuruklemeHedefYolu, setBreadcrumbSuruklemeHedefYolu] =
     useState("");
-  const [terminalModalAcik, setTerminalModalAcik] = useState(false);
-  const [terminalWarningModalAcik, setTerminalWarningModalAcik] =
-    useState(false);
-  const [terminalUyarisiTekrarGosterme, setTerminalUyarisiTekrarGosterme] =
-    useState(false);
-  const [terminalBaglaniyor, setTerminalBaglaniyor] = useState(false);
-  const [terminalBaglandi, setTerminalBaglandi] = useState(false);
-  const [terminalHatasi, setTerminalHatasi] = useState("");
-
-  const terminalKapsayiciRef = useRef(null);
-  const terminalRef = useRef(null);
-  const terminalFitAddonRef = useRef(null);
-  const terminalWebSocketRef = useRef(null);
 
   const t = sozluk[dil];
   const previewDuzenlemeKirliMi =
@@ -144,300 +131,6 @@ export default function AnaSayfa() {
     setSilmeOnizlemeYukleniyor(false);
     setSilmeOnizlemeHatasi("");
   };
-
-  const terminalKaynaklariniTemizle = () => {
-    const ws = terminalWebSocketRef.current;
-
-    if (ws) {
-      try {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ tip: "close" }));
-        }
-
-        ws.close();
-      } catch (hata) {
-        console.log("Terminal WebSocket kapatma hatası:", hata);
-      }
-    }
-
-    terminalWebSocketRef.current = null;
-
-    if (terminalRef.current) {
-      try {
-        terminalRef.current.dispose();
-      } catch (hata) {
-        console.log("Terminal dispose hatası:", hata);
-      }
-    }
-
-    terminalRef.current = null;
-    terminalFitAddonRef.current = null;
-  };
-
-  const terminaliKapat = () => {
-    terminalKaynaklariniTemizle();
-    setTerminalModalAcik(false);
-    setTerminalWarningModalAcik(false);
-    setTerminalUyarisiTekrarGosterme(false);
-    setTerminalBaglaniyor(false);
-    setTerminalBaglandi(false);
-    setTerminalHatasi("");
-  };
-
-  const terminaliAc = () => {
-    if (!seciliSunucu || !oturumToken) {
-      toastGoster(t.selectServerFirst, "error");
-      return;
-    }
-
-    const uyarıGizli =
-      window.localStorage.getItem("pionter_terminal_warning_hidden") === "true";
-
-    if (uyarıGizli) {
-      setTerminalModalAcik(true);
-      return;
-    }
-
-    setTerminalUyarisiTekrarGosterme(false);
-    setTerminalWarningModalAcik(true);
-  };
-
-  const terminalUyarisiniOnayla = () => {
-    if (terminalUyarisiTekrarGosterme) {
-      window.localStorage.setItem("pionter_terminal_warning_hidden", "true");
-    }
-
-    setTerminalWarningModalAcik(false);
-    setTerminalModalAcik(true);
-  };
-
-  useEffect(() => {
-    if (!terminalModalAcik) return;
-
-    let iptalEdildi = false;
-    let resizeHandler = null;
-    let dataDisposable = null;
-
-    const terminalBaslat = async () => {
-      if (!terminalKapsayiciRef.current || !seciliSunucu || !oturumToken) {
-        return;
-      }
-
-      setTerminalBaglaniyor(true);
-      setTerminalBaglandi(false);
-      setTerminalHatasi("");
-
-      const { Terminal } = await import("@xterm/xterm");
-      const { FitAddon } = await import("@xterm/addon-fit");
-
-      if (iptalEdildi) return;
-
-      const terminal = new Terminal({
-        cursorBlink: true,
-        convertEol: true,
-        fontFamily:
-          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-        fontSize: 13,
-        lineHeight: 1.25,
-        scrollback: 5000,
-        theme: karanlikMod
-          ? {
-              background: "#1d2021",
-              foreground: "#ebdbb2",
-              cursor: "#fabd2f",
-              selectionBackground: "#504945",
-              black: "#282828",
-              red: "#cc241d",
-              green: "#98971a",
-              yellow: "#d79921",
-              blue: "#458588",
-              magenta: "#b16286",
-              cyan: "#689d6a",
-              white: "#a89984",
-              brightBlack: "#928374",
-              brightRed: "#fb4934",
-              brightGreen: "#b8bb26",
-              brightYellow: "#fabd2f",
-              brightBlue: "#83a598",
-              brightMagenta: "#d3869b",
-              brightCyan: "#8ec07c",
-              brightWhite: "#ebdbb2",
-            }
-          : {
-              background: "#fbf1c7",
-              foreground: "#3c3836",
-              cursor: "#b57614",
-              selectionBackground: "#d5c4a1",
-              black: "#fbf1c7",
-              red: "#cc241d",
-              green: "#98971a",
-              yellow: "#d79921",
-              blue: "#458588",
-              magenta: "#b16286",
-              cyan: "#689d6a",
-              white: "#7c6f64",
-              brightBlack: "#928374",
-              brightRed: "#9d0006",
-              brightGreen: "#79740e",
-              brightYellow: "#b57614",
-              brightBlue: "#076678",
-              brightMagenta: "#8f3f71",
-              brightCyan: "#427b58",
-              brightWhite: "#3c3836",
-            },
-      });
-
-      const fitAddon = new FitAddon();
-
-      terminal.loadAddon(fitAddon);
-      terminal.open(terminalKapsayiciRef.current);
-
-      terminalRef.current = terminal;
-      terminalFitAddonRef.current = fitAddon;
-
-      requestAnimationFrame(() => {
-        try {
-          fitAddon.fit();
-        } catch (hata) {
-          console.log("Terminal fit hatası:", hata);
-        }
-      });
-
-      terminal.writeln(
-        dil === "tr"
-          ? "PionterCloud terminal bağlantısı hazırlanıyor..."
-          : "Preparing PionterCloud terminal connection...",
-      );
-
-      const ws = new WebSocket("ws://localhost:8080/api/terminal/ws");
-      terminalWebSocketRef.current = ws;
-
-      ws.onopen = () => {
-        const cols = terminal.cols || 120;
-        const rows = terminal.rows || 30;
-
-        ws.send(
-          JSON.stringify({
-            tip: "auth",
-            token: oturumToken,
-            server_id: seciliSunucu.id,
-            cols,
-            rows,
-          }),
-        );
-      };
-
-      ws.onmessage = (event) => {
-        let mesaj = null;
-
-        try {
-          mesaj = JSON.parse(event.data);
-        } catch {
-          terminal.write(String(event.data));
-          return;
-        }
-
-        if (mesaj.tip === "ready") {
-          setTerminalBaglaniyor(false);
-          setTerminalBaglandi(true);
-          setTerminalHatasi("");
-          return;
-        }
-
-        if (mesaj.tip === "data") {
-          terminal.write(mesaj.data || "");
-          return;
-        }
-
-        if (mesaj.tip === "error") {
-          const hataMesaji = mesaj.data || t.terminalConnectionFailed;
-
-          setTerminalBaglaniyor(false);
-          setTerminalBaglandi(false);
-          setTerminalHatasi(hataMesaji);
-          terminal.writeln("");
-          terminal.writeln(hataMesaji);
-        }
-      };
-
-      ws.onerror = () => {
-        setTerminalBaglaniyor(false);
-        setTerminalBaglandi(false);
-        setTerminalHatasi(t.terminalConnectionFailed);
-        terminal.writeln("");
-        terminal.writeln(t.terminalConnectionFailed);
-      };
-
-      ws.onclose = () => {
-        setTerminalBaglaniyor(false);
-        setTerminalBaglandi(false);
-
-        if (!iptalEdildi) {
-          terminal.writeln("");
-          terminal.writeln(t.terminalConnectionClosed);
-        }
-      };
-
-      dataDisposable = terminal.onData((data) => {
-        const aktifWS = terminalWebSocketRef.current;
-
-        if (aktifWS && aktifWS.readyState === WebSocket.OPEN) {
-          aktifWS.send(
-            JSON.stringify({
-              tip: "input",
-              data,
-            }),
-          );
-        }
-      });
-
-      resizeHandler = () => {
-        try {
-          fitAddon.fit();
-
-          const aktifWS = terminalWebSocketRef.current;
-
-          if (aktifWS && aktifWS.readyState === WebSocket.OPEN) {
-            aktifWS.send(
-              JSON.stringify({
-                tip: "resize",
-                cols: terminal.cols,
-                rows: terminal.rows,
-              }),
-            );
-          }
-        } catch (hata) {
-          console.log("Terminal resize hatası:", hata);
-        }
-      };
-
-      window.addEventListener("resize", resizeHandler);
-    };
-
-    terminalBaslat();
-
-    return () => {
-      iptalEdildi = true;
-
-      if (resizeHandler) {
-        window.removeEventListener("resize", resizeHandler);
-      }
-
-      if (dataDisposable) {
-        dataDisposable.dispose();
-      }
-
-      terminalKaynaklariniTemizle();
-    };
-  }, [
-    terminalModalAcik,
-    seciliSunucu,
-    oturumToken,
-    karanlikMod,
-    dil,
-    t.terminalConnectionClosed,
-    t.terminalConnectionFailed,
-  ]);
 
   const yeniKayitOlustur = () => {
     if (yukleniyor) return;
@@ -674,8 +367,6 @@ export default function AnaSayfa() {
   };
 
   const sunucularaDon = () => {
-    terminaliKapat();
-
     setSeciliSunucu(null);
     setMevcutYol("/");
     setDosyalar([]);
@@ -737,8 +428,6 @@ export default function AnaSayfa() {
   };
 
   const oturumuTemizle = () => {
-    terminaliKapat();
-
     setOturumToken("");
     setGirisYapildi(false);
     setKullaniciAdi("");
@@ -830,8 +519,6 @@ export default function AnaSayfa() {
 
   const sunucuSec = (sunucu) => {
     if (yukleniyor) return;
-
-    terminaliKapat();
 
     setSeciliSunucu(sunucu);
     setMevcutYol("/");
@@ -4615,125 +4302,6 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
-      {terminalWarningModalAcik && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-[#d79921] bg-[#fbf1c7] p-6 shadow-xl dark:border-[#fabd2f] dark:bg-[#282828]">
-            <div className="mb-4 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d79921] text-lg font-black text-[#282828] dark:bg-[#fabd2f]">
-                !
-              </div>
-
-              <div>
-                <h2 className="text-lg font-black text-[#3c3836] dark:text-[#ebdbb2]">
-                  {t.terminalWarningTitle}
-                </h2>
-
-                <p className="mt-2 text-sm leading-relaxed text-[#7c6f64] dark:text-[#a89984]">
-                  {t.terminalWarningIntro}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-4 text-sm leading-relaxed text-[#3c3836] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2]">
-              <p>{t.terminalWarningPermissions}</p>
-              <p>{t.terminalWarningIsolatedFolder}</p>
-              <p className="font-bold text-[#cc241d] dark:text-[#fb4934]">
-                {t.terminalWarningCareful}
-              </p>
-            </div>
-
-            <label className="mt-4 flex cursor-pointer items-center gap-3 text-sm font-bold text-[#3c3836] dark:text-[#ebdbb2]">
-              <input
-                type="checkbox"
-                checked={terminalUyarisiTekrarGosterme}
-                onChange={(e) =>
-                  setTerminalUyarisiTekrarGosterme(e.target.checked)
-                }
-                className="h-4 w-4 cursor-pointer accent-[#458588]"
-              />
-              {t.terminalDontShowAgain}
-            </label>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setTerminalWarningModalAcik(false)}
-                className="rounded-lg bg-[#d5c4a1] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
-              >
-                {t.cancel}
-              </button>
-
-              <button
-                type="button"
-                onClick={terminalUyarisiniOnayla}
-                className="rounded-lg bg-[#d79921] px-4 py-2 text-sm font-black text-[#282828] transition-colors hover:bg-[#b57614] dark:bg-[#fabd2f] dark:hover:bg-[#d79921]"
-              >
-                {t.openTerminalConfirm}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {terminalModalAcik && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="flex h-[86vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-[#504945] bg-[#1d2021] shadow-2xl">
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[#504945] bg-[#282828] px-4 py-3">
-              <div className="min-w-0">
-                <h2 className="truncate text-base font-black text-[#ebdbb2]">
-                  {t.terminalTitle}
-                </h2>
-
-                <p className="truncate text-xs font-bold text-[#a89984]">
-                  {seciliSunucu?.sunucu_takma_ad || "-"} ·{" "}
-                  {seciliSunucu?.sunucu_kullanici || "-"} ·{" "}
-                  {seciliSunucu?.izole_klasor || "-"}
-                </p>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                <span
-                  className={`rounded-full border px-3 py-1 text-xs font-black ${
-                    terminalBaglandi
-                      ? "border-[#98971a] bg-[#32361a] text-[#b8bb26]"
-                      : terminalBaglaniyor
-                        ? "border-[#d79921] bg-[#3b321d] text-[#fabd2f]"
-                        : "border-[#665c54] bg-[#3c3836] text-[#a89984]"
-                  }`}
-                >
-                  {terminalBaglandi
-                    ? t.terminalConnected
-                    : terminalBaglaniyor
-                      ? t.terminalConnecting
-                      : t.terminalDisconnected}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={terminaliKapat}
-                  className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#fb4934]"
-                >
-                  {t.closeTerminal}
-                </button>
-              </div>
-            </div>
-
-            {terminalHatasi && (
-              <div className="shrink-0 border-b border-[#504945] bg-[#3c3836] px-4 py-2">
-                <p className="text-sm font-bold text-[#fb4934]">
-                  {terminalHatasi}
-                </p>
-              </div>
-            )}
-
-            <div className="min-h-0 flex-1 bg-[#1d2021] p-3">
-              <div
-                ref={terminalKapsayiciRef}
-                className="h-full w-full overflow-hidden rounded-lg border border-[#504945] bg-[#1d2021] p-2"
-              />
-            </div>
-          </div>
-        </div>
-      )}
       {previewModalAcik && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
@@ -6087,14 +5655,6 @@ export default function AnaSayfa() {
                         className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                       >
                         {t.newFolder}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={terminaliAc}
-                        disabled={yukleniyor || !seciliSunucu}
-                        className="shrink-0 rounded-lg border border-[#d79921] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#fabd2f] dark:hover:bg-[#3b321d]"
-                      >
-                        {t.openTerminal}
                       </button>
 
                       {gosterilecekDosyalar.length > 0 &&
