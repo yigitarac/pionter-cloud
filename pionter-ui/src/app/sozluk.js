@@ -240,7 +240,10 @@ export const sozluk = {
     revokingShare: "Revoking...",
     shareRevoked: "Share link revoked.",
     shareRevokeFailed: "Share link could not be revoked.",
-    revokeShareConfirm: "Are you sure you want to revoke this share link?",
+    revokeShareTitle: "Revoke share link",
+    revokeShareText:
+      "This share link will stop working immediately. This action cannot be undone.",
+    revokeShareConfirmButton: "Revoke link",
     refreshShareLinks: "Refresh",
     createdAt: "Created",
     path: "Path",
@@ -484,8 +487,10 @@ export const sozluk = {
     revokingShare: "İptal ediliyor...",
     shareRevoked: "Paylaşım linki iptal edildi.",
     shareRevokeFailed: "Paylaşım linki iptal edilemedi.",
-    revokeShareConfirm:
-      "Bu paylaşım linkini iptal etmek istediğine emin misin?",
+    revokeShareTitle: "Paylaşım linkini iptal et",
+    revokeShareText:
+      "Bu paylaşım linki hemen çalışmayı durduracak. Bu işlem geri alınamaz.",
+    revokeShareConfirmButton: "Linki iptal et",
     refreshShareLinks: "Yenile",
     createdAt: "Oluşturuldu",
     path: "Yol",

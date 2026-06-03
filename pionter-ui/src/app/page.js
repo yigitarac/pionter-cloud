@@ -73,6 +73,8 @@ export default function AnaSayfa() {
   const [shareLinkleriYukleniyor, setShareLinkleriYukleniyor] = useState(false);
   const [shareLinkleriHatasi, setShareLinkleriHatasi] = useState("");
   const [shareIptalEdiliyorID, setShareIptalEdiliyorID] = useState(null);
+  const [shareIptalOnayModalAcik, setShareIptalOnayModalAcik] = useState(false);
+  const [iptalEdilecekShareLink, setIptalEdilecekShareLink] = useState(null);
   const [silmeOnizlemeOgeleri, setSilmeOnizlemeOgeleri] = useState([]);
   const [silmeOnizlemeToplam, setSilmeOnizlemeToplam] = useState(0);
   const [silmeOnizlemeYukleniyor, setSilmeOnizlemeYukleniyor] = useState(false);
@@ -251,6 +253,8 @@ export default function AnaSayfa() {
     setShareLinkleriYukleniyor(false);
     setShareLinkleriHatasi("");
     setShareIptalEdiliyorID(null);
+    setShareIptalOnayModalAcik(false);
+    setIptalEdilecekShareLink(null);
   };
 
   const shareLinkDurumMetniAl = (durum) => {
@@ -343,12 +347,24 @@ export default function AnaSayfa() {
     shareLinkleriGetir();
   };
 
-  const shareLinkiniIptalEt = (shareID) => {
-    if (!shareID || shareIptalEdiliyorID) return;
+  const shareIptalOnayModaliniAc = (link) => {
+    if (!link || link.durum !== "active") return;
 
-    if (!window.confirm(t.revokeShareConfirm)) {
-      return;
-    }
+    setIptalEdilecekShareLink(link);
+    setShareIptalOnayModalAcik(true);
+  };
+
+  const shareIptalOnayModaliniKapat = () => {
+    if (shareIptalEdiliyorID) return;
+
+    setShareIptalOnayModalAcik(false);
+    setIptalEdilecekShareLink(null);
+  };
+
+  const shareLinkiniIptalEt = () => {
+    const shareID = iptalEdilecekShareLink?.id;
+
+    if (!shareID || shareIptalEdiliyorID) return;
 
     setShareIptalEdiliyorID(shareID);
 
@@ -378,12 +394,16 @@ export default function AnaSayfa() {
       })
       .then(() => {
         setShareIptalEdiliyorID(null);
+        setShareIptalOnayModalAcik(false);
+        setIptalEdilecekShareLink(null);
         toastGoster(t.shareRevoked, "success");
         shareLinkleriGetir();
       })
       .catch((hata) => {
         if (hata.message === "Oturum geçersiz") {
           setShareIptalEdiliyorID(null);
+          setShareIptalOnayModalAcik(false);
+          setIptalEdilecekShareLink(null);
           return;
         }
 
@@ -4461,7 +4481,7 @@ export default function AnaSayfa() {
                             <div className="flex shrink-0 gap-2 lg:flex-col">
                               <button
                                 type="button"
-                                onClick={() => shareLinkiniIptalEt(link.id)}
+                                onClick={() => shareIptalOnayModaliniAc(link)}
                                 disabled={
                                   !aktifMi || shareIptalEdiliyorID === link.id
                                 }
@@ -4488,6 +4508,67 @@ export default function AnaSayfa() {
                 className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
               >
                 {t.refreshShareLinks}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {shareIptalOnayModalAcik && (
+        <div
+          onClick={shareIptalOnayModaliniKapat}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d79921] bg-[#fbf1c7] p-5 text-[#3c3836] shadow-2xl dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d79921] text-lg font-black text-[#282828] dark:bg-[#fabd2f]">
+                !
+              </div>
+
+              <div className="min-w-0">
+                <h2 className="text-lg font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                  {t.revokeShareTitle}
+                </h2>
+
+                <p className="mt-2 text-sm leading-relaxed text-[#7c6f64] dark:text-[#a89984]">
+                  {t.revokeShareText}
+                </p>
+              </div>
+            </div>
+
+            {iptalEdilecekShareLink && (
+              <div className="mb-5 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
+                <p className="break-words text-sm font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                  {iptalEdilecekShareLink.dosya_adi}
+                </p>
+
+                <p className="mt-1 break-all text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                  {iptalEdilecekShareLink.dosya_yolu}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={shareIptalOnayModaliniKapat}
+                disabled={Boolean(shareIptalEdiliyorID)}
+                className="rounded-lg bg-[#d5c4a1] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                onClick={shareLinkiniIptalEt}
+                disabled={Boolean(shareIptalEdiliyorID)}
+                className="rounded-lg bg-[#cc241d] px-4 py-2 text-sm font-black text-[#fbf1c7] transition-colors hover:bg-[#9d0006] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#fb4934] dark:text-[#282828] dark:hover:bg-[#cc241d]"
+              >
+                {shareIptalEdiliyorID
+                  ? t.revokingShare
+                  : t.revokeShareConfirmButton}
               </button>
             </div>
           </div>

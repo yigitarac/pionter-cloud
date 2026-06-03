@@ -1421,6 +1421,7 @@ func paylasimLinkleriniListele(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN sunucular s ON s.id = sl.server_id
 		WHERE sl.user_id = $1
 		ORDER BY sl.olusturma_tarihi DESC
+		LIMIT 100
 	`, userID)
 
 	if err != nil {
