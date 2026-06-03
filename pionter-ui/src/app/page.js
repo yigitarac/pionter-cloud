@@ -2419,6 +2419,49 @@ export default function AnaSayfa() {
     };
   }, [previewModalAcik, previewDuzenlemeKirliMi]);
 
+  useEffect(() => {
+    if (!previewDuzenlemeKirliMi) return;
+
+    const sayfadanCikisiKontrolEt = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", sayfadanCikisiKontrolEt);
+
+    return () => {
+      window.removeEventListener("beforeunload", sayfadanCikisiKontrolEt);
+    };
+  }, [previewDuzenlemeKirliMi]);
+
+  useEffect(() => {
+    const klavyeKaydiniKontrolEt = (e) => {
+      const saveKisayoluMu =
+        (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s";
+
+      if (!saveKisayoluMu) return;
+      if (!previewModalAcik || !previewDuzenlemeModu) return;
+
+      e.preventDefault();
+
+      if (previewDuzenlemeKirliMi && !previewKaydediliyor) {
+        previewDosyasiniKaydet();
+      }
+    };
+
+    window.addEventListener("keydown", klavyeKaydiniKontrolEt);
+
+    return () => {
+      window.removeEventListener("keydown", klavyeKaydiniKontrolEt);
+    };
+  }, [
+    previewModalAcik,
+    previewDuzenlemeModu,
+    previewDuzenlemeKirliMi,
+    previewKaydediliyor,
+    previewDosyasiniKaydet,
+  ]);
+
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       dosyalariYukle(e.target.files);
@@ -4364,6 +4407,18 @@ export default function AnaSayfa() {
               ) : previewVerisi?.tip === "text" ? (
                 previewDuzenlemeModu ? (
                   <div className="overflow-hidden rounded-lg border border-[#504945] bg-[#1d2021]">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#504945] bg-[#282828] px-4 py-2">
+                      <p className="text-xs font-bold text-[#a89984]">
+                        {t.saveShortcutHint}
+                      </p>
+
+                      {previewDuzenlemeKirliMi && (
+                        <span className="rounded-full border border-[#d79921] bg-[#3b321d] px-2 py-1 text-xs font-black text-[#fabd2f]">
+                          {t.unsavedChanges}
+                        </span>
+                      )}
+                    </div>
+
                     {previewKaydetHatasi && (
                       <div className="border-b border-[#504945] bg-[#3c3836] px-4 py-3">
                         <p className="text-sm font-bold text-[#fb4934]">

@@ -201,6 +201,8 @@ export const sozluk = {
     fileSaveFailed: "File could not be saved.",
     unsavedChangesConfirm:
       "You have unsaved changes. Are you sure you want to close without saving?",
+    unsavedChanges: "Unsaved changes",
+    saveShortcutHint: "Press Ctrl+S / Cmd+S to save",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -403,5 +405,7 @@ export const sozluk = {
     fileSaveFailed: "Dosya kaydedilemedi.",
     unsavedChangesConfirm:
       "Kaydedilmemiş değişikliklerin var. Kaydetmeden kapatmak istediğine emin misin?",
+    unsavedChanges: "Kaydedilmemiş değişiklik var",
+    saveShortcutHint: "Kaydetmek için Ctrl+S / Cmd+S",
   },
 };
