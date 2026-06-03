@@ -116,6 +116,8 @@ export default function AnaSayfa() {
   const [suruklemeHedefiAnahtari, setSuruklemeHedefiAnahtari] = useState("");
   const [breadcrumbSuruklemeHedefYolu, setBreadcrumbSuruklemeHedefYolu] =
     useState("");
+  const [dosyaModalAcik, setDosyaModalAcik] = useState(false);
+  const [yeniDosyaAdi, setYeniDosyaAdi] = useState("");
 
   const t = sozluk[dil];
   const previewDuzenlemeKirliMi =
@@ -673,6 +675,8 @@ export default function AnaSayfa() {
     secimleriTemizle();
     setYeniKlasorAdi("");
     setKlasorModalAcik(false);
+    setDosyaModalAcik(false);
+    setYeniDosyaAdi("");
     setAcikMenuIndex(null);
     setYukleniyor(false);
     setYuklemeMesaji("");
@@ -749,6 +753,8 @@ export default function AnaSayfa() {
     secimleriTemizle();
     setYeniKlasorAdi("");
     setKlasorModalAcik(false);
+    setDosyaModalAcik(false);
+    setYeniDosyaAdi("");
     setAcikMenuIndex(null);
 
     previewTemizle();
@@ -829,6 +835,8 @@ export default function AnaSayfa() {
     setAramaMetni("");
     secimleriTemizle();
     setYeniKlasorAdi("");
+    setDosyaModalAcik(false);
+    setYeniDosyaAdi("");
     setAcikMenuIndex(null);
     setTopluTasimaModalAcik(false);
     setSunucuStats(null);
@@ -2163,6 +2171,13 @@ export default function AnaSayfa() {
     setYeniKlasorAdi("");
   };
 
+  const dosyaModaliniKapat = () => {
+    if (yukleniyor) return;
+
+    setDosyaModalAcik(false);
+    setYeniDosyaAdi("");
+  };
+
   const klasorOlustur = () => {
     if (yukleniyor) return;
     if (!seciliSunucu) {
@@ -2219,6 +2234,78 @@ export default function AnaSayfa() {
         const mesaj = apiHataMesajiAl(hata, t.folderCreateFailed);
 
         console.log("Klasör oluşturma hatası:", hata);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        toastGoster(mesaj, "error");
+      });
+  };
+
+  const dosyaOlustur = () => {
+    if (yukleniyor) return;
+
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    const temizDosyaAdi = yeniDosyaAdi.trim();
+
+    if (!temizDosyaAdi) {
+      toastGoster(t.fileNameEmpty, "error");
+      return;
+    }
+
+    if (gecersizDosyaVeyaKlasorAdiMi(temizDosyaAdi)) {
+      toastGoster(t.invalidFileName, "error");
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeMesaji(t.creatingFile);
+
+    fetch("http://localhost:8080/api/files/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        yol: mevcutYol,
+        server_id: seciliSunucu.id,
+        dosya_adi: temizDosyaAdi,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          return apiCevapHatasiOlustur(cevap, t.fileCreateFailed).then(
+            (hata) => {
+              throw hata;
+            },
+          );
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        if (!veri.basarili) {
+          throw new Error(veri.mesaj || t.fileCreateFailed);
+        }
+
+        setDosyaModalAcik(false);
+        setYeniDosyaAdi("");
+        toastGoster(t.fileCreateSuccess, "success");
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
+
+        const mesaj = apiHataMesajiAl(hata, t.fileCreateFailed);
+
+        console.log("Dosya oluşturma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
         toastGoster(mesaj, "error");
@@ -4241,6 +4328,62 @@ export default function AnaSayfa() {
       lang={dil === "tr" ? "tr" : "en"}
     >
       <Toast toast={toast} />
+      {dosyaModalAcik && (
+        <div
+          onClick={dosyaModaliniKapat}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-5 text-[#3c3836] shadow-xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <h2 className="mb-2 text-lg font-bold text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.newFileTitle}
+            </h2>
+
+            <p className="mb-4 text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+              {t.newFileHelp}
+            </p>
+
+            <input
+              type="text"
+              value={yeniDosyaAdi}
+              onChange={(e) => setYeniDosyaAdi(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  dosyaOlustur();
+                }
+
+                if (e.key === "Escape") {
+                  dosyaModaliniKapat();
+                }
+              }}
+              placeholder={t.fileNamePlaceholder}
+              className="w-full rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-4 py-2.5 text-sm text-[#3c3836] placeholder-[#928374] focus:outline-none dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:placeholder-[#a89984]"
+              autoFocus
+            />
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={dosyaModaliniKapat}
+                className="rounded-lg bg-[#d5c4a1] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                onClick={dosyaOlustur}
+                disabled={yukleniyor}
+                className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+              >
+                {t.createFile}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {klasorModalAcik && (
         <div
           onClick={klasorModaliniKapat}
@@ -6503,6 +6646,15 @@ export default function AnaSayfa() {
                         className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
                       >
                         {t.upload}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDosyaModalAcik(true)}
+                        disabled={yukleniyor}
+                        className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                      >
+                        {t.newFile}
                       </button>
 
                       <button

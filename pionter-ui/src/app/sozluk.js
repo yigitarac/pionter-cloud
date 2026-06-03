@@ -251,6 +251,15 @@ export const sozluk = {
     unsavedChangesText:
       "You have unsaved changes. If you continue, your changes will be discarded.",
     discardChanges: "Discard changes",
+    newFile: "New file",
+    newFileTitle: "Create new file",
+    newFileHelp: "Create an empty file in the current folder.",
+    fileNamePlaceholder: "File name, e.g. notes.txt",
+    createFile: "Create File",
+    creatingFile: "Creating file...",
+    fileCreateSuccess: "File created successfully.",
+    fileCreateFailed: "File could not be created.",
+    fileNameEmpty: "File name cannot be empty.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -502,5 +511,14 @@ export const sozluk = {
     unsavedChangesText:
       "Kaydedilmemiş değişikliklerin var. Devam edersen değişikliklerin kaybolacak.",
     discardChanges: "Değişiklikleri at",
+    newFile: "Yeni dosya",
+    newFileTitle: "Yeni dosya oluştur",
+    newFileHelp: "Mevcut klasörde boş bir dosya oluştur.",
+    fileNamePlaceholder: "Dosya adı, örn. notlar.txt",
+    createFile: "Dosya oluştur",
+    creatingFile: "Dosya oluşturuluyor...",
+    fileCreateSuccess: "Dosya başarıyla oluşturuldu.",
+    fileCreateFailed: "Dosya oluşturulamadı.",
+    fileNameEmpty: "Dosya adı boş olamaz.",
   },
 };

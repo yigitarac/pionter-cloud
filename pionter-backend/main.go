@@ -140,6 +140,7 @@ func main() {
 	http.HandleFunc("/api/servers/delete", sunucuSil)
 	http.HandleFunc("/api/servers/update", sunucuGuncelle)
 	http.HandleFunc("/api/folders/create", klasorOlustur)
+	http.HandleFunc("/api/files/create", dosyaOlustur)
 	http.HandleFunc("/api/delete", dosyaVeyaKlasorSil)
 	http.HandleFunc("/api/rename", dosyaVeyaKlasorYenidenAdlandir)
 	http.HandleFunc("/api/move", dosyaVeyaKlasorTasi)
@@ -280,6 +281,13 @@ type KlasorOlusturBilgileri struct {
 	Yol       string `json:"yol"`
 	ServerID  int    `json:"server_id"`
 	KlasorAdi string `json:"klasor_adi"`
+}
+
+type DosyaOlusturBilgileri struct {
+	Token    string `json:"token"`
+	Yol      string `json:"yol"`
+	ServerID int    `json:"server_id"`
+	DosyaAdi string `json:"dosya_adi"`
 }
 
 type SilmeBilgileri struct {
@@ -2318,6 +2326,110 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		"mesaj":    "Klasör oluşturuldu",
 	})
 }
+
+func dosyaOlustur(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler DosyaOlusturBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+	bilgiler.Yol = strings.TrimSpace(bilgiler.Yol)
+	bilgiler.DosyaAdi = strings.TrimSpace(bilgiler.DosyaAdi)
+
+	if bilgiler.Token == "" || bilgiler.ServerID <= 0 || bilgiler.DosyaAdi == "" {
+		apiHatasiYaz(w, http.StatusBadRequest, "INVALID_REQUEST", "Eksik veya geçersiz veri")
+		return
+	}
+
+	if !guvenliAdMi(bilgiler.DosyaAdi) {
+		apiHatasiYaz(w, http.StatusBadRequest, "INVALID_FILE_NAME", "Geçersiz dosya adı")
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
+	if err != nil {
+		apiHatasiYaz(w, http.StatusUnauthorized, "UNAUTHORIZED", "Yetkisiz giriş veya sunucu bulunamadı")
+		return
+	}
+
+	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		apiHatasiYaz(w, http.StatusBadRequest, "INVALID_PATH", "Geçersiz yol")
+		return
+	}
+
+	yeniDosyaYolu := path.Join(gercekYol, bilgiler.DosyaAdi)
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Dosya oluşturma SSH auth hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SSH_AUTH_FAILED", "SSH kimlik doğrulama hazırlanamadı")
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Dosya oluşturma SSH bağlantı hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SSH_CONNECTION_FAILED", "SSH bağlantısı kurulamadı")
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("Dosya oluşturma SFTP hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SFTP_CONNECTION_FAILED", "SFTP bağlantısı kurulamadı")
+		return
+	}
+	defer sftpClient.Close()
+
+	_, err = sftpClient.Stat(yeniDosyaYolu)
+	if err == nil {
+		apiHatasiYaz(w, http.StatusConflict, "FILE_ALREADY_EXISTS", "Bu isimde zaten bir dosya veya klasör var")
+		return
+	}
+
+	if err != nil && izinHatasiMi(err) {
+		apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+		return
+	}
+
+	yeniDosya, err := sftpClient.OpenFile(yeniDosyaYolu, os.O_WRONLY|os.O_CREATE|os.O_EXCL)
+	if err != nil {
+		fmt.Println("Dosya oluşturma hatası:", err)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "FILE_CREATE_FAILED", "Dosya oluşturulamadı")
+		return
+	}
+	defer yeniDosya.Close()
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"basarili":  true,
+		"mesaj":     "Dosya oluşturuldu",
+		"dosya_adi": bilgiler.DosyaAdi,
+	})
+}
+
 func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
 
