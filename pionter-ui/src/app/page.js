@@ -120,6 +120,7 @@ export default function AnaSayfa() {
   const [yeniDosyaAdi, setYeniDosyaAdi] = useState("");
   const [contextMenu, setContextMenu] = useState({
     acik: false,
+    tip: "",
     x: 0,
     y: 0,
     dosya: null,
@@ -310,22 +311,14 @@ export default function AnaSayfa() {
   const contextMenuyuKapat = () => {
     setContextMenu({
       acik: false,
+      tip: "",
       x: 0,
       y: 0,
       dosya: null,
     });
   };
 
-  const contextMenuyuAc = (e, dosya) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (yukleniyor || !dosya) return;
-
-    setAcikMenuIndex(null);
-
-    const menuGenisligi = 210;
-    const menuYuksekligi = dosya.klasorMu ? 190 : 250;
+  const contextMenuKonumuHesapla = (e, menuGenisligi, menuYuksekligi) => {
     const padding = 12;
 
     let x = e.clientX;
@@ -336,10 +329,27 @@ export default function AnaSayfa() {
       y = Math.min(y, window.innerHeight - menuYuksekligi - padding);
     }
 
-    setContextMenu({
-      acik: true,
+    return {
       x: Math.max(padding, x),
       y: Math.max(padding, y),
+    };
+  };
+
+  const contextMenuyuAc = (e, dosya) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (yukleniyor || !dosya) return;
+
+    setAcikMenuIndex(null);
+
+    const konum = contextMenuKonumuHesapla(e, 210, dosya.klasorMu ? 190 : 250);
+
+    setContextMenu({
+      acik: true,
+      tip: "item",
+      x: konum.x,
+      y: konum.y,
       dosya,
     });
   };
@@ -386,6 +396,43 @@ export default function AnaSayfa() {
 
     if (aksiyon === "delete") {
       dosyaVeyaKlasorSil(dosya);
+    }
+  };
+
+  const bosAlanContextMenuyuAc = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (yukleniyor || !seciliSunucu) return;
+
+    setAcikMenuIndex(null);
+
+    const konum = contextMenuKonumuHesapla(e, 210, 145);
+
+    setContextMenu({
+      acik: true,
+      tip: "empty",
+      x: konum.x,
+      y: konum.y,
+      dosya: null,
+    });
+  };
+
+  const bosAlanContextMenuAksiyonCalistir = (aksiyon) => {
+    contextMenuyuKapat();
+
+    if (aksiyon === "upload") {
+      dosyaGirdiRef.current?.click();
+      return;
+    }
+
+    if (aksiyon === "newFile") {
+      setDosyaModalAcik(true);
+      return;
+    }
+
+    if (aksiyon === "newFolder") {
+      setKlasorModalAcik(true);
     }
   };
 
@@ -5706,7 +5753,7 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
-      {contextMenu.acik && contextMenu.dosya && (
+      {contextMenu.acik && (
         <div
           onClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.preventDefault()}
@@ -5716,71 +5763,105 @@ export default function AnaSayfa() {
             top: `${contextMenu.y}px`,
           }}
         >
-          {contextMenu.dosya.klasorMu ? (
-            <button
-              type="button"
-              onClick={() => contextMenuAksiyonCalistir("open")}
-              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-            >
-              {t.openFolder}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => contextMenuAksiyonCalistir("preview")}
-              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-            >
-              {t.previewItem}
-            </button>
+          {contextMenu.tip === "empty" && (
+            <>
+              <button
+                type="button"
+                onClick={() => bosAlanContextMenuAksiyonCalistir("upload")}
+                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+              >
+                {t.upload}
+              </button>
+
+              <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
+
+              <button
+                type="button"
+                onClick={() => bosAlanContextMenuAksiyonCalistir("newFile")}
+                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+              >
+                {t.newFile}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => bosAlanContextMenuAksiyonCalistir("newFolder")}
+                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+              >
+                {t.newFolder}
+              </button>
+            </>
           )}
 
-          {!contextMenu.dosya.klasorMu && (
-            <button
-              type="button"
-              onClick={() => contextMenuAksiyonCalistir("download")}
-              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-            >
-              {t.downloadFile}
-            </button>
+          {contextMenu.tip === "item" && contextMenu.dosya && (
+            <>
+              {contextMenu.dosya.klasorMu ? (
+                <button
+                  type="button"
+                  onClick={() => contextMenuAksiyonCalistir("open")}
+                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                >
+                  {t.openFolder}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => contextMenuAksiyonCalistir("preview")}
+                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                >
+                  {t.previewItem}
+                </button>
+              )}
+
+              {!contextMenu.dosya.klasorMu && (
+                <button
+                  type="button"
+                  onClick={() => contextMenuAksiyonCalistir("download")}
+                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                >
+                  {t.downloadFile}
+                </button>
+              )}
+
+              <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
+
+              <button
+                type="button"
+                onClick={() => contextMenuAksiyonCalistir("rename")}
+                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+              >
+                {t.renameItem}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => contextMenuAksiyonCalistir("move")}
+                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+              >
+                {t.moveItem}
+              </button>
+
+              {!contextMenu.dosya.klasorMu && (
+                <button
+                  type="button"
+                  onClick={() => contextMenuAksiyonCalistir("share")}
+                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                >
+                  {t.shareItem}
+                </button>
+              )}
+
+              <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
+
+              <button
+                type="button"
+                onClick={() => contextMenuAksiyonCalistir("delete")}
+                className="w-full px-4 py-2.5 text-left text-sm font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
+              >
+                {t.deleteItem}
+              </button>
+            </>
           )}
-
-          <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
-
-          <button
-            type="button"
-            onClick={() => contextMenuAksiyonCalistir("rename")}
-            className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-          >
-            {t.renameItem}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => contextMenuAksiyonCalistir("move")}
-            className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-          >
-            {t.moveItem}
-          </button>
-
-          {!contextMenu.dosya.klasorMu && (
-            <button
-              type="button"
-              onClick={() => contextMenuAksiyonCalistir("share")}
-              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-            >
-              {t.shareItem}
-            </button>
-          )}
-
-          <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
-
-          <button
-            type="button"
-            onClick={() => contextMenuAksiyonCalistir("delete")}
-            className="w-full px-4 py-2.5 text-left text-sm font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
-          >
-            {t.deleteItem}
-          </button>
         </div>
       )}
       <div
@@ -7017,178 +7098,194 @@ export default function AnaSayfa() {
               </div>
             </div>
 
-            {yukleniyor ? (
-              <LoadingState
-                yukleniyor={yukleniyor}
-                mesaj={yuklemeMesaji || t.loading}
-                progress={yuklemeYuzdesi}
-                progressLabel={t.uploadProgress}
-              />
-            ) : dosyalar.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
-                <svg
-                  className="w-16 h-16 mb-4 opacity-50"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div
+              onContextMenu={bosAlanContextMenuyuAc}
+              className="min-h-[45vh]"
+            >
+              {yukleniyor ? (
+                <LoadingState
+                  yukleniyor={yukleniyor}
+                  mesaj={yuklemeMesaji || t.loading}
+                  progress={yuklemeYuzdesi}
+                  progressLabel={t.uploadProgress}
+                />
+              ) : dosyalar.length === 0 ? (
+                <div
+                  onContextMenu={bosAlanContextMenuyuAc}
+                  className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1"
-                    d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"
-                  />
-                </svg>
-                <p className="text-sm">{dosyaMesaji || t.emptyFolder}</p>
-              </div>
-            ) : gosterilecekDosyalar.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]">
-                <p className="text-sm">{t.noSearchResults}</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {gosterilecekDosyalar.map((dosya, index) => {
-                  const dosyaAnahtari = dosyaAnahtariOlustur(dosya);
-                  const surukleniyorMu =
-                    suruklenenOgeAnahtari === dosyaAnahtari;
-                  const dropHedefiMi =
-                    suruklemeHedefiAnahtari === dosyaAnahtari;
+                  <svg
+                    className="w-16 h-16 mb-4 opacity-50"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1"
+                      d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776"
+                    />
+                  </svg>
+                  <p className="text-sm">{dosyaMesaji || t.emptyFolder}</p>
+                </div>
+              ) : gosterilecekDosyalar.length === 0 ? (
+                <div
+                  onContextMenu={bosAlanContextMenuyuAc}
+                  className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]"
+                >
+                  <p className="text-sm">{t.noSearchResults}</p>
+                </div>
+              ) : (
+                <div
+                  onContextMenu={bosAlanContextMenuyuAc}
+                  className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                >
+                  {gosterilecekDosyalar.map((dosya, index) => {
+                    const dosyaAnahtari = dosyaAnahtariOlustur(dosya);
+                    const surukleniyorMu =
+                      suruklenenOgeAnahtari === dosyaAnahtari;
+                    const dropHedefiMi =
+                      suruklemeHedefiAnahtari === dosyaAnahtari;
 
-                  return (
-                    <div
-                      key={dosyaAnahtari}
-                      draggable={!yukleniyor}
-                      onDragStart={(e) => kartSuruklemeBaslat(e, dosya)}
-                      onDragEnd={kartSuruklemeBitir}
-                      onDragOver={(e) => klasorKartininUstundeSurukle(e, dosya)}
-                      onDragEnter={(e) =>
-                        klasorKartininUstundeSurukle(e, dosya)
-                      }
-                      onDragLeave={(e) => klasorKartindanAyril(e, dosya)}
-                      onDrop={(e) => klasorKartinaBirak(e, dosya)}
-                      onContextMenu={(e) => contextMenuyuAc(e, dosya)}
-                      onClick={() => klasoreGir(dosya)}
-                      className={`group relative flex min-w-0 flex-col items-center rounded-xl bg-[#ebdbb2] p-4 transition-all hover:shadow-md dark:bg-[#3c3836] ${
-                        dropHedefiMi
-                          ? "border border-[#98971a] ring-2 ring-[#98971a]/60 dark:border-[#b8bb26] dark:ring-[#b8bb26]/50"
-                          : "border border-[#d5c4a1] hover:border-[#458588] dark:border-[#504945] dark:hover:border-[#83a598]"
-                      } ${surukleniyorMu ? "opacity-60" : ""} cursor-pointer`}
-                    >
-                      {dosya.klasorMu && dropHedefiMi && (
-                        <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-lg border border-dashed border-[#98971a] bg-[#fbf1c7]/80 px-3 text-center text-xs font-bold text-[#79740e] backdrop-blur-sm dark:border-[#b8bb26] dark:bg-[#282828]/80 dark:text-[#b8bb26]">
-                          {t.dropHereToMove}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          dosyaSeciminiDegistir(dosya);
-                        }}
-                        className={`absolute left-3 top-3 z-10 flex h-5 w-5 items-center justify-center rounded border text-xs font-bold transition-colors ${
-                          dosyaSeciliMi(dosya)
-                            ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
-                            : "border-[#a89984] bg-[#fbf1c7] text-transparent dark:border-[#665c54] dark:bg-[#282828]"
-                        }`}
-                        aria-label={
-                          dosyaSeciliMi(dosya) ? t.unselectItem : t.selectItem
+                    return (
+                      <div
+                        key={dosyaAnahtari}
+                        draggable={!yukleniyor}
+                        onDragStart={(e) => kartSuruklemeBaslat(e, dosya)}
+                        onDragEnd={kartSuruklemeBitir}
+                        onDragOver={(e) =>
+                          klasorKartininUstundeSurukle(e, dosya)
                         }
+                        onDragEnter={(e) =>
+                          klasorKartininUstundeSurukle(e, dosya)
+                        }
+                        onDragLeave={(e) => klasorKartindanAyril(e, dosya)}
+                        onDrop={(e) => klasorKartinaBirak(e, dosya)}
+                        onContextMenu={(e) => contextMenuyuAc(e, dosya)}
+                        onClick={() => klasoreGir(dosya)}
+                        className={`group relative flex min-w-0 flex-col items-center rounded-xl bg-[#ebdbb2] p-4 transition-all hover:shadow-md dark:bg-[#3c3836] ${
+                          dropHedefiMi
+                            ? "border border-[#98971a] ring-2 ring-[#98971a]/60 dark:border-[#b8bb26] dark:ring-[#b8bb26]/50"
+                            : "border border-[#d5c4a1] hover:border-[#458588] dark:border-[#504945] dark:hover:border-[#83a598]"
+                        } ${surukleniyorMu ? "opacity-60" : ""} cursor-pointer`}
                       >
-                        ✓
-                      </button>
-                      {dosyaIkonuGoster(dosya)}
-                      <div className="group/name relative max-w-full px-1">
-                        <span className="block max-w-full truncate text-center text-sm font-medium text-[#3c3836] dark:text-[#ebdbb2]">
-                          {dosya.ad}
-                        </span>
-
-                        <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-[360px] -translate-x-1/2 whitespace-normal break-words rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-1.5 text-center text-xs font-bold leading-snug text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 [transition-delay:0ms] group-hover/name:opacity-100 group-hover/name:[transition-delay:700ms] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
-                          {dosya.ad}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
-                        <p>
-                          {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
-                        </p>
-                        <p className="truncate max-w-full">
-                          {dosya.degistirilme}
-                        </p>
-                      </div>
-                      <div className="absolute right-2 top-2">
+                        {dosya.klasorMu && dropHedefiMi && (
+                          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-lg border border-dashed border-[#98971a] bg-[#fbf1c7]/80 px-3 text-center text-xs font-bold text-[#79740e] backdrop-blur-sm dark:border-[#b8bb26] dark:bg-[#282828]/80 dark:text-[#b8bb26]">
+                            {t.dropHereToMove}
+                          </div>
+                        )}
                         <button
                           type="button"
-                          aria-label={t.openFileMenu}
                           onClick={(e) => {
                             e.stopPropagation();
-                            contextMenuyuKapat();
-                            setAcikMenuIndex(
-                              acikMenuIndex === index ? null : index,
-                            );
+                            dosyaSeciminiDegistir(dosya);
                           }}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all cursor-pointer"
+                          className={`absolute left-3 top-3 z-10 flex h-5 w-5 items-center justify-center rounded border text-xs font-bold transition-colors ${
+                            dosyaSeciliMi(dosya)
+                              ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
+                              : "border-[#a89984] bg-[#fbf1c7] text-transparent dark:border-[#665c54] dark:bg-[#282828]"
+                          }`}
+                          aria-label={
+                            dosyaSeciliMi(dosya) ? t.unselectItem : t.selectItem
+                          }
                         >
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                          </svg>
+                          ✓
                         </button>
+                        {dosyaIkonuGoster(dosya)}
+                        <div className="group/name relative max-w-full px-1">
+                          <span className="block max-w-full truncate text-center text-sm font-medium text-[#3c3836] dark:text-[#ebdbb2]">
+                            {dosya.ad}
+                          </span>
 
-                        {acikMenuIndex === index && (
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] shadow-lg overflow-hidden"
+                          <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-[360px] -translate-x-1/2 whitespace-normal break-words rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-1.5 text-center text-xs font-bold leading-snug text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 [transition-delay:0ms] group-hover/name:opacity-100 group-hover/name:[transition-delay:700ms] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                            {dosya.ad}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
+                          <p>
+                            {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
+                          </p>
+                          <p className="truncate max-w-full">
+                            {dosya.degistirilme}
+                          </p>
+                        </div>
+                        <div className="absolute right-2 top-2">
+                          <button
+                            type="button"
+                            aria-label={t.openFileMenu}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              contextMenuyuKapat();
+                              setAcikMenuIndex(
+                                acikMenuIndex === index ? null : index,
+                              );
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all cursor-pointer"
                           >
-                            <button
-                              onClick={() => {
-                                setAcikMenuIndex(null);
-                                dosyaVeyaKlasorYenidenAdlandir(dosya);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              {t.renameItem}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setAcikMenuIndex(null);
-                                dosyaVeyaKlasorTasi(dosya);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-                            >
-                              {t.moveItem}
-                            </button>
+                              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                            </svg>
+                          </button>
 
-                            {!dosya.klasorMu && (
+                          {acikMenuIndex === index && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] shadow-lg overflow-hidden"
+                            >
                               <button
                                 onClick={() => {
                                   setAcikMenuIndex(null);
-                                  paylasimModaliniAc(dosya);
+                                  dosyaVeyaKlasorYenidenAdlandir(dosya);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
                               >
-                                {t.shareItem}
+                                {t.renameItem}
                               </button>
-                            )}
+                              <button
+                                onClick={() => {
+                                  setAcikMenuIndex(null);
+                                  dosyaVeyaKlasorTasi(dosya);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                              >
+                                {t.moveItem}
+                              </button>
 
-                            <button
-                              onClick={() => {
-                                setAcikMenuIndex(null);
-                                dosyaVeyaKlasorSil(dosya);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-[#cc241d] hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-                            >
-                              {t.deleteItem}
-                            </button>
-                          </div>
-                        )}
+                              {!dosya.klasorMu && (
+                                <button
+                                  onClick={() => {
+                                    setAcikMenuIndex(null);
+                                    paylasimModaliniAc(dosya);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                                >
+                                  {t.shareItem}
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => {
+                                  setAcikMenuIndex(null);
+                                  dosyaVeyaKlasorSil(dosya);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-[#cc241d] hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                              >
+                                {t.deleteItem}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>
