@@ -2714,6 +2714,116 @@ export default function AnaSayfa() {
     return `${dosya.klasorMu ? "klasor" : "dosya"}:${dosya.ad}`;
   };
 
+  const suruklenecekOgeleriGetir = (kaynakAnahtar) => {
+    const kaynakDosya = dosyalar.find(
+      (oge) => dosyaAnahtariOlustur(oge) === kaynakAnahtar,
+    );
+
+    if (!kaynakDosya) {
+      return [];
+    }
+
+    const kaynakSeciliMi = seciliOgeAnahtarlari.includes(kaynakAnahtar);
+
+    if (!kaynakSeciliMi) {
+      return [kaynakDosya];
+    }
+
+    const seciliOgeler = dosyalar.filter((oge) =>
+      seciliOgeAnahtarlari.includes(dosyaAnahtariOlustur(oge)),
+    );
+
+    return seciliOgeler.length > 0 ? seciliOgeler : [kaynakDosya];
+  };
+
+  const surukleyerekOgeleriHedefYolaTasi = async (kaynakAnahtar, hedefYol) => {
+    suruklemeStateTemizle();
+
+    if (yukleniyor) return;
+
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    if (!hedefYol || hedefYol === mevcutYol) {
+      toastGoster(t.alreadyInThisFolder, "error");
+      return;
+    }
+
+    const tasinacakOgeler = suruklenecekOgeleriGetir(kaynakAnahtar);
+
+    if (tasinacakOgeler.length === 0) {
+      return;
+    }
+
+    const gecersizHedefVarMi = tasinacakOgeler.some((oge) => {
+      const kaynakYol = ogeYoluOlustur(mevcutYol, oge.ad);
+
+      return (
+        oge.klasorMu &&
+        (hedefYol === kaynakYol || hedefYol.startsWith(kaynakYol + "/"))
+      );
+    });
+
+    if (gecersizHedefVarMi) {
+      toastGoster(t.cannotMoveFolderIntoItself, "error");
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeMesaji(
+      tasinacakOgeler.length > 1 ? t.movingSelectedItems : t.movingItem,
+    );
+
+    try {
+      for (let i = 0; i < tasinacakOgeler.length; i++) {
+        const oge = tasinacakOgeler[i];
+
+        const cevap = await fetch("http://localhost:8080/api/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: oturumToken,
+            server_id: seciliSunucu.id,
+            kaynak_yol: mevcutYol,
+            hedef_yol: hedefYol,
+            dosya_adi: oge.ad,
+          }),
+        });
+
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Sürükleyerek taşıma başarısız");
+        }
+      }
+
+      toastGoster(
+        tasinacakOgeler.length > 1 ? t.selectedItemsMoved : t.moveSuccess,
+        "success",
+      );
+
+      secimleriTemizle();
+      previewCacheRef.current = {};
+      setThumbnailVerileri({});
+      hedefKlasorCacheRef.current = {};
+      klasoruYenile(mevcutYol);
+    } catch (hata) {
+      if (hata.message === "Oturum geçersiz") {
+        return;
+      }
+
+      console.log("Sürükleyerek taşıma hatası:", hata);
+      suruklemeStateTemizle();
+      setYukleniyor(false);
+      setYuklemeMesaji("");
+      toastGoster(t.moveFailed, "error");
+    }
+  };
+
   const kartSuruklemeBaslat = (e, dosya) => {
     if (yukleniyor) {
       e.preventDefault();
@@ -2781,84 +2891,13 @@ export default function AnaSayfa() {
   };
 
   const dosyayiSurukleyerekTasi = (kaynakAnahtar, hedefKlasor) => {
-    suruklemeStateTemizle();
-
-    if (yukleniyor) return;
-    if (!seciliSunucu) {
-      toastGoster(t.selectServerFirst, "error");
-      return;
-    }
-
-    const kaynakDosya = dosyalar.find(
-      (oge) => dosyaAnahtariOlustur(oge) === kaynakAnahtar,
-    );
-
-    if (!kaynakDosya || !hedefKlasor?.klasorMu) {
-      return;
-    }
-
-    const hedefAnahtar = dosyaAnahtariOlustur(hedefKlasor);
-
-    if (kaynakAnahtar === hedefAnahtar) {
-      suruklemeStateTemizle();
+    if (!hedefKlasor?.klasorMu) {
       return;
     }
 
     const hedefYol = ogeYoluOlustur(mevcutYol, hedefKlasor.ad);
-    const kaynakYol = ogeYoluOlustur(mevcutYol, kaynakDosya.ad);
 
-    if (
-      kaynakDosya.klasorMu &&
-      (hedefYol === kaynakYol || hedefYol.startsWith(kaynakYol + "/"))
-    ) {
-      toastGoster(t.cannotMoveFolderIntoItself, "error");
-      suruklemeStateTemizle();
-      return;
-    }
-
-    setYukleniyor(true);
-    setYuklemeMesaji(t.movingItem);
-
-    fetch("http://localhost:8080/api/move", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token: oturumToken,
-        server_id: seciliSunucu.id,
-        kaynak_yol: mevcutYol,
-        hedef_yol: hedefYol,
-        dosya_adi: kaynakDosya.ad,
-      }),
-    })
-      .then((cevap) => {
-        if (oturumHatasiKontrolEt(cevap)) {
-          throw new Error("Oturum geçersiz");
-        }
-
-        if (!cevap.ok) {
-          throw new Error("Sürükleyerek taşıma başarısız");
-        }
-
-        toastGoster(t.moveSuccess, "success");
-
-        suruklemeStateTemizle();
-        secimleriTemizle();
-        previewCacheRef.current = {};
-        setThumbnailVerileri({});
-        hedefKlasorCacheRef.current = {};
-        klasoruYenile(mevcutYol);
-      })
-      .catch((hata) => {
-        if (hata.message === "Oturum geçersiz") {
-          return;
-        }
-
-        console.log("Sürükleyerek taşıma hatası:", hata);
-        suruklemeStateTemizle();
-        setYukleniyor(false);
-        setYuklemeMesaji("");
-        toastGoster(t.moveFailed, "error");
-      });
+    surukleyerekOgeleriHedefYolaTasi(kaynakAnahtar, hedefYol);
   };
 
   const klasorKartinaBirak = (e, hedefKlasor) => {
@@ -2938,79 +2977,7 @@ export default function AnaSayfa() {
   };
 
   const ogeleriBreadcrumbYolunaTasi = (kaynakAnahtar, hedefYol) => {
-    suruklemeStateTemizle();
-
-    if (yukleniyor) return;
-
-    if (!seciliSunucu) {
-      toastGoster(t.selectServerFirst, "error");
-      return;
-    }
-
-    if (!hedefYol || hedefYol === mevcutYol) {
-      toastGoster(t.alreadyInThisFolder, "error");
-      return;
-    }
-
-    const kaynakDosya = dosyalar.find(
-      (oge) => dosyaAnahtariOlustur(oge) === kaynakAnahtar,
-    );
-
-    if (!kaynakDosya) {
-      return;
-    }
-
-    const kaynakYol = ogeYoluOlustur(mevcutYol, kaynakDosya.ad);
-
-    if (
-      kaynakDosya.klasorMu &&
-      (hedefYol === kaynakYol || hedefYol.startsWith(kaynakYol + "/"))
-    ) {
-      toastGoster(t.cannotMoveFolderIntoItself, "error");
-      return;
-    }
-
-    setYukleniyor(true);
-    setYuklemeMesaji(t.movingItem);
-
-    fetch("http://localhost:8080/api/move", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token: oturumToken,
-        server_id: seciliSunucu.id,
-        kaynak_yol: mevcutYol,
-        hedef_yol: hedefYol,
-        dosya_adi: kaynakDosya.ad,
-      }),
-    })
-      .then((cevap) => {
-        if (oturumHatasiKontrolEt(cevap)) {
-          throw new Error("Oturum geçersiz");
-        }
-
-        if (!cevap.ok) {
-          throw new Error("Breadcrumb taşıma başarısız");
-        }
-
-        toastGoster(t.moveSuccess, "success");
-
-        secimleriTemizle();
-        previewCacheRef.current = {};
-        setThumbnailVerileri({});
-        hedefKlasorCacheRef.current = {};
-        klasoruYenile(mevcutYol);
-      })
-      .catch((hata) => {
-        if (hata.message === "Oturum geçersiz") {
-          return;
-        }
-
-        console.log("Breadcrumb taşıma hatası:", hata);
-        setYukleniyor(false);
-        setYuklemeMesaji("");
-        toastGoster(t.moveFailed, "error");
-      });
+    surukleyerekOgeleriHedefYolaTasi(kaynakAnahtar, hedefYol);
   };
 
   const breadcrumbYolunaBirak = (e, hedefYol) => {
@@ -5152,7 +5119,9 @@ export default function AnaSayfa() {
                       className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
                         breadcrumbSuruklemeHedefYolu === "/"
                           ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
-                          : "text-[#458588] hover:bg-[#d5c4a1] hover:text-[#076678] dark:text-[#83a598] dark:hover:bg-[#3c3836] dark:hover:text-[#8ec07c]"
+                          : mevcutYol === "/"
+                            ? "text-[#458588] dark:text-[#83a598]"
+                            : "text-[#928374] hover:bg-[#d5c4a1] hover:text-[#458588] dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
                       }`}
                       title={t.dropHereToMove}
                     >
@@ -5191,7 +5160,9 @@ export default function AnaSayfa() {
                             className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
                               breadcrumbSuruklemeHedefYolu === hedefYol
                                 ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
-                                : "text-[#458588] hover:bg-[#d5c4a1] hover:text-[#076678] dark:text-[#83a598] dark:hover:bg-[#3c3836] dark:hover:text-[#8ec07c]"
+                                : hedefYol === mevcutYol
+                                  ? "text-[#458588] dark:text-[#83a598]"
+                                  : "text-[#928374] hover:bg-[#d5c4a1] hover:text-[#458588] dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
                             }`}
                             title={t.dropHereToMove}
                           >
