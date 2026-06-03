@@ -108,6 +108,8 @@ export default function AnaSayfa() {
   const [previewOrijinalIcerik, setPreviewOrijinalIcerik] = useState("");
   const [previewKaydediliyor, setPreviewKaydediliyor] = useState(false);
   const [previewKaydetHatasi, setPreviewKaydetHatasi] = useState("");
+  const [previewOnayModalAcik, setPreviewOnayModalAcik] = useState(false);
+  const [previewOnayAksiyonu, setPreviewOnayAksiyonu] = useState("");
   const [thumbnailVerileri, setThumbnailVerileri] = useState({});
   const previewCacheRef = useRef({});
   const [suruklenenOgeAnahtari, setSuruklenenOgeAnahtari] = useState("");
@@ -209,6 +211,8 @@ export default function AnaSayfa() {
     setPreviewOrijinalIcerik("");
     setPreviewKaydediliyor(false);
     setPreviewKaydetHatasi("");
+    setPreviewOnayModalAcik(false);
+    setPreviewOnayAksiyonu("");
   };
 
   const silmeOnizlemesiniTemizle = () => {
@@ -1231,8 +1235,40 @@ export default function AnaSayfa() {
     );
   };
 
+  const previewOnayModaliniAc = (aksiyon) => {
+    setPreviewOnayAksiyonu(aksiyon);
+    setPreviewOnayModalAcik(true);
+  };
+
+  const previewOnayModaliniKapat = () => {
+    if (previewKaydediliyor) return;
+
+    setPreviewOnayModalAcik(false);
+    setPreviewOnayAksiyonu("");
+  };
+
+  const previewDegisiklikleriAt = () => {
+    const aksiyon = previewOnayAksiyonu;
+
+    setPreviewOnayModalAcik(false);
+    setPreviewOnayAksiyonu("");
+
+    if (aksiyon === "close") {
+      previewTemizle();
+      return;
+    }
+
+    if (aksiyon === "cancelEdit") {
+      setPreviewDuzenlemeModu(false);
+      setPreviewEditIcerik("");
+      setPreviewOrijinalIcerik("");
+      setPreviewKaydetHatasi("");
+    }
+  };
+
   const previewModaliniKapat = () => {
-    if (previewDuzenlemeKirliMi && !window.confirm(t.unsavedChangesConfirm)) {
+    if (previewDuzenlemeKirliMi) {
+      previewOnayModaliniAc("close");
       return;
     }
 
@@ -1251,7 +1287,8 @@ export default function AnaSayfa() {
   };
 
   const previewDuzenlemeyiIptalEt = () => {
-    if (previewDuzenlemeKirliMi && !window.confirm(t.unsavedChangesConfirm)) {
+    if (previewDuzenlemeKirliMi) {
+      previewOnayModaliniAc("cancelEdit");
       return;
     }
 
@@ -5237,6 +5274,57 @@ export default function AnaSayfa() {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {previewOnayModalAcik && (
+        <div
+          onClick={previewOnayModaliniKapat}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[#d79921] bg-[#fbf1c7] p-5 text-[#3c3836] shadow-2xl dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d79921] text-lg font-black text-[#282828] dark:bg-[#fabd2f]">
+                !
+              </div>
+
+              <div className="min-w-0">
+                <h2 className="text-lg font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                  {t.unsavedChangesTitle}
+                </h2>
+
+                <p className="mt-2 text-sm leading-relaxed text-[#7c6f64] dark:text-[#a89984]">
+                  {t.unsavedChangesText}
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-5 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
+              <p className="break-words text-sm font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                {previewDosya?.ad || previewVerisi?.dosya_adi || "-"}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={previewOnayModaliniKapat}
+                className="rounded-lg bg-[#d5c4a1] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                onClick={previewDegisiklikleriAt}
+                className="rounded-lg bg-[#cc241d] px-4 py-2 text-sm font-black text-[#fbf1c7] transition-colors hover:bg-[#9d0006] dark:bg-[#fb4934] dark:text-[#282828] dark:hover:bg-[#cc241d]"
+              >
+                {t.discardChanges}
+              </button>
             </div>
           </div>
         </div>

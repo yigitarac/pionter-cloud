@@ -247,6 +247,10 @@ export const sozluk = {
     refreshShareLinks: "Refresh",
     createdAt: "Created",
     path: "Path",
+    unsavedChangesTitle: "Unsaved changes",
+    unsavedChangesText:
+      "You have unsaved changes. If you continue, your changes will be discarded.",
+    discardChanges: "Discard changes",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -494,5 +498,9 @@ export const sozluk = {
     refreshShareLinks: "Yenile",
     createdAt: "Oluşturuldu",
     path: "Yol",
+    unsavedChangesTitle: "Kaydedilmemiş değişiklikler",
+    unsavedChangesText:
+      "Kaydedilmemiş değişikliklerin var. Devam edersen değişikliklerin kaybolacak.",
+    discardChanges: "Değişiklikleri at",
   },
 };
