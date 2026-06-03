@@ -5710,7 +5710,7 @@ export default function AnaSayfa() {
         <div
           onClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.preventDefault()}
-          className="fixed z-[70] w-52 overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] py-1 text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          className="fixed z-[70] w-52 overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
           style={{
             left: `${contextMenu.x}px`,
             top: `${contextMenu.y}px`,
@@ -5744,7 +5744,7 @@ export default function AnaSayfa() {
             </button>
           )}
 
-          <div className="my-1 border-t border-[#d5c4a1] dark:border-[#504945]" />
+          <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
 
           <button
             type="button"
@@ -5772,7 +5772,7 @@ export default function AnaSayfa() {
             </button>
           )}
 
-          <div className="my-1 border-t border-[#d5c4a1] dark:border-[#504945]" />
+          <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
 
           <button
             type="button"
