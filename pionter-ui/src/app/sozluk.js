@@ -203,6 +203,25 @@ export const sozluk = {
       "You have unsaved changes. Are you sure you want to close without saving?",
     unsavedChanges: "Unsaved changes",
     saveShortcutHint: "Press Ctrl+S / Cmd+S to save",
+    openTerminal: "Terminal",
+    terminalTitle: "SSH Terminal",
+    terminalConnecting: "Connecting...",
+    terminalConnected: "Connected",
+    terminalDisconnected: "Disconnected",
+    terminalConnectionFailed: "Terminal connection failed.",
+    terminalConnectionClosed: "Terminal connection closed.",
+    closeTerminal: "Close Terminal",
+    terminalWarningTitle: "Before opening the terminal",
+    terminalWarningIntro:
+      "This terminal runs real commands on the selected server using the saved SSH user.",
+    terminalWarningPermissions:
+      "If the saved SSH user is root, commands run as root. If it is a normal user, Linux permissions limit what can be done. PionterCloud does not grant extra root or sudo privileges.",
+    terminalWarningIsolatedFolder:
+      "The isolated folder is only the starting directory for the terminal. It is not a security sandbox.",
+    terminalWarningCareful:
+      "If you are not sure what you are doing, do not leave the isolated folder or modify system files.",
+    terminalDontShowAgain: "Do not show this warning again",
+    openTerminalConfirm: "Open Terminal",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -407,5 +426,24 @@ export const sozluk = {
       "Kaydedilmemiş değişikliklerin var. Kaydetmeden kapatmak istediğine emin misin?",
     unsavedChanges: "Kaydedilmemiş değişiklik var",
     saveShortcutHint: "Kaydetmek için Ctrl+S / Cmd+S",
+    openTerminal: "Terminal",
+    terminalTitle: "SSH Terminal",
+    terminalConnecting: "Bağlanıyor...",
+    terminalConnected: "Bağlandı",
+    terminalDisconnected: "Bağlı değil",
+    terminalConnectionFailed: "Terminal bağlantısı başarısız.",
+    terminalConnectionClosed: "Terminal bağlantısı kapandı.",
+    closeTerminal: "Terminali Kapat",
+    terminalWarningTitle: "Terminali açmadan önce",
+    terminalWarningIntro:
+      "Bu terminal, seçili sunucuda kayıtlı SSH kullanıcısı ile gerçek komutlar çalıştırır.",
+    terminalWarningPermissions:
+      "Kayıtlı SSH kullanıcısı root ise komutlar root yetkisiyle çalışır. Normal kullanıcı ise Linux izinleri neye izin veriyorsa sadece o yapılabilir. PionterCloud ekstra root veya sudo yetkisi vermez.",
+    terminalWarningIsolatedFolder:
+      "İzole klasör terminal için sadece başlangıç klasörüdür. Güvenlik sandbox'ı değildir.",
+    terminalWarningCareful:
+      "Ne yaptığından emin değilsen izole klasör dışına çıkma ve sistem dosyalarını değiştirme.",
+    terminalDontShowAgain: "Bu uyarıyı tekrar gösterme",
+    openTerminalConfirm: "Terminali Aç",
   },
 };
