@@ -37,7 +37,7 @@ Current phase status:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: planned
+* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links: planned
 * v0.8 Activity Logs: planned
 * v0.9 Editor Polish: planned
@@ -168,6 +168,22 @@ PionterCloud lets users:
 * Silent auto refresh
 * In-memory backend stats cache
 
+### Stability and Error Handling
+
+* Shared frontend API error parsing helper
+* Standard permission denied handling for core file operations
+* User-friendly permission error messages in Turkish and English
+* Permission-aware folder listing errors
+* Permission-aware preview errors
+* Permission-aware editor save errors
+* Permission-aware delete errors
+* Permission-aware upload errors
+* Permission-aware folder creation errors
+* Permission-aware rename errors
+* Permission-aware move, bulk move, and drag move errors
+* Permission-aware download errors
+* Clearer backend error codes for common file operation failures
+
 ### UI/UX
 
 * Toast notifications
@@ -203,26 +219,13 @@ Current security decisions:
 * Text preview and text save operations have size limits.
 * Unsupported file types are blocked from editing.
 * Recursive delete remains protected by isolated-folder path validation.
+* Permission denied errors are detected and shown with clearer user-facing messages.
 
 Important limitation:
 
 The isolated folder protects PionterCloud file operations. It is not a general-purpose server sandbox.
 
 ## Roadmap
-
-### v0.6.5 Stability, Permission Errors and Public SaaS Hardening
-
-Planned:
-
-* Improve backend error codes.
-* Improve permission denied detection.
-* Show user-friendly permission errors in the frontend.
-* Improve SFTP/SSH connection error messages.
-* Improve file save/move/delete/upload error messages.
-* Add clearer public SaaS security notes.
-* Review public registration risks.
-* Plan email verification / invite / abuse-prevention strategy.
-* Add stronger deployment/security notes.
 
 ### v0.7 Share Links
 
@@ -313,7 +316,7 @@ Planned AI principles:
   * find large files
   * explain a code file
   * summarize activity logs
-* Higher-risk AI actions should be deferred until logs, permissions, previews, and rollback systems are stronger.
+* Higher-risk AI actions should be deferred until logs, permissions, previews, confirmations, and rollback systems are stronger.
 
 ## Tech Stack
 

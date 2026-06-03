@@ -41,7 +41,7 @@ Core product direction:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: planned
+* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links: planned
 * v0.8 Activity Logs: planned
 * v0.9 Editor Polish: planned
@@ -73,6 +73,7 @@ Current backend responsibilities:
 * Move
 * Server stats collection
 * In-memory server stats cache
+* Permission-aware file operation error handling
 
 ### Frontend
 
@@ -103,6 +104,8 @@ Current frontend responsibilities:
 * Edit / Save / Cancel Edit flow for supported text/code files
 * Ctrl+S / Cmd+S save shortcut
 * Unsaved-change warnings for editor changes
+* Shared frontend API error parsing
+* User-friendly permission error messages
 
 ### Database
 
@@ -163,6 +166,8 @@ Expected future tables:
 * Move operations block moving folders into themselves.
 * Text preview and text save operations have size limits.
 * Unsupported file types are blocked from editing.
+* Permission denied errors are detected and returned with clearer error codes.
+* The frontend maps permission denied errors to localized user-facing messages.
 
 ## Completed Phase Summaries
 
@@ -383,41 +388,76 @@ Known limitations:
 * Language servers are deferred.
 * Custom PionterCloud Gruvbox Monaco themes are planned for a future editor polish phase.
 
+## v0.6.5 Stability, Permission Errors and Public SaaS Hardening Summary
+
+The v0.6.5 phase focused on making file operation failures clearer and more user-friendly before adding larger public-product features.
+
+Backend changes:
+
+* Added shared API error response struct.
+* Added shared JSON API error helper.
+* Added file-list JSON error helper.
+* Added permission denied detection helper.
+* Added localized base permission-denied backend message.
+* Added `kod` support to file listing responses.
+* Added permission-aware folder preparation errors.
+* Added permission-aware folder read errors.
+* Added permission-aware text preview errors.
+* Added permission-aware image preview errors.
+* Added permission-aware editor save errors.
+* Added permission-aware delete errors.
+* Added permission-aware upload errors.
+* Added permission-aware folder creation errors.
+* Added permission-aware rename errors.
+* Added permission-aware move errors.
+* Added JSON error responses for download failures.
+* Added permission-aware download open errors.
+* Added clearer backend error codes for common SSH/SFTP operation failures.
+
+Frontend changes:
+
+* Added shared API response error parser.
+* Added shared API error message mapper.
+* Added preview-specific error message mapper.
+* Added Turkish and English permission denied messages.
+* Added Turkish and English files-load-failed messages.
+* Added Turkish and English download-failed messages.
+* Updated folder listing error handling.
+* Updated preview error handling.
+* Updated editor save error handling.
+* Updated delete error handling.
+* Updated upload error handling.
+* Updated folder creation error handling.
+* Updated rename error handling.
+* Updated single move error handling.
+* Updated drag move error handling.
+* Updated bulk move error handling.
+* Updated download error handling.
+
+Manual validation:
+
+* Normal folder listing still works.
+* Normal preview still works.
+* Normal editor save still works.
+* Normal delete still works.
+* Normal upload still works.
+* Normal folder creation still works.
+* Normal rename still works.
+* Normal move still works.
+* Normal bulk move still works.
+* Normal drag move still works.
+* Normal download still works.
+* Permission denied cases now show a clearer localized message instead of only generic operation-failed text.
+* Backend startup passed.
+* Frontend startup/lint passed after syntax cleanup.
+
+Known limitations:
+
+* Error handling is better, but not fully standardized across every backend endpoint yet.
+* Some non-permission SSH/SFTP errors still use generic messages.
+* Public SaaS features still need email verification, rate limiting, password reset, and stronger abuse-prevention planning.
+
 ## Planned Roadmap
-
-## v0.6.5 Stability, Permission Errors and Public SaaS Hardening
-
-Goals:
-
-* Improve stability before adding more features.
-* Make backend errors more consistent.
-* Make frontend error messages more user-friendly.
-* Prepare the project direction for public SaaS concerns.
-
-Planned backend work:
-
-* Add permission denied detection helper.
-* Standardize common error codes.
-* Improve SFTP/SSH error classification.
-* Return clearer errors for:
-
-  * list
-  * upload
-  * preview
-  * save
-  * rename
-  * move
-  * delete
-* Review public registration assumptions.
-* Add notes for future email verification, rate limiting, and abuse prevention.
-
-Planned frontend work:
-
-* Show clearer permission denied messages.
-* Show clearer SSH connection failure messages.
-* Show clearer SFTP failure messages.
-* Improve generic operation failure toasts.
-* Avoid confusing users when Linux permissions block an operation.
 
 ## v0.7 Share Links
 
