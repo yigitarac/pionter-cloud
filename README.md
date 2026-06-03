@@ -1,16 +1,32 @@
 # PionterCloud
 
-PionterCloud is a bring-your-own-server cloud dashboard and secure web file manager built with Go, Next.js, PostgreSQL, SSH, and SFTP.
+PionterCloud is a public bring-your-own-server cloud file manager and lightweight server dashboard.
 
-The idea is simple:
-
-Users add their own server, choose an isolated folder, and manage files on that server through a web interface.
+Users connect their own SSH/SFTP server, choose an isolated folder, and manage their files through a clean web interface.
 
 > This project is in active development and is not production-ready yet.
 
-## Current Status
+## Product Direction
 
-PionterCloud has completed its local/portfolio MVP stage, the v0.2 Security Gate phase, and the v0.3 Core File Manager Polish phase.
+PionterCloud is designed as:
+
+```txt
+BYOS cloud file manager first, lightweight server dashboard second.
+```
+
+The public product focuses on:
+
+* file management
+* file preview
+* safe text/code editing
+* lightweight read-only server visibility
+* sharing
+* activity logs
+* future AI-assisted file and activity workflows
+
+PionterCloud is not intended to be a full server admin panel like cPanel or Plesk.
+
+## Current Status
 
 Current phase status:
 
@@ -21,9 +37,10 @@ Current phase status:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6 Terminal: planned
-* v0.7 AI Features: planned
-* v0.8 Deployment / Production Hardening: planned
+* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: planned
+* v0.7 Share Links: planned
+* v0.8 Activity Logs: planned
+* v0.9 Editor Polish: planned
 * v1.0 Public-ready strong release: future goal
 
 ## What PionterCloud Does
@@ -31,34 +48,34 @@ Current phase status:
 PionterCloud lets users:
 
 * Create a PionterCloud account
+* Login with username or email
 * Add their own SSH/SFTP server
+* Use password-based SSH authentication
+* Use SSH private key authentication
 * Define an isolated folder for file operations
 * Browse files and folders
 * Upload and download files
+* Upload multiple files
 * Create folders
-* Preview text/code files and images
+* Rename files and folders
+* Move files and folders
+* Delete files and folders, including non-empty folders
+* Select multiple files and folders
+* Bulk move selected files and folders
+* Bulk delete selected files and folders
+* Drag files and folders onto folder cards to move them
+* Drag selected multiple items as a group
+* Drag files and folders onto breadcrumb folders to move them upward
+* Upload files directly into folder cards or breadcrumb target folders
+* Preview text/code files
+* Preview images
 * Edit supported text/code files with Monaco Editor
 * Save edited files back to the connected server over SFTP
-* Rename files and folders
-* Delete files and folders, including non-empty folders
-* Move files and folders
-* Drag files and folders onto folder cards to move them
-* Drag files and folders onto breadcrumb folders to move them upward
-* Select multiple files and folders
-* Bulk delete selected files and folders
-* Bulk move selected files and folders
+* View basic read-only server status
 * Pin frequently used servers
 * Use a collapsible left sidebar for server navigation
 * Use the interface in Turkish or English
 * Switch between dark and light mode
-
-The project is evolving toward a broader bring-your-own-server dashboard with:
-
-* secure file management
-* server monitoring
-* file preview/editor support
-* optional web terminal access
-* optional AI-assisted file/code explanations
 
 ## Current Features
 
@@ -67,11 +84,11 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * User registration
 * Login with username or email
 * Password hashing with bcrypt
-* Automatic migration of old plain text development passwords after successful login
+* Automatic migration of old plain-text development passwords after successful login
 * Token-based session authentication
 * Logout support
 * Token expiration
-* Frontend session cleanup on expired/invalid token
+* Frontend session cleanup on expired or invalid token
 
 ### Server Management
 
@@ -82,11 +99,11 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Pin/unpin frequently used servers
 * Pinned servers appear first
 * SSH/SFTP connection test before saving or updating servers
-* Prevent saving invalid server connection settings
 * Password-based SSH authentication
 * SSH private key authentication
 * Isolated folder validation
-* Cleaner empty state when no servers exist
+* Saved server credentials are encrypted before storage
+* Saved credentials are not returned to the frontend
 
 ### File Manager
 
@@ -115,7 +132,21 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Bulk delete selected items
 * Bulk move selected items
 * Preview selected items inside bulk move and bulk delete modals
+* File metadata display:
+
+  * file size
+  * last modified date
+
+### File Preview and Editor
+
 * Text/code file preview
+* Image preview
+* Image thumbnails in the file grid
+* File preview modal
+* Preview cache
+* Preview size limits
+* File type icon system
+* Language-specific code file icon colors
 * Monaco-based text/code editor
 * Safe text/code file saving through SFTP
 * Edit / Save / Cancel Edit flow inside the preview modal
@@ -123,499 +154,195 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Unsaved-change warning before closing the modal
 * Browser before-unload warning for unsaved editor changes
 * Download is disabled while an edited file has unsaved changes
-* File metadata display
 
-  * file size
-  * last modified date
+### Server Monitoring
+
+* Lightweight read-only server status panel
+* SSH OK status badge
+* CPU usage
+* RAM usage
+* Disk usage
+* Uptime
+* Last updated timestamp
+* Manual refresh
+* Silent auto refresh
+* In-memory backend stats cache
 
 ### UI/UX
 
 * Toast notifications
-
 * Loading states
-
-* Custom modal dialogs
-
-  * rename modal
-  * move modal
-  * delete confirmation modal
-  * bulk move modal
-  * bulk delete confirmation modal
-  * server delete confirmation modal
-  * server edit modal
-
-* Click outside to close menus and modals
-
-* Drag and drop upload
-
 * Upload progress indicator
-
+* Custom modal dialogs
+* Click outside to close menus and modals
+* Drag and drop upload
+* Drag and drop move
+* Multi-item drag preview
+* File-type-aware drag preview colors
+* Custom breadcrumb/up-folder tooltips
 * Collapsible left sidebar
-
 * Server preview inside the sidebar
-
-* Profile/settings controls moved into the sidebar
-
-* Improved My Servers empty state
-
+* Profile/settings controls inside the sidebar
 * Dark/light mode
-
 * Turkish/English language switch
 
-## v0.3 Completed Summary
+## Security Model
 
-v0.3 focused on improving the core file manager experience and making multi-item operations usable.
+PionterCloud is a public BYOS application, so security is a core concern.
 
-Completed in v0.3:
-
-* Collapsible left sidebar for server navigation
-* Server preview inside the sidebar
-* Profile/settings controls moved into the sidebar
-* Cleaner My Servers empty state
-* Multi-select toolbar for file and folder selections
-* Select listed/visible items
-* Clear selection behavior
-* Bulk delete support
-* Bulk move support
-* Shared move modal behavior for single-item and bulk move flows
-* Selected-item preview inside bulk move modal
-* Selected-item preview inside bulk delete modal
-* State cleanup after bulk operations
-* Improved drag-and-drop upload behavior
-* Improved upload/new-folder/selection UX
-* v0.3 smoke test completed
-* `npm run lint` completed with 0 errors and 2 non-blocking warnings
-
-Known non-blocking lint warnings after v0.3:
-
-* `postcss.config.mjs` anonymous default export warning
-* React Hook dependency warning for the drag/drop upload effect in `page.js`
-
-## v0.4 Completed Summary
-
-v0.4 focused on adding a lightweight server monitoring panel for the selected server.
-
-Completed in v0.4:
-
-* Added `/api/server/stats` backend endpoint.
-* Added SSH-based server stats collection.
-* Added CPU usage calculation.
-* Added RAM usage information.
-* Added disk usage information.
-* Added clean uptime output.
-* Added server monitoring card to the selected server view.
-* Added CPU/RAM/Disk progress bars.
-* Added manual Refresh support.
-* Added silent auto refresh.
-* Added backend stats cache to reduce repeated SSH load.
-* Added Last updated timestamp.
-* Added SSH OK status badge.
-* Improved Turkish uppercase behavior with the `lang` attribute.
-* v0.4 final smoke test completed with no blocking errors.
-
-Known notes:
-
-* Monitoring currently targets Linux servers.
-* Auto refresh is frontend-driven.
-* Backend stats cache is in-memory.
-* Cache cleanup is deferred to a later refactor.
-
-## v0.5A Completed Summary
-
-v0.5A focused on adding a safe and lightweight file preview system.
-
-Completed in v0.5A:
-
-* Added `/api/file/preview` backend endpoint.
-* Added text/code file preview support.
-* Added image preview support.
-* Added preview size limits.
-* Added frontend preview state and cache.
-* Added image thumbnails in the file grid.
-* Added file preview modal.
-* Added modal close behavior with Close button, outside click, and Escape key.
-* Added file type icon system v2.
-* Added language-specific code file icon colors.
-* Added mini file icons in bulk move/delete modals.
-* Added support for common programming/config file types:
-  * JavaScript / TypeScript
-  * Go
-  * C / C++ / C#
-  * Python
-  * Rust
-  * Zig
-  * Ruby
-  * Java
-  * Kotlin
-  * PHP
-  * Swift
-  * Dart
-  * Lua
-  * R
-  * Scala
-  * Shell
-  * SQL
-  * Dockerfile
-  * Makefile
-  * CMakeLists
-  * TOML / INI / CONF
-* v0.5A preview smoke test completed.
-
-Known notes:
-
-* PDF preview currently shows a fallback message and download option.
-* Office files currently use distinct icons but do not have real preview.
-* Large text/image files are blocked by preview limits.
-* Image thumbnail loading is limited to the first visible batch for safety.
-
-## v0.5A.5 Core File Operations Reliability Summary
-
-v0.5A.5 focused on making core file operations safer, more reliable, and more natural to use.
-
-Completed in v0.5A.5:
-
-* Added recursive folder deletion for non-empty folders.
-* Kept recursive deletion behind the existing isolated-folder path safety checks.
-* Added folder content preview inside the single delete confirmation modal.
-* Added drag-and-drop move support from file cards to folder cards.
-* Added drag-and-drop move support from file cards to breadcrumb folders.
-* Added multi-item drag move support when selected items are dragged as a group.
-* Added upload-to-target support by dropping local files onto folder cards.
-* Added upload-to-target support by dropping local files onto breadcrumb folders.
-* Improved drag/drop visual feedback for folder cards and breadcrumb targets.
-* Added stacked drag preview cards for multi-item drag operations.
-* Added file-type-aware colors to drag preview cards.
-* Fixed drag/drop hover flicker and stale drag state issues.
-* Locked breadcrumb and up-folder navigation while file loading is in progress.
-* Replaced native browser breadcrumb tooltips with PionterCloud-style custom tooltips.
-* Ran manual smoke tests for recursive delete, drag move, multi-item drag move, breadcrumb move, targeted upload, and loading-state navigation lock.
-
-Known notes:
-
-* Recursive delete is intentionally powerful and must remain protected by isolated-folder path validation.
-* Drag/drop move currently performs multiple `/api/move` calls for multi-item operations.
-* More advanced move conflict handling can be improved later with stable backend error codes.
-
-## v0.5B Basic Text Editor + Monaco Summary
-
-v0.5B focused on turning the file preview system into a lightweight, safe text/code editor.
-
-Completed in v0.5B:
-
-* Added `/api/file/save` backend endpoint.
-* Added safe text/code file saving over SFTP.
-* Added save size limit for editable files.
-* Reused the existing text/code file whitelist for editor support.
-* Blocked unsupported file types from being edited.
-* Blocked folders from being saved as files.
-* Kept save operations behind token authentication and isolated-folder path validation.
-* Added Monaco Editor integration to the file preview modal.
-* Added Edit / Save / Cancel Edit flow for supported text/code files.
-* Added language detection for Monaco based on file extension.
-* Added Ctrl+S / Cmd+S save shortcut.
-* Added unsaved-change detection.
-* Added confirmation before closing the editor with unsaved changes.
-* Added browser before-unload protection for unsaved editor changes.
-* Added editor status bar with save shortcut hint and unsaved-change badge.
-* Disabled Download while the editor has unsaved changes.
-* Updated preview cache after successful save.
-* Refreshed the file list after successful save.
-
-Known notes:
-
-* The editor currently supports lightweight text/code editing, not full IDE behavior.
-* Monaco syntax highlighting is available, but advanced semantic highlighting and language-server features are not included yet.
-* Future editor polish may add custom PionterCloud Gruvbox dark/light Monaco themes.
-* Future editor polish may improve language-specific syntax colors without making the editor heavy by default.
-
-## Security Status
-
-PionterCloud is safer than the initial v0.1 local MVP, but it is still not production-ready.
-
-Completed security improvements:
+Current security decisions:
 
 * Pionter account passwords are hashed with bcrypt.
-* Old plain text development passwords are migrated to bcrypt after successful login.
-* Login returns a session token.
-* Protected backend endpoints use token-based authentication.
-* The frontend no longer sends the Pionter account password after login.
-* Logout deletes the active session token.
-* Session tokens expire.
-* Expired tokens are rejected by the backend.
-* The frontend clears the local session on `401 Unauthorized`.
-* Saved server passwords and SSH private keys are encrypted before being stored.
-* Existing plain text server credentials are lazily migrated to encrypted values when used.
-* Saved server credentials are not returned to the frontend.
+* Session tokens are stored server-side.
+* Expired tokens are rejected.
+* Protected endpoints require token authentication.
+* Saved server passwords and SSH private keys are encrypted.
+* Saved server credentials are not sent back to the frontend.
+* File operations are restricted to the configured isolated folder.
+* File and folder names are validated against dangerous path fragments.
+* Text preview and text save operations have size limits.
+* Unsupported file types are blocked from editing.
+* Recursive delete remains protected by isolated-folder path validation.
 
-Credential encryption behavior:
+Important limitation:
 
-* AES-GCM is used.
-* Encrypted values use the `enc:v1:` prefix.
-* The encryption key is loaded from `CREDENTIAL_ENCRYPTION_KEY`.
-* The real encryption key must never be committed.
+The isolated folder protects PionterCloud file operations. It is not a general-purpose server sandbox.
 
-Still required before production use:
+## Roadmap
 
-* Move tokens from request body to `Authorization: Bearer <token>` headers.
-* Improve CORS configuration.
-* Add rate limiting.
-* Add stricter request size limits.
-* Add SSH host key verification.
-* Add stable backend error codes.
-* Improve logging without leaking secrets.
-* Add HTTPS deployment.
-* Add deployment hardening.
-* Add backup and recovery planning.
-* Add a proper database migration strategy.
+### v0.6.5 Stability, Permission Errors and Public SaaS Hardening
 
-## Important Warning
+Planned:
 
-This project handles sensitive information such as:
+* Improve backend error codes.
+* Improve permission denied detection.
+* Show user-friendly permission errors in the frontend.
+* Improve SFTP/SSH connection error messages.
+* Improve file save/move/delete/upload error messages.
+* Add clearer public SaaS security notes.
+* Review public registration risks.
+* Plan email verification / invite / abuse-prevention strategy.
+* Add stronger deployment/security notes.
 
-* Pionter account credentials
-* server IP addresses
-* server usernames
-* server passwords
-* SSH private keys
-* remote file access
+### v0.7 Share Links
 
-Do not expose this project to untrusted public users yet.
+Planned:
 
-For now, it is intended for:
+* Share files with generated links.
+* Expiring share links:
 
-* learning
-* local development
-* portfolio development
-* controlled private testing
+  * 1 hour
+  * 1 day
+  * 1 week
+  * 1 month
+  * 1 year
+  * unlimited
+* Secure random share tokens.
+* Share link database table.
+* Expiration validation.
+* Public download endpoint for shared files.
+* Optional share management UI.
+* Share revoke/delete support.
+
+### v0.8 Activity Logs
+
+Planned:
+
+* Track important user actions:
+
+  * login/logout
+  * server add/edit/delete
+  * upload
+  * download
+  * rename
+  * move
+  * delete
+  * editor save
+  * share link create/revoke
+* Activity log database table.
+* Activity log UI.
+* Per-server and per-file filtering.
+* Foundation for future rollback and AI-assisted activity review.
+
+### v0.9 Editor Polish
+
+Planned:
+
+* PionterCloud Gruvbox Dark Monaco theme.
+* PionterCloud Gruvbox Light Monaco theme.
+* Better language-specific syntax colors.
+* More polished editor toolbar.
+* Better editor loading state.
+* Better large-file handling.
+* Optional editor settings.
+* Keep advanced editor features lightweight and lazy-loaded.
+
+### Future Features
+
+Potential future features:
+
+* Google Docs-like collaborative editing
+* Server-to-server file transfer
+* Advanced file versioning
+* File rollback support
+* AI-assisted file search and summarization
+* AI-assisted activity log review
+* AI-assisted safe actions with preview/confirmation
+* Optional user-provided AI API keys
+* More advanced monitoring
+* Public deployment hardening
+* Email verification
+* 2FA/passkey support
+* Rate limiting
+* Audit logs
+* Admin dashboard
+
+## AI Direction
+
+AI features are planned as optional and user-controlled.
+
+Planned AI principles:
+
+* Users provide their own API key.
+* AI features should not create platform cost by default.
+* AI should not perform dangerous actions without preview and confirmation.
+* AI actions should rely on activity logs and safe operation APIs.
+* AI should start with low-risk tasks:
+
+  * summarize a folder
+  * find large files
+  * explain a code file
+  * summarize activity logs
+* Higher-risk AI actions should be deferred until logs, permissions, previews, and rollback systems are stronger.
 
 ## Tech Stack
 
-### Frontend
-
-* Next.js
-* React
-* Tailwind CSS
-
-### Backend
+Backend:
 
 * Go
 * PostgreSQL
 * SSH
 * SFTP
 
-### Development Tools
+Frontend:
 
-* Docker for local PostgreSQL
-* Environment variables with `.env`
-* Git/GitHub for version control
+* Next.js
+* React
+* Tailwind CSS
+* Monaco Editor
 
-## Project Structure
+Database:
 
-```text
-Pionter-Cloud/
-  README.md
-  DEVELOPMENT_NOTES.md
+* PostgreSQL
 
-  pionter-backend/
-    main.go
-    go.mod
-    go.sum
-    .env.example
-    .gitignore
+## Development Philosophy
 
-  pionter-ui/
-    src/app/page.js
-    src/app/sozluk.js
-    src/app/yardimcilar.js
-    src/app/components/
-      LoadingState.jsx
-      Toast.jsx
-    package.json
-    package-lock.json
-```
+PionterCloud prioritizes:
 
-## Environment Variables
+* security-aware design
+* controlled progress
+* clear UX
+* maintainable code
+* quality over speed
 
-Create a `.env` file inside the `pionter-backend` folder.
-
-Example:
-
-```env
-DATABASE_URL=postgres://admin:password@localhost:5432/piontercloud
-CREDENTIAL_ENCRYPTION_KEY=base64-encoded-32-byte-key
-```
-
-Generate a local credential encryption key with:
-
-```bash
-openssl rand -base64 32
-```
-
-Do not commit the real `.env` file.
-
-Only `.env.example` should be committed.
-
-## Local Development Setup
-
-### 1. Start PostgreSQL
-
-The project currently uses PostgreSQL locally, commonly through Docker.
-
-Example database URL:
-
-```env
-DATABASE_URL=postgres://admin:password@localhost:5432/piontercloud
-```
-
-### 2. Start Backend
-
-```bash
-cd pionter-backend
-go run main.go
-```
-
-Expected output:
-
-```text
-Veritabanına başarıyla bağlandım!
-Sunucu 8080 portunda çalışmaya başladı!
-```
-
-### 3. Start Frontend
-
-```bash
-cd pionter-ui
-npm install
-npm run dev
-```
-
-Then open the frontend in the browser.
-
-## Current Development Philosophy
-
-This project is learning-focused, but quality is prioritized over speed.
-
-Main goals:
-
-* Learn backend development with Go.
-* Learn frontend development with Next.js.
-* Learn database usage with PostgreSQL.
-* Learn SSH/SFTP file operations.
-* Build a real-world cloud/file-manager style application.
-* Improve security and architecture step by step.
-* Keep technical debt visible instead of hiding it.
-
-## Roadmap
-
-### v0.4 Server Monitoring
-
-Planned improvements:
-
-* CPU usage
-* RAM usage
-* Disk usage
-* Uptime
-* Load average
-* Manual refresh
-* Optional auto-refresh
-* Server dashboard panel
-
-### v0.5 File Preview and Editor
-
-Planned improvements:
-
-* Text file preview
-* Image preview
-* Unsupported file warning
-* Large file limit
-* Binary file detection
-* Basic text/code editor
-* Save edited file
-* Unsaved changes warning
-* Monaco editor integration
-* Syntax highlighting
-
-### v0.6 Terminal
-
-Planned improvements:
-
-* Web terminal for selected server
-* Terminal starts in isolated folder
-* Strong warning before opening terminal
-* WebSocket-based command session
-* Research restricted user/chroot/limited shell options
-
-Terminal access is powerful but risky. It should not be treated casually.
-
-### v0.7 AI Features
-
-Possible improvements:
-
-* User-provided AI API key
-* Explain selected file
-* Summarize code file
-* Analyze log file
-* Explain error messages
-* Suggest refactors
-* Privacy warning before sending file content to an AI provider
-
-### v0.8 Deployment / Production Gate
-
-Planned improvements:
-
-* HTTPS deployment
-* Production environment configuration
-* Safer CORS
-* Rate limiting
-* Request size limits
-* SSH host key verification
-* Stable backend error codes
-* Safer logging
-* Backup strategy
-* Docker/deployment guide
-* Production checklist
-
-### v1.0 Public-ready Strong Release
-
-v1.0 should mean:
-
-* strong security foundation
-* polished core file manager
-* server monitoring
-* preview/editor functionality
-* deployment documentation
-* known limitations clearly documented
-* public usage risks reduced and understood
-
-## Deployment Position
-
-Recommended deployment strategy:
-
-* v0.1: local/portfolio only
-* v0.2: possible private deployment after careful setup
-* v0.3/v0.4: stronger portfolio/demo visibility
-* v0.8/v1.0: serious public deployment consideration
-
-A domain can be purchased earlier, but broad public usage should wait until deployment hardening is complete.
-
-## Known Limitations
-
-Current limitations:
-
-* Frontend `page.js` is still large.
-* Backend `main.go` is still large.
-* Tokens are sent in request bodies instead of headers.
-* CORS is still permissive.
-* SSH host key verification is not implemented.
-* Rate limiting is not implemented.
-* Error responses are not standardized.
-* No formal database migration tool is used yet.
-* No automated tests yet.
-* No CI pipeline yet.
-* No deployment guide yet.
-* Mobile/tablet sidebar behavior is deferred.
-* Lint warnings exist but no lint errors are currently present.
-
-## License
-
-This project does not have a license yet.
+This is a learning-focused project, but the goal is to keep the codebase honest enough to grow toward a real public product.

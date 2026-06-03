@@ -1,41 +1,51 @@
 # Development Notes
 
-This file tracks the current technical status, security decisions, technical debt, and future roadmap for PionterCloud.
+This file tracks the technical status, security decisions, technical debt, roadmap, and product direction for PionterCloud.
 
-PionterCloud is a learning-focused full-stack project, but the goal is to keep the codebase honest, maintainable, and security-aware as it grows.
+PionterCloud is a learning-focused full-stack project, but the goal is to keep the codebase honest, maintainable, and security-aware as it grows toward a public BYOS SaaS product.
 
-## Current Project Status
+## Product Definition
 
-PionterCloud has passed the v0.1 local/portfolio MVP stage, completed the v0.2 Security Gate phase, and completed the v0.3 Core File Manager Polish phase.
+PionterCloud is a public bring-your-own-server cloud file manager and lightweight server dashboard.
 
-Current high-level status:
+The product is:
+
+```txt
+File manager first, lightweight server dashboard second.
+```
+
+The product is not:
+
+```txt
+A full cPanel/Plesk replacement.
+A full server administration panel.
+```
+
+Core product direction:
+
+* Public BYOS file manager
+* Safe file operations
+* File preview
+* Text/code editing
+* Lightweight read-only server visibility
+* Sharing
+* Activity logs
+* Future optional AI assistance
+
+## Current High-Level Status
 
 * v0.1 Local/Portfolio MVP: completed
 * v0.2 Security Gate: completed
 * v0.3 Core File Manager Polish: completed
-* v0.4 Server Monitoring: planned
+* v0.4 Server Monitoring: completed
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6 Terminal: planned
-* v0.7 AI Features: planned
-* v0.8 Deployment / Production Hardening: planned
+* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: planned
+* v0.7 Share Links: planned
+* v0.8 Activity Logs: planned
+* v0.9 Editor Polish: planned
 * v1.0 Public-ready strong release: future goal
-
-## Product Direction
-
-PionterCloud started as a bring-your-own-server cloud file manager.
-
-The product direction is evolving toward:
-
-* bring-your-own-server cloud dashboard
-* secure web-based file manager
-* server monitoring panel
-* lightweight web editor
-* optional terminal access
-* optional AI-assisted file/code explanation features
-
-The project should continue to prioritize correctness, security, and maintainability over speed.
 
 ## Current Architecture
 
@@ -50,6 +60,7 @@ Current backend responsibilities:
 * Password hashing
 * Token/session management
 * Server management
+* Server credential encryption and decryption
 * SSH/SFTP connection validation
 * File listing
 * File upload
@@ -60,7 +71,8 @@ Current backend responsibilities:
 * Delete, including recursive folder delete
 * Rename
 * Move
-* Server credential encryption and decryption
+* Server stats collection
+* In-memory server stats cache
 
 ### Frontend
 
@@ -71,6 +83,7 @@ Current frontend responsibilities:
 * Login/register UI
 * Server list UI
 * Server add/edit/delete/pin UI
+* Sidebar navigation
 * File manager UI
 * Upload/download UI
 * File preview UI
@@ -82,18 +95,18 @@ Current frontend responsibilities:
 * Drag/drop move for single and selected multiple items
 * Breadcrumb drop targets for moving files/folders upward
 * Targeted upload by dropping local files onto folder cards or breadcrumb folders
-* Sidebar navigation
 * Toast notifications
 * Loading states
 * Dark/light mode
 * Turkish/English language switch
+* Server monitoring UI
 * Edit / Save / Cancel Edit flow for supported text/code files
 * Ctrl+S / Cmd+S save shortcut
 * Unsaved-change warnings for editor changes
 
 ### Database
 
-PostgreSQL is used for local development.
+PostgreSQL is used.
 
 Current main tables:
 
@@ -101,11 +114,63 @@ Current main tables:
 * `sunucular`
 * `oturumlar`
 
+Expected future tables:
+
+* `share_links`
+* `activity_logs`
+* possibly `email_verifications`
+* possibly `password_resets`
+* possibly `user_security_settings`
+
+## Current Security Decisions
+
+### Authentication
+
+* New Pionter account passwords are stored with bcrypt.
+* Older plain-text development passwords are migrated to bcrypt after successful login.
+* Login returns a session token.
+* Session tokens are stored in the `oturumlar` table.
+* Protected backend endpoints require token-based authentication.
+* Logout deletes the active session token from the database.
+* Session tokens have an expiration timestamp.
+* Expired tokens are rejected by the backend.
+* Expired sessions are cleaned up during login.
+* The frontend handles `401 Unauthorized` responses by clearing local session state.
+
+### Server Credentials
+
+* Server passwords and SSH private keys are encrypted before storage.
+* Existing plain-text development credentials are lazily migrated to encrypted values when the server is used.
+* Saved server credentials are not returned to the frontend.
+* SSH/SFTP connection test runs before saving or updating a server.
+
+### Isolated Folder
+
+* File manager operations are restricted to the configured isolated folder.
+* Backend path construction uses safe path joining and validation.
+* File/folder names are validated against dangerous path fragments.
+* The isolated folder protects PionterCloud file operations.
+* The isolated folder is not a general-purpose server sandbox.
+
+### File Operations
+
+* File listing uses SFTP.
+* Upload uses SFTP.
+* Download uses SFTP.
+* Preview uses SFTP.
+* Editor save uses SFTP.
+* Recursive delete is supported but remains behind isolated-folder path checks.
+* Move operations block moving folders into themselves.
+* Text preview and text save operations have size limits.
+* Unsupported file types are blocked from editing.
+
+## Completed Phase Summaries
+
 ## v0.1 Local/Portfolio MVP Summary
 
 The v0.1 phase focused on making the core product usable locally.
 
-Completed in v0.1:
+Completed:
 
 * User registration and login
 * Multiple server support
@@ -128,645 +193,434 @@ Completed in v0.1:
 * Dark/light mode
 * Turkish/English language switch
 * Initial README and development notes
-* Final v0.1 smoke test
-
-v0.1 was considered a local/portfolio MVP, not a production-ready release.
 
 ## v0.2 Security Gate Summary
 
 The v0.2 phase focused on improving authentication, session handling, and credential storage.
 
-Completed security improvements:
+Completed:
 
-* New Pionter account passwords are stored with bcrypt hashing.
-* Older plain text development passwords are migrated to bcrypt after successful login.
-* A dedicated `/api/login` endpoint was added.
-* Login returns a session token.
-* Session tokens are stored in the `oturumlar` table.
-* Protected backend endpoints now use token-based authentication.
-* Protected backend endpoints no longer accept username/password fallback.
-* The frontend no longer sends the Pionter account password after login.
-* Logout support was added.
-* Logout deletes the active session token from the database.
-* Session tokens now have an expiration timestamp.
-* Expired tokens are rejected by the backend.
-* Expired sessions are cleaned up during login.
-* The frontend handles `401 Unauthorized` responses by clearing the local session and returning to the login screen.
-* Server passwords and SSH private keys are encrypted before being stored.
-* Existing plain text server credentials are lazily migrated to encrypted values when the server is used.
-* Saved server credentials are not returned to the frontend.
-
-v0.2 final smoke test status:
-
-* Backend startup verified.
-* Frontend startup verified.
-* Register/login/logout flow verified.
-* Token expiration/session invalidation behavior verified.
-* Server management flow verified.
-* File manager flow verified.
-* Credential encryption behavior verified.
-* Secret tracking checks passed.
-
-v0.2 is considered complete.
+* bcrypt password hashing
+* Plain-text development password migration
+* Dedicated `/api/login` endpoint
+* Session token generation
+* Server-side session token storage
+* Protected endpoint token authentication
+* Logout endpoint
+* Token expiration
+* Frontend session cleanup on invalid token
+* Server credential encryption
+* Lazy migration for old plain-text server credentials
+* Saved credentials hidden from frontend responses
 
 ## v0.3 Core File Manager Polish Summary
 
-The v0.3 phase focused on making the file manager feel more like a real product interface and adding stable multi-item operations.
+The v0.3 phase focused on making the file manager feel more like a real product interface.
 
-Completed in v0.3:
+Completed:
 
-* Reworked the server navigation experience with a collapsible left sidebar.
-* Added a mini sidebar state and expanded sidebar state.
-* Added server previews inside the sidebar.
-* Moved profile/settings actions into the sidebar.
-* Improved dark/light sidebar styling.
-* Improved the My Servers empty-state UX.
-* Added multi-select support improvements.
-* Added a selection toolbar for selected files/folders.
-* Added Select listed/visible behavior.
-* Added Clear selection behavior.
-* Added Bulk delete flow.
-* Added Bulk move flow using the existing move modal infrastructure.
-* Added selected-item previews to the bulk move modal.
-* Added selected-item previews to the bulk delete modal.
-* Added state cleanup after bulk move operations.
-* Improved drag-and-drop upload behavior.
-* Improved upload, folder creation, and selection UX.
-* Ran a v0.3 smoke test covering:
-
-  * login
-  * server selection
-  * sidebar behavior
-  * folder navigation
-  * upload
-  * folder creation
-  * rename
-  * single move
-  * single delete
-  * bulk move
-  * bulk delete
-  * search selection
-  * Clear selection
-  * Back to Servers
-  * My Servers empty state
-
-v0.3 final validation:
-
-* `npm run lint` completed with 0 errors.
-* 2 non-blocking warnings remain.
-* Core v0.3 user flows passed manual smoke testing.
+* Collapsible left sidebar
+* Server preview inside sidebar
+* Profile/settings controls inside sidebar
+* Improved empty states
+* Multi-select toolbar
+* Select listed/visible behavior
+* Clear selection behavior
+* Bulk delete
+* Bulk move
+* Shared move modal behavior
+* Selected-item previews in bulk move/delete modals
+* Improved drag-and-drop upload behavior
+* Improved upload/folder/selection UX
 
 Known non-blocking warnings after v0.3:
 
-* `postcss.config.mjs` has an anonymous default export warning.
-* `page.js` has a React Hook dependency warning for the drag/drop upload effect.
-
-v0.3 is considered complete.
+* `postcss.config.mjs` anonymous default export warning
+* React Hook dependency warning for the drag/drop upload effect in `page.js`
 
 ## v0.4 Server Monitoring Summary
 
-The v0.4 phase focused on adding basic server monitoring for the currently selected server.
+The v0.4 phase added basic read-only server monitoring.
 
-Completed in v0.4:
+Completed:
 
-* Added `/api/server/stats` endpoint.
-* Added stats request/response structs.
-* Added SSH command execution helper.
-* Added RAM parsing from `free -m`.
-* Added disk parsing from `df -m /`.
-* Added load average parsing from `/proc/loadavg`.
-* Added CPU usage calculation using two `/proc/stat` reads.
-* Changed uptime output to use `uptime -p`.
-* Added frontend stats state and fetch logic.
-* Added monitoring card inside the selected server panel.
-* Added CPU/RAM/Disk progress bars.
-* Removed Load Avg from the main UI to keep the panel simple.
-* Added SSH OK status badge.
-* Added Last updated timestamp.
-* Added manual refresh.
-* Added silent auto refresh every 60 seconds.
-* Auto refresh does not run while the browser tab is hidden.
-* Auto refresh does not replace the current stats card with loading state.
-* Added in-memory backend stats cache.
-* Manual refresh and first load use fresh stats.
-* Silent refresh can use cache.
-* Added Turkish uppercase fix by setting the root `lang` attribute.
-* Ran final v0.4 smoke test.
+* `/api/server/stats` endpoint
+* SSH-based server stats collection
+* CPU usage calculation
+* RAM usage
+* Disk usage
+* Load average parsing
+* Uptime output
+* Monitoring card in selected server panel
+* CPU/RAM/Disk progress bars
+* SSH OK status badge
+* Last updated timestamp
+* Manual refresh
+* Silent auto refresh
+* In-memory backend stats cache
 
-Current limitations:
+Limitations:
 
-* Monitoring is Linux-focused.
-* Stats are collected over SSH.
-* Each fresh stats request may open an SSH connection.
-* Backend cache is in-memory and resets when the backend restarts.
-* Cache cleanup is not implemented yet.
-* Historical charts are not implemented.
-* Alerting is not implemented.
-* Multi-server dashboard monitoring is not implemented.
+* Linux-focused
+* SSH-based
+* Backend cache is in-memory
+* Historical charts are not implemented
+* Alerting is not implemented
 
 ## v0.5A File Preview Summary
 
-The v0.5A phase focused on adding safe file previews and improving file type recognition in the UI.
+The v0.5A phase added safe file previews and improved file type recognition.
 
 Backend changes:
 
-* Added `/api/file/preview`.
-* Added preview request and response structs.
-* Added file extension detection helper.
-* Added supported text/code file whitelist.
-* Added image file whitelist.
-* Added preview type detection.
-* Added text preview reader through SFTP.
-* Added image preview reader through SFTP.
-* Added base64 image response support.
-* Added preview limits:
-  * Text preview max: 1 MB
-  * Image preview max: 5 MB
-* Added support for special filenames:
-  * `.env`
-  * `.env.example`
-  * `Dockerfile`
-  * `Makefile`
-  * `CMakeLists.txt`
+* `/api/file/preview`
+* Preview request/response structs
+* File extension detection
+* Supported text/code file whitelist
+* Image file whitelist
+* Preview type detection
+* Text preview reader through SFTP
+* Image preview reader through SFTP
+* Base64 image response support
+* Preview limits:
+
+  * text: 1 MB
+  * image: 5 MB
 
 Frontend changes:
 
-* Added preview modal state.
-* Added preview cache.
-* Added preview fetch function.
-* Added file type helper functions.
-* Added image thumbnail loading.
-* Added image thumbnail rendering inside file cards.
-* Added file preview modal.
-* Added outside-click close behavior.
-* Added Escape key close behavior.
-* Changed file click behavior:
-  * Folders open normally.
-  * Preview-supported files open in preview modal.
-  * Unsupported files keep download behavior.
-* Added file icon system v2.
-* Added language-specific code icon colors.
-* Added fixed-width mini icons for bulk move/delete modals.
-* Added expanded language/config file support.
+* Preview state
+* Preview cache
+* File preview modal
+* Text/code preview
+* Image preview
+* Image thumbnails
+* File type icon system v2
+* Language-specific code icon colors
+* Mini file icons in bulk modals
 
-Current limitations:
+Known limitations:
 
-* PDF preview is not implemented yet.
-* Office document preview is not implemented yet.
-* Video/audio preview is not implemented yet.
-* Large files are intentionally blocked.
-* Thumbnail loading is simple and limited; future improvement can use IntersectionObserver.
-* Text editor/save support is not implemented yet.
+* PDF preview currently shows fallback/download behavior.
+* Office files have icons but no real preview.
+* Large text/image files are blocked by preview limits.
+* Image thumbnail loading is limited for safety.
 
 ## v0.5A.5 Core File Operations Reliability Summary
 
-The v0.5A.5 phase focused on improving the reliability and usability of core file operations before moving on to the text editor phase.
+The v0.5A.5 phase improved core file operation reliability and UX.
 
 Backend changes:
 
-* Replaced empty-folder-only delete behavior with recursive folder deletion.
-* Added recursive SFTP delete helper.
-* Used `Lstat`-based behavior so symlink directories are not recursively followed as real folders.
-* Strengthened file/folder name validation for risky names such as empty values, `.`, `..`, path separators, and suspicious path fragments.
-* Kept delete and move operations behind existing token authentication and isolated-folder path validation.
+* Recursive folder deletion
+* Recursive SFTP delete helper
+* Symlink-aware delete behavior through `Lstat`
+* Stronger file/folder name validation
 
 Frontend changes:
 
-* Added folder-content preview to the single delete modal.
-* Added drag/drop move from file cards to folder cards.
-* Added drag/drop move from file cards to breadcrumb folders.
-* Added multi-item drag move when the dragged item is part of the current selection.
-* Preserved single-item drag behavior when dragging an unselected item.
-* Added targeted upload support by dropping local files onto folder cards.
-* Added targeted upload support by dropping local files onto breadcrumb folders.
-* Added drag/drop visual states for folder cards and breadcrumb targets.
-* Fixed drag hover flicker caused by child element `dragLeave` events.
-* Fixed stale drag state after completed drag/drop operations.
-* Added stacked drag preview cards for multi-item drag operations.
-* Added file-type-aware colors for drag preview cards.
-* Locked breadcrumb and up-folder navigation while file loading is in progress.
-* Added PionterCloud-style custom tooltips for breadcrumb and up-folder controls.
+* Folder-content preview in delete modal
+* Drag/drop move from file cards to folder cards
+* Drag/drop move from file cards to breadcrumb folders
+* Multi-item drag move
+* Targeted upload to folder cards
+* Targeted upload to breadcrumb folders
+* Drag/drop visual states
+* Drag hover flicker fixes
+* Stale drag state fixes
+* Stacked drag preview cards
+* File-type-aware drag preview colors
+* Loading-state navigation lock
+* Custom breadcrumb/up-folder tooltips
 
-Manual validation:
-
-* Recursive delete works for folders containing files and nested folders.
-* Single-item drag move works from file cards to folder cards.
-* Single-item drag move works from file cards to breadcrumb folders.
-* Multi-item drag move works from selected items to folder cards.
-* Multi-item drag move works from selected items to breadcrumb folders.
-* Local file upload still works by dropping files into the current folder.
-* Local file upload works when dropping files onto folder cards.
-* Local file upload works when dropping files onto breadcrumb folders.
-* Loading-state navigation lock prevents stacked folder navigation requests.
-* Drag preview, drag target highlighting, and custom breadcrumb tooltips passed manual UX checks.
-
-Known limitations / future improvements:
+Known limitations:
 
 * Multi-item drag move currently sends one `/api/move` request per item.
-* Partial failure handling for multi-item move can be improved after stable backend error codes are introduced.
+* Partial failure handling can be improved after stable backend error codes.
 * Move conflict feedback is still generic.
-* Drag/drop behavior should be re-tested after mobile/tablet layout work.
 
 ## v0.5B Basic Text Editor + Monaco Summary
 
-The v0.5B phase focused on adding a safe, lightweight editor flow for supported text/code files.
+The v0.5B phase added safe lightweight text/code editing.
 
 Backend changes:
 
-* Added `/api/file/save`.
-* Added save request and response structs.
-* Added a JSON response helper for file-save responses.
-* Added `textSaveLimit`.
-* Reused the existing text/code file whitelist for editable file types.
-* Added SFTP-based text file save helper.
-* Saved files using truncate-and-write behavior.
-* Avoided creating new files from the save endpoint for now.
-* Rejected unsupported file types.
-* Rejected folders as save targets.
-* Rejected oversized file contents.
-* Kept save operations protected by token authentication.
-* Kept save operations protected by isolated-folder path validation.
-* Kept file name validation through the existing safe-name helper.
+* `/api/file/save`
+* Save request/response structs
+* Save response helper
+* `textSaveLimit`
+* SFTP-based text file save helper
+* Truncate-and-write save behavior
+* Existing-file-only save behavior
+* Unsupported file type rejection
+* Folder save rejection
+* Oversized content rejection
+* Token authentication and isolated-folder path validation
 
 Frontend changes:
 
-* Added Monaco Editor through dynamic import.
-* Added editor state to the preview modal.
-* Added edit mode for supported text/code previews.
-* Added read-only preview mode and edit mode switching.
-* Added Save and Cancel Edit actions.
-* Added dirty-state tracking by comparing current editor content to original content.
-* Added Ctrl+S / Cmd+S save shortcut.
-* Added confirmation before closing with unsaved changes.
-* Added browser before-unload warning for unsaved editor changes.
-* Added editor information bar with save shortcut hint.
-* Added unsaved-change badge.
-* Disabled Download while editor content has unsaved changes.
-* Updated preview cache after successful save.
-* Refreshed the current file list after successful save.
-* Added Monaco language detection based on file extension.
+* Monaco Editor dynamic import
+* Editor state in preview modal
+* Read-only preview mode
+* Edit mode
+* Save action
+* Cancel Edit action
+* Dirty-state tracking
+* Ctrl+S / Cmd+S save shortcut
+* Confirmation before closing with unsaved changes
+* Browser before-unload warning
+* Editor information bar
+* Unsaved-change badge
+* Download disabled while unsaved changes exist
+* Preview cache update after save
+* File list refresh after save
+* Monaco language detection by extension
 
-Manual validation:
+Known limitations:
 
-* `.txt` files can be opened, edited, saved, closed, and reopened with updated content.
-* Common code files such as `.js`, `.json`, `.md`, `.go`, and `.cpp` open in Monaco editor mode.
-* Ctrl+S / Cmd+S saves edited files.
-* Close, Escape, and outside-click behavior warn before discarding unsaved changes.
-* Browser refresh/navigation warns when editor changes are unsaved.
-* Download is disabled while unsaved changes exist.
-* Unsupported file types do not show the Edit button.
-* Large text/code files remain protected by preview/save limits.
-
-Known limitations / future improvements:
-
-* The editor currently provides lightweight text/code editing, not full IDE behavior.
 * Monaco standalone highlighting is not the same as language-server semantic highlighting.
-* Advanced IntelliSense, language servers, and semantic highlighting are deferred.
-* Future polish should add PionterCloud Gruvbox Dark and Gruvbox Light Monaco themes.
-* Future polish may add language-specific color tuning for Monaco and the file UI.
-* Advanced editor features should be lazy-loaded or optional so the file manager does not become heavy.
+* Advanced IntelliSense is not implemented.
+* Language servers are deferred.
+* Custom PionterCloud Gruvbox Monaco themes are planned for a future editor polish phase.
 
-## Current Authentication Behavior
-
-Current auth flow:
-
-1. User registers with username, email, and password.
-2. Backend hashes the password before saving it.
-3. User logs in with username/email and password.
-4. Backend verifies the password.
-5. Backend creates a session token.
-6. Frontend stores the token in React state.
-7. Protected requests send the token.
-8. Backend validates the token.
-9. Logout deletes the token.
-10. Expired tokens are rejected.
-
-Current limitation:
-
-* Tokens are currently sent in request bodies.
-* A future improvement should move tokens to the `Authorization: Bearer <token>` header.
-
-## Current Credential Encryption Behavior
-
-Saved server credentials are encrypted before being stored.
-
-Encrypted fields:
-
-* `sunucu_sifre`
-* `ssh_private_key`
-
-Encryption behavior:
-
-* AES-GCM is used.
-* Encrypted values use the `enc:v1:` prefix.
-* The encryption key is loaded from `CREDENTIAL_ENCRYPTION_KEY`.
-* The real encryption key must never be committed.
-* `.env.example` only contains a placeholder value.
-* Plain text old development credentials are lazily migrated when the server is used.
-
-Important note:
-
-If the encryption key is lost, encrypted server credentials cannot be recovered.
-
-## Server Connection Validation Notes
-
-Current behavior:
-
-* When adding a new server, the backend tests the SSH/SFTP connection before saving it.
-* When updating an existing server, the backend tests the SSH/SFTP connection before applying the update.
-* If the connection test fails, the server is not saved or updated.
-* The connection test checks:
-
-  * SSH connection
-  * SSH authentication
-  * SFTP client creation
-  * isolated folder accessibility
-
-Frontend behavior:
-
-* The separate manual "Test Connection" button was removed.
-* Save/update now means:
-
-  * validate form fields
-  * send request to backend
-  * backend checks the connection
-  * backend saves only if the connection is valid
-
-Important limitation:
-
-* SSH host key verification is still not implemented.
-* The backend still uses insecure host key behavior during SSH connections.
-* This must be improved before production use.
-
-## Current Security Status
-
-The project is significantly safer than the v0.1 local MVP.
-
-Current improvements:
-
-* Pionter account passwords are no longer stored as plain text.
-* Frontend no longer sends the Pionter password after login.
-* Protected endpoints use token authentication.
-* Logout and token expiration exist.
-* Saved server credentials are encrypted.
-* Existing plain server credentials are lazily migrated.
-
-Still not production-ready.
-
-Remaining security work before serious public usage:
-
-* Move tokens from request body to `Authorization` header.
-* Improve CORS configuration.
-* Add rate limiting.
-* Add stricter request size limits.
-* Add SSH host key verification.
-* Add stable backend error codes.
-* Improve logging without leaking secrets.
-* Add production deployment hardening.
-* Add HTTPS deployment.
-* Add backup and recovery planning.
-* Review database migration strategy.
-* Review token cleanup strategy outside login.
-
-## Current Frontend Refactor Status
-
-The frontend has started to move away from a single large `page.js` file, but more refactoring is still needed.
-
-Already extracted:
-
-* Loading state component
-* Toast component
-* Helper functions
-* Dictionary file
-
-Still needed:
-
-* Split large file manager UI into smaller components.
-* Extract repeated button/input/modal styles.
-* Extract server form logic.
-* Extract file action menu.
-* Extract modal components.
-* Extract API helper functions.
-* Reduce repeated fetch/error/loading logic.
-* Clean up remaining lint warnings during a refactor pass.
-* Improve mobile/tablet sidebar behavior.
-
-Possible future frontend components:
-
-* `TextInput`
-* `PrimaryButton`
-* `SecondaryButton`
-* `DangerButton`
-* `Modal`
-* `Toast`
-* `ServerForm`
-* `AuthForm`
-* `FileGrid`
-* `FileCard`
-* `Breadcrumb`
-* `FileActionMenu`
-* `RenameModal`
-* `MoveModal`
-* `DeleteConfirmationModal`
-* `BulkActionToolbar`
-* `Sidebar`
-
-## Current Backend Refactor Status
-
-The backend is functional but still mostly lives in a single `main.go` file.
-
-Already improved:
-
-* CORS helper
-* POST request helper
-* JSON read helper
-* Password hashing helpers
-* Token/session helpers
-* Credential encryption helpers
-* Server credential lookup helper
-* Connection validation helper
-
-Still needed:
-
-* Split backend code into packages/files.
-* Add middleware-style auth helpers.
-* Improve error response format.
-* Add stable error codes.
-* Reduce repeated SSH/SFTP connection setup.
-* Centralize response helpers.
-* Improve config/env loading.
-* Add structured logging.
-* Add database migration tooling later.
-
-Possible future backend structure:
-
-```text
-pionter-backend/
-  main.go
-  config/
-  db/
-  handlers/
-  middleware/
-  auth/
-  servers/
-  files/
-  sshclient/
-  crypto/
-  models/
-```
-
-## API/Error Response Notes
-
-Backend error responses currently use user-facing text messages.
-
-Future goal:
-
-```json
-{
-  "success": false,
-  "code": "FOLDER_EMPTY",
-  "message": "Folder is empty."
-}
-```
-
-The frontend should eventually translate user-facing messages based on stable backend error codes.
-
-## Known Technical Debt
-
-Current known technical debt:
-
-* Frontend `page.js` is still too large.
-* Backend `main.go` is still too large.
-* Tokens are sent in request bodies instead of headers.
-* CORS is still too permissive.
-* SSH host key verification is not implemented.
-* Rate limiting is not implemented.
-* Request size limits need improvement.
-* Error responses are not standardized.
-* Logging is basic.
-* No formal migration system yet.
-* No deployment guide yet.
-* No automated tests yet.
-* No CI pipeline yet.
-* Mobile/tablet sidebar behavior is deferred.
-* Lint warnings exist but no lint errors are currently present.
-
-## Roadmap
-
-### v0.4 Server Monitoring
-
-Planned improvements:
-
-* CPU usage
-* RAM usage
-* Disk usage
-* Uptime
-* Load average
-* Manual refresh
-* Optional auto-refresh
-* Server status dashboard
-
-### v0.5 File Preview and Editor
-
-Planned improvements:
-
-* Text file preview
-* Image preview
-* Unsupported file warning
-* Large file limit
-* Binary file detection
-* Basic text/code editor
-* Save edited file
-* Unsaved changes warning
-* Monaco editor integration
-* Syntax highlighting
-
-### v0.6 Terminal
-
-Planned improvements:
-
-* Web terminal for selected server
-* Terminal starts in isolated folder
-* Strong user warning before opening terminal
-* WebSocket-based command session
-* Research restricted user/chroot/limited shell options
-
-Important risk:
-
-Terminal access can be dangerous. It should not be added before the security foundation is strong.
-
-### v0.7 AI Features
-
-Possible improvements:
-
-* User-provided AI API key
-* Explain selected file
-* Summarize code file
-* Analyze log file
-* Explain error messages
-* Suggest refactors
-* Privacy warning before sending file content to an AI provider
-
-Important decisions:
-
-* Where API keys are stored
-* Whether API keys are encrypted
-* Whether file content is sent only with explicit user confirmation
-* How large files are handled
-
-### v0.8 Deployment / Production Gate
-
-Planned improvements:
-
-* HTTPS deployment
-* Production environment configuration
-* Safer CORS
+## Planned Roadmap
+
+## v0.6.5 Stability, Permission Errors and Public SaaS Hardening
+
+Goals:
+
+* Improve stability before adding more features.
+* Make backend errors more consistent.
+* Make frontend error messages more user-friendly.
+* Prepare the project direction for public SaaS concerns.
+
+Planned backend work:
+
+* Add permission denied detection helper.
+* Standardize common error codes.
+* Improve SFTP/SSH error classification.
+* Return clearer errors for:
+
+  * list
+  * upload
+  * preview
+  * save
+  * rename
+  * move
+  * delete
+* Review public registration assumptions.
+* Add notes for future email verification, rate limiting, and abuse prevention.
+
+Planned frontend work:
+
+* Show clearer permission denied messages.
+* Show clearer SSH connection failure messages.
+* Show clearer SFTP failure messages.
+* Improve generic operation failure toasts.
+* Avoid confusing users when Linux permissions block an operation.
+
+## v0.7 Share Links
+
+Goals:
+
+* Allow users to share files through generated links.
+* Support time-limited and unlimited links.
+
+Planned backend work:
+
+* Add `share_links` table.
+* Generate secure random share tokens.
+* Store:
+
+  * user id
+  * server id
+  * file path
+  * token hash or token value
+  * expiration time
+  * created time
+  * revoked status
+* Add share-create endpoint.
+* Add public share-download endpoint.
+* Add share-revoke endpoint.
+* Validate expiration and revoked state.
+
+Planned frontend work:
+
+* Share action in file menu.
+* Share modal.
+* Expiration selector:
+
+  * 1 hour
+  * 1 day
+  * 1 week
+  * 1 month
+  * 1 year
+  * unlimited
+* Copy link button.
+* Revoke link behavior.
+* Share management UI later.
+
+Security notes:
+
+* Share tokens must be long and random.
+* Shared file access must not require account login.
+* Shared access must not expose server credentials.
+* Expired and revoked links must stop working.
+
+## v0.8 Activity Logs
+
+Goals:
+
+* Track important user actions.
+* Build the foundation for audit, rollback ideas, and future AI-assisted activity review.
+
+Planned backend work:
+
+* Add `activity_logs` table.
+* Log key actions:
+
+  * login
+  * logout
+  * server add/edit/delete
+  * upload
+  * download
+  * preview
+  * save
+  * rename
+  * move
+  * delete
+  * share link create/revoke
+* Store:
+
+  * user id
+  * server id
+  * action type
+  * target path
+  * metadata JSON
+  * timestamp
+  * status
+  * error code if failed
+
+Planned frontend work:
+
+* Activity log page or modal.
+* Filter by server.
+* Filter by action type.
+* Filter by date.
+* Search by path.
+* Basic timeline UI.
+
+Future use:
+
+* “What changed recently?”
+* Undo/rollback research
+* AI-assisted activity summaries
+* Safer AI action previews
+
+## v0.9 Editor Polish
+
+Goals:
+
+* Improve Monaco editor look and feel.
+* Keep editor lightweight.
+
+Planned work:
+
+* PionterCloud Gruvbox Dark Monaco theme
+* PionterCloud Gruvbox Light Monaco theme
+* Better language-specific token colors
+* Better editor toolbar
+* Better editor loading state
+* Better large-file UX
+* Optional editor settings
+* More consistent file/editor color system
+
+Deferred:
+
+* Heavy language servers
+* Full IDE behavior
+* Advanced IntelliSense
+* Semantic highlighting
+* Project-wide code analysis
+
+These should only be added if they can be lazy-loaded or made optional.
+
+## Future Features
+
+Potential future features:
+
+* Google Docs-like collaborative editing
+* Server-to-server file transfer
+* File versioning
+* File rollback
+* AI-assisted file search
+* AI-assisted code/file explanation
+* AI-assisted activity log review
+* AI-assisted safe file operations
+* User-provided AI API keys
+* More advanced monitoring
+* Email verification
+* Password reset
+* 2FA/passkey support
 * Rate limiting
-* Request size limits
-* SSH host key verification
-* Stable backend error codes
-* Safer logging
-* Backup strategy
-* Docker/deployment guide
-* Production checklist
+* Admin dashboard
+* Abuse prevention tools
 
-### v1.0 Public-ready Strong Release
+## Public SaaS Security Backlog
 
-v1.0 should not mean “perfect,” but it should mean:
+Before public release, the project should consider:
 
-* The app has a strong security foundation.
-* Core file manager flows are polished.
-* Server monitoring exists.
-* Preview/editor functionality exists.
-* Deployment documentation exists.
-* Known limitations are clearly documented.
-* Public usage risks are understood and reduced.
+* Email verification
+* Password reset flow
+* Login rate limiting
+* Registration rate limiting
+* Stronger session management
+* Refresh-token strategy or better token lifecycle
+* 2FA/passkey support
+* CSRF review
+* CORS/origin hardening
+* Security headers
+* Audit logs
+* Admin moderation tools
+* Abuse prevention
+* Better secret management
+* Production-grade environment config
+* Backups and recovery strategy
+* Deployment hardening
 
-## Deployment Position
+## AI Direction
 
-Recommended deployment strategy:
+AI features are planned as optional and user-controlled.
 
-* v0.1: local/portfolio only
-* v0.2: possible private deployment after careful setup
-* v0.3/v0.4: stronger portfolio/demo visibility
-* v0.8/v1.0: serious public deployment consideration
+Principles:
 
-Domain can be purchased earlier, but public usage should wait until deployment hardening is complete.
+* Users should provide their own API key.
+* AI should not create platform cost by default.
+* AI should not perform destructive actions without preview and confirmation.
+* AI should use safe backend APIs, not raw shell access.
+* AI should rely on activity logs for context.
+* AI actions should start read-only.
 
-## Current Recommendation
+Low-risk AI ideas:
 
-Do not treat PionterCloud as production-ready yet.
+* Summarize folder contents.
+* Find largest files in a folder.
+* Explain a code file.
+* Summarize recent activity.
+* Search logs.
+* Suggest cleanup candidates.
 
-It is suitable for:
+Higher-risk AI ideas are deferred until logs, permissions, previews, confirmations, and rollback systems are stronger.
 
-* learning
-* local testing
-* portfolio development
-* controlled private testing after v0.2/v0.3
+## Development Philosophy
 
-It is not yet suitable for:
+Priorities:
 
-* broad public signup
-* untrusted users
-* production server credential storage without further hardening
-* terminal access in public environments
+* correctness
+* security-aware design
+* maintainability
+* clear UX
+* controlled progress
+* quality over speed
+
+PionterCloud should grow carefully. Every powerful feature should be evaluated by how much it increases risk in a public BYOS SaaS environment.
