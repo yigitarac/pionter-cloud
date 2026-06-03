@@ -4367,7 +4367,11 @@ export default function AnaSayfa() {
                   <button
                     type="button"
                     onClick={() => dosyayiIndir(previewDosya)}
-                    disabled={yukleniyor || previewKaydediliyor}
+                    disabled={
+                      yukleniyor ||
+                      previewKaydediliyor ||
+                      previewDuzenlemeKirliMi
+                    }
                     className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#83a598] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {t.downloadFile}
