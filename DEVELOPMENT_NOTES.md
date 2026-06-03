@@ -14,7 +14,9 @@ Current high-level status:
 * v0.2 Security Gate: completed
 * v0.3 Core File Manager Polish: completed
 * v0.4 Server Monitoring: planned
-* v0.5 File Preview and Editor: planned
+* v0.5A File Preview: completed
+* v0.5A.5 Core File Operations Reliability: completed
+* v0.5B Basic Text Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
@@ -53,7 +55,7 @@ Current backend responsibilities:
 * File upload
 * File download
 * Folder creation
-* Delete
+* Delete, including recursive folder delete
 * Rename
 * Move
 * Server credential encryption and decryption
@@ -73,6 +75,9 @@ Current frontend responsibilities:
 * Rename/delete/move modals
 * Bulk move and bulk delete modals
 * Multi-select toolbar
+* Drag/drop move for single and selected multiple items
+* Breadcrumb drop targets for moving files/folders upward
+* Targeted upload by dropping local files onto folder cards or breadcrumb folders
 * Sidebar navigation
 * Toast notifications
 * Loading states
@@ -305,6 +310,55 @@ Current limitations:
 * Large files are intentionally blocked.
 * Thumbnail loading is simple and limited; future improvement can use IntersectionObserver.
 * Text editor/save support is not implemented yet.
+
+## v0.5A.5 Core File Operations Reliability Summary
+
+The v0.5A.5 phase focused on improving the reliability and usability of core file operations before moving on to the text editor phase.
+
+Backend changes:
+
+* Replaced empty-folder-only delete behavior with recursive folder deletion.
+* Added recursive SFTP delete helper.
+* Used `Lstat`-based behavior so symlink directories are not recursively followed as real folders.
+* Strengthened file/folder name validation for risky names such as empty values, `.`, `..`, path separators, and suspicious path fragments.
+* Kept delete and move operations behind existing token authentication and isolated-folder path validation.
+
+Frontend changes:
+
+* Added folder-content preview to the single delete modal.
+* Added drag/drop move from file cards to folder cards.
+* Added drag/drop move from file cards to breadcrumb folders.
+* Added multi-item drag move when the dragged item is part of the current selection.
+* Preserved single-item drag behavior when dragging an unselected item.
+* Added targeted upload support by dropping local files onto folder cards.
+* Added targeted upload support by dropping local files onto breadcrumb folders.
+* Added drag/drop visual states for folder cards and breadcrumb targets.
+* Fixed drag hover flicker caused by child element `dragLeave` events.
+* Fixed stale drag state after completed drag/drop operations.
+* Added stacked drag preview cards for multi-item drag operations.
+* Added file-type-aware colors for drag preview cards.
+* Locked breadcrumb and up-folder navigation while file loading is in progress.
+* Added PionterCloud-style custom tooltips for breadcrumb and up-folder controls.
+
+Manual validation:
+
+* Recursive delete works for folders containing files and nested folders.
+* Single-item drag move works from file cards to folder cards.
+* Single-item drag move works from file cards to breadcrumb folders.
+* Multi-item drag move works from selected items to folder cards.
+* Multi-item drag move works from selected items to breadcrumb folders.
+* Local file upload still works by dropping files into the current folder.
+* Local file upload works when dropping files onto folder cards.
+* Local file upload works when dropping files onto breadcrumb folders.
+* Loading-state navigation lock prevents stacked folder navigation requests.
+* Drag preview, drag target highlighting, and custom breadcrumb tooltips passed manual UX checks.
+
+Known limitations / future improvements:
+
+* Multi-item drag move currently sends one `/api/move` request per item.
+* Partial failure handling for multi-item move can be improved after stable backend error codes are introduced.
+* Move conflict feedback is still generic.
+* Drag/drop behavior should be re-tested after mobile/tablet layout work.
 
 ## Current Authentication Behavior
 

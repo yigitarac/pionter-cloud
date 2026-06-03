@@ -19,6 +19,7 @@ Current phase status:
 * v0.3 Core File Manager Polish: completed
 * v0.4 Server Monitoring: completed
 * v0.5A File Preview: completed
+* v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor: planned
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
@@ -36,8 +37,10 @@ PionterCloud lets users:
 * Upload and download files
 * Create folders
 * Rename files and folders
-* Delete files and empty folders
+* Delete files and folders, including non-empty folders
 * Move files and folders
+* Drag files and folders onto folder cards to move them
+* Drag files and folders onto breadcrumb folders to move them upward
 * Select multiple files and folders
 * Bulk delete selected files and folders
 * Bulk move selected files and folders
@@ -93,10 +96,15 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Multi-file upload
 * Download files
 * Create folders
-* Delete files and empty folders
+* Delete files and folders, including non-empty folders
+* Preview folder contents before deleting a folder
 * Rename files and folders
 * Move files and folders
 * Nested target folder picker for move
+* Drag files and folders onto folder cards to move them
+* Drag selected multiple items as a group
+* Drag files and folders onto breadcrumb folders to move them upward
+* Upload files directly into folder cards or breadcrumb target folders
 * Safeguards against moving folders into themselves
 * Multi-select support
 * Select listed/visible items
@@ -248,6 +256,34 @@ Known notes:
 * Office files currently use distinct icons but do not have real preview.
 * Large text/image files are blocked by preview limits.
 * Image thumbnail loading is limited to the first visible batch for safety.
+
+## v0.5A.5 Core File Operations Reliability Summary
+
+v0.5A.5 focused on making core file operations safer, more reliable, and more natural to use.
+
+Completed in v0.5A.5:
+
+* Added recursive folder deletion for non-empty folders.
+* Kept recursive deletion behind the existing isolated-folder path safety checks.
+* Added folder content preview inside the single delete confirmation modal.
+* Added drag-and-drop move support from file cards to folder cards.
+* Added drag-and-drop move support from file cards to breadcrumb folders.
+* Added multi-item drag move support when selected items are dragged as a group.
+* Added upload-to-target support by dropping local files onto folder cards.
+* Added upload-to-target support by dropping local files onto breadcrumb folders.
+* Improved drag/drop visual feedback for folder cards and breadcrumb targets.
+* Added stacked drag preview cards for multi-item drag operations.
+* Added file-type-aware colors to drag preview cards.
+* Fixed drag/drop hover flicker and stale drag state issues.
+* Locked breadcrumb and up-folder navigation while file loading is in progress.
+* Replaced native browser breadcrumb tooltips with PionterCloud-style custom tooltips.
+* Ran manual smoke tests for recursive delete, drag move, multi-item drag move, breadcrumb move, targeted upload, and loading-state navigation lock.
+
+Known notes:
+
+* Recursive delete is intentionally powerful and must remain protected by isolated-folder path validation.
+* Drag/drop move currently performs multiple `/api/move` calls for multi-item operations.
+* More advanced move conflict handling can be improved later with stable backend error codes.
 
 ## Security Status
 
