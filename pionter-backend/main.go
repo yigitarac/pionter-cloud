@@ -147,6 +147,7 @@ func main() {
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
 	http.HandleFunc("/api/share/create", paylasimLinkiOlustur)
+	http.HandleFunc("/api/share/download/", paylasimDosyasiIndir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -355,6 +356,15 @@ type PaylasimLinkiOlusturCevabi struct {
 	DosyaAdi            string `json:"dosya_adi,omitempty"`
 	DosyaYolu           string `json:"dosya_yolu,omitempty"`
 	SonGecerlilikTarihi string `json:"son_gecerlilik_tarihi,omitempty"`
+}
+
+type PaylasimLinkiKaydi struct {
+	UserID              int
+	ServerID            int
+	DosyaYolu           string
+	DosyaAdi            string
+	SonGecerlilikTarihi sql.NullTime
+	IptalEdildi         bool
 }
 
 type SunucuStatsBilgileri struct {
@@ -604,6 +614,12 @@ func paylasimLinkiCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimLin
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(cevap)
+}
+
+func publicPaylasimHatasiYaz(w http.ResponseWriter, status int, mesaj string) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(status)
+	w.Write([]byte(mesaj))
 }
 
 func dosyaListeHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
@@ -1255,6 +1271,165 @@ func paylasimLinkiOlustur(w http.ResponseWriter, r *http.Request) {
 		DosyaYolu:           dosyaYolu,
 		SonGecerlilikTarihi: sonGecerlilikMetni,
 	})
+}
+
+func paylasimDosyasiIndir(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "GET, OPTIONS")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		publicPaylasimHatasiYaz(w, http.StatusMethodNotAllowed, "Sadece GET isteği kabul edilir")
+		return
+	}
+
+	paylasimTokeni := strings.TrimPrefix(r.URL.Path, "/api/share/download/")
+	paylasimTokeni = strings.TrimSpace(paylasimTokeni)
+
+	if paylasimTokeni == "" ||
+		strings.Contains(paylasimTokeni, "/") ||
+		strings.Contains(paylasimTokeni, "\\") ||
+		strings.Contains(paylasimTokeni, "..") ||
+		strings.Contains(paylasimTokeni, "⁄") {
+		publicPaylasimHatasiYaz(w, http.StatusBadRequest, "Geçersiz paylaşım linki")
+		return
+	}
+
+	tokenHash := paylasimTokenHashle(paylasimTokeni)
+
+	var kayit PaylasimLinkiKaydi
+
+	err := db.QueryRow(`
+		SELECT
+			user_id,
+			server_id,
+			dosya_yolu,
+			dosya_adi,
+			son_gecerlilik_tarihi,
+			iptal_edildi
+		FROM share_links
+		WHERE token_hash = $1
+		LIMIT 1
+	`, tokenHash).Scan(
+		&kayit.UserID,
+		&kayit.ServerID,
+		&kayit.DosyaYolu,
+		&kayit.DosyaAdi,
+		&kayit.SonGecerlilikTarihi,
+		&kayit.IptalEdildi,
+	)
+
+	if err != nil {
+		publicPaylasimHatasiYaz(w, http.StatusNotFound, "Paylaşım linki bulunamadı")
+		return
+	}
+
+	if kayit.IptalEdildi {
+		publicPaylasimHatasiYaz(w, http.StatusGone, "Bu paylaşım linki iptal edilmiş")
+		return
+	}
+
+	if kayit.SonGecerlilikTarihi.Valid && time.Now().After(kayit.SonGecerlilikTarihi.Time) {
+		publicPaylasimHatasiYaz(w, http.StatusGone, "Bu paylaşım linkinin süresi dolmuş")
+		return
+	}
+
+	if kayit.DosyaYolu == "" || kayit.DosyaAdi == "" {
+		publicPaylasimHatasiYaz(w, http.StatusInternalServerError, "Paylaşım kaydı geçersiz")
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaUserIDIle(kayit.UserID, kayit.ServerID)
+	if err != nil {
+		fmt.Println("Paylaşım server credential hatası:", err)
+		publicPaylasimHatasiYaz(w, http.StatusNotFound, "Paylaşılan dosyanın bağlı olduğu sunucu bulunamadı")
+		return
+	}
+
+	gercekDosyaYolu, err := guvenliYolOlustur(kimlik.IzoleKlasor, kayit.DosyaYolu)
+	if err != nil {
+		publicPaylasimHatasiYaz(w, http.StatusBadRequest, "Paylaşılan dosya yolu geçersiz")
+		return
+	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Paylaşım download SSH auth hatası:", err)
+		publicPaylasimHatasiYaz(w, http.StatusBadGateway, "SSH kimlik doğrulama hazırlanamadı")
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         8 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Paylaşım download SSH bağlantı hatası:", err)
+		publicPaylasimHatasiYaz(w, http.StatusBadGateway, "SSH bağlantısı kurulamadı")
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("Paylaşım download SFTP hatası:", err)
+		publicPaylasimHatasiYaz(w, http.StatusBadGateway, "SFTP bağlantısı kurulamadı")
+		return
+	}
+	defer sftpClient.Close()
+
+	dosyaBilgisi, err := sftpClient.Stat(gercekDosyaYolu)
+	if err != nil {
+		fmt.Println("Paylaşım dosya stat hatası:", err)
+
+		if izinHatasiMi(err) {
+			publicPaylasimHatasiYaz(w, http.StatusForbidden, izinHatasiMesaji())
+			return
+		}
+
+		publicPaylasimHatasiYaz(w, http.StatusNotFound, "Paylaşılan dosya bulunamadı")
+		return
+	}
+
+	if dosyaBilgisi.IsDir() {
+		publicPaylasimHatasiYaz(w, http.StatusBadRequest, "Klasör paylaşımı desteklenmiyor")
+		return
+	}
+
+	acilanDosya, err := sftpClient.Open(gercekDosyaYolu)
+	if err != nil {
+		fmt.Println("Paylaşım dosya açma hatası:", err)
+
+		if izinHatasiMi(err) {
+			publicPaylasimHatasiYaz(w, http.StatusForbidden, izinHatasiMesaji())
+			return
+		}
+
+		publicPaylasimHatasiYaz(w, http.StatusInternalServerError, "Paylaşılan dosya açılamadı")
+		return
+	}
+	defer acilanDosya.Close()
+
+	temizDosyaAdi := strings.ReplaceAll(kayit.DosyaAdi, `"`, "")
+	if temizDosyaAdi == "" {
+		temizDosyaAdi = "download"
+	}
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.FormatInt(dosyaBilgisi.Size(), 10))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, temizDosyaAdi))
+
+	_, err = io.Copy(w, acilanDosya)
+	if err != nil {
+		fmt.Println("Paylaşım download stream hatası:", err)
+	}
 }
 
 func dosyaYukle(w http.ResponseWriter, r *http.Request) {
@@ -3312,6 +3487,61 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 
 	return k, nil
 }
+
+func sunucuKimlikSorgulaUserIDIle(userID int, serverID int) (GizliKimlik, error) {
+	var k GizliKimlik
+
+	if userID <= 0 || serverID <= 0 {
+		return k, fmt.Errorf("geçersiz kullanıcı veya sunucu")
+	}
+
+	err := db.QueryRow(`
+		SELECT
+			sunucu_ip,
+			sunucu_port,
+			sunucu_kullanici,
+			baglanti_tipi,
+			COALESCE(sunucu_sifre, ''),
+			COALESCE(ssh_private_key, ''),
+			izole_klasor
+		FROM sunucular
+		WHERE id = $1 AND user_id = $2
+		LIMIT 1
+	`, serverID, userID).Scan(
+		&k.IP,
+		&k.Port,
+		&k.SunucuKullanici,
+		&k.BaglantiTipi,
+		&k.SunucuSifre,
+		&k.SSHPrivateKey,
+		&k.IzoleKlasor,
+	)
+
+	if err != nil {
+		return k, err
+	}
+
+	kayitliSunucuSifre := k.SunucuSifre
+	kayitliSSHPrivateKey := k.SSHPrivateKey
+
+	err = sunucuCredentiallariniGerekirseSifrele(serverID, userID, kayitliSunucuSifre, kayitliSSHPrivateKey)
+	if err != nil {
+		return k, fmt.Errorf("sunucu credentialları şifrelenemedi: %w", err)
+	}
+
+	k.SunucuSifre, err = gizliVeriCoz(k.SunucuSifre)
+	if err != nil {
+		return k, fmt.Errorf("sunucu şifresi çözülemedi: %w", err)
+	}
+
+	k.SSHPrivateKey, err = gizliVeriCoz(k.SSHPrivateKey)
+	if err != nil {
+		return k, fmt.Errorf("SSH private key çözülemedi: %w", err)
+	}
+
+	return k, nil
+}
+
 func gecmisOturumlariTemizle() {
 	_, err := db.Exec(`
 		DELETE FROM oturumlar
