@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 
 	"crypto/aes"
@@ -83,6 +84,26 @@ func main() {
 			olusturma_tarihi TIMESTAMP NOT NULL DEFAULT NOW(),
 			son_gecerlilik_tarihi TIMESTAMP NOT NULL DEFAULT NOW() + INTERVAL '7 days'
 		);
+		CREATE TABLE IF NOT EXISTS share_links (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER REFERENCES kullanicilar(id) ON DELETE CASCADE,
+			server_id INTEGER REFERENCES sunucular(id) ON DELETE CASCADE,
+			dosya_yolu TEXT NOT NULL,
+			dosya_adi TEXT NOT NULL,
+			token_hash TEXT UNIQUE NOT NULL,
+			son_gecerlilik_tarihi TIMESTAMP,
+			iptal_edildi BOOLEAN NOT NULL DEFAULT FALSE,
+			olusturma_tarihi TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+
+		CREATE INDEX IF NOT EXISTS share_links_user_id_index
+		ON share_links (user_id);
+
+		CREATE INDEX IF NOT EXISTS share_links_server_id_index
+		ON share_links (server_id);
+
+		CREATE INDEX IF NOT EXISTS share_links_token_hash_index
+		ON share_links (token_hash);
 
 		ALTER TABLE sunucular
 		ALTER COLUMN sunucu_sifre TYPE TEXT;
@@ -125,6 +146,7 @@ func main() {
 	http.HandleFunc("/api/servers/pin", sunucuSabitle)
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
+	http.HandleFunc("/api/share/create", paylasimLinkiOlustur)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
 }
@@ -314,6 +336,25 @@ type GirisCevabi struct {
 
 type TokenIstekBilgileri struct {
 	Token string `json:"token"`
+}
+
+type PaylasimLinkiOlusturBilgileri struct {
+	Token    string `json:"token"`
+	ServerID int    `json:"server_id"`
+	Yol      string `json:"yol"`
+	DosyaAdi string `json:"dosya_adi"`
+	Sure     string `json:"sure"`
+}
+
+type PaylasimLinkiOlusturCevabi struct {
+	Basarili            bool   `json:"basarili"`
+	Mesaj               string `json:"mesaj"`
+	Kod                 string `json:"kod,omitempty"`
+	PaylasimLinki       string `json:"paylasim_linki,omitempty"`
+	Token               string `json:"token,omitempty"`
+	DosyaAdi            string `json:"dosya_adi,omitempty"`
+	DosyaYolu           string `json:"dosya_yolu,omitempty"`
+	SonGecerlilikTarihi string `json:"son_gecerlilik_tarihi,omitempty"`
 }
 
 type SunucuStatsBilgileri struct {
@@ -559,6 +600,12 @@ func apiHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
 	})
 }
 
+func paylasimLinkiCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimLinkiOlusturCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
 func dosyaListeHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -584,6 +631,74 @@ func izinHatasiMi(err error) bool {
 
 func izinHatasiMesaji() string {
 	return "Bu işlem için SSH kullanıcısının yetkisi yok"
+}
+
+func guvenliPaylasimTokeniOlustur() (string, error) {
+	byteDizisi := make([]byte, 32)
+
+	_, err := rand.Read(byteDizisi)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(byteDizisi), nil
+}
+
+func paylasimTokenHashle(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
+}
+
+func paylasimSuresiHesapla(sure string) (*time.Time, error) {
+	sure = strings.TrimSpace(strings.ToLower(sure))
+
+	if sure == "" {
+		return nil, fmt.Errorf("paylaşım süresi boş")
+	}
+
+	if sure == "unlimited" || sure == "suresiz" {
+		return nil, nil
+	}
+
+	simdi := time.Now()
+	var sonGecerlilik time.Time
+
+	switch sure {
+	case "1h":
+		sonGecerlilik = simdi.Add(1 * time.Hour)
+	case "1d":
+		sonGecerlilik = simdi.Add(24 * time.Hour)
+	case "1w":
+		sonGecerlilik = simdi.Add(7 * 24 * time.Hour)
+	case "1m":
+		sonGecerlilik = simdi.AddDate(0, 1, 0)
+	case "1y":
+		sonGecerlilik = simdi.AddDate(1, 0, 0)
+	default:
+		return nil, fmt.Errorf("geçersiz paylaşım süresi")
+	}
+
+	return &sonGecerlilik, nil
+}
+
+func paylasimDosyaYoluOlustur(klasorYolu string, dosyaAdi string) string {
+	klasorYolu = strings.TrimSpace(klasorYolu)
+
+	if klasorYolu == "" || klasorYolu == "/" {
+		return "/" + dosyaAdi
+	}
+
+	return path.Clean("/" + strings.TrimPrefix(path.Join(klasorYolu, dosyaAdi), "/"))
+}
+
+func publicPaylasimURLAl(token string) string {
+	publicURL := strings.TrimRight(strings.TrimSpace(os.Getenv("APP_PUBLIC_URL")), "/")
+
+	if publicURL == "" {
+		publicURL = "http://localhost:8080"
+	}
+
+	return publicURL + "/api/share/download/" + token
 }
 
 func dosyaKaydetCevabiYaz(w http.ResponseWriter, status int, cevap DosyaKaydetCevabi) {
@@ -933,6 +1048,212 @@ func dosyaKaydet(w http.ResponseWriter, r *http.Request) {
 		DosyaAdi:    bilgiler.DosyaAdi,
 		Boyut:       kaydedilenBoyut,
 		KayitZamani: time.Now().Format("2006-01-02 15:04"),
+	})
+}
+
+func paylasimLinkiOlustur(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler PaylasimLinkiOlusturBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+	bilgiler.Yol = strings.TrimSpace(bilgiler.Yol)
+	bilgiler.DosyaAdi = strings.TrimSpace(bilgiler.DosyaAdi)
+	bilgiler.Sure = strings.TrimSpace(strings.ToLower(bilgiler.Sure))
+
+	if bilgiler.Token == "" || bilgiler.ServerID <= 0 || bilgiler.DosyaAdi == "" || bilgiler.Sure == "" {
+		paylasimLinkiCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Eksik veya geçersiz veri",
+			Kod:      "INVALID_REQUEST",
+		})
+		return
+	}
+
+	if !guvenliAdMi(bilgiler.DosyaAdi) {
+		paylasimLinkiCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz dosya adı",
+			Kod:      "INVALID_FILE_NAME",
+		})
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		paylasimLinkiCevabiYaz(w, http.StatusUnauthorized, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş",
+			Kod:      "UNAUTHORIZED",
+		})
+		return
+	}
+
+	sonGecerlilik, err := paylasimSuresiHesapla(bilgiler.Sure)
+	if err != nil {
+		paylasimLinkiCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz paylaşım süresi",
+			Kod:      "INVALID_SHARE_DURATION",
+		})
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
+	if err != nil {
+		paylasimLinkiCevabiYaz(w, http.StatusUnauthorized, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş veya sunucu bulunamadı",
+			Kod:      "UNAUTHORIZED",
+		})
+		return
+	}
+
+	gercekKlasorYolu, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		paylasimLinkiCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz yol",
+			Kod:      "INVALID_PATH",
+		})
+		return
+	}
+
+	gercekDosyaYolu := path.Join(gercekKlasorYolu, bilgiler.DosyaAdi)
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Share create SSH auth hatası:", err)
+		paylasimLinkiCevabiYaz(w, http.StatusBadGateway, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "SSH kimlik doğrulama hazırlanamadı",
+			Kod:      "SSH_AUTH_FAILED",
+		})
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         8 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Share create SSH bağlantı hatası:", err)
+		paylasimLinkiCevabiYaz(w, http.StatusBadGateway, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "SSH bağlantısı kurulamadı",
+			Kod:      "SSH_CONNECTION_FAILED",
+		})
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("Share create SFTP hatası:", err)
+		paylasimLinkiCevabiYaz(w, http.StatusBadGateway, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "SFTP bağlantısı kurulamadı",
+			Kod:      "SFTP_CONNECTION_FAILED",
+		})
+		return
+	}
+	defer sftpClient.Close()
+
+	dosyaBilgisi, err := sftpClient.Stat(gercekDosyaYolu)
+	if err != nil {
+		fmt.Println("Paylaşılacak dosya kontrol edilemedi:", err)
+
+		if izinHatasiMi(err) {
+			paylasimLinkiCevabiYaz(w, http.StatusForbidden, PaylasimLinkiOlusturCevabi{
+				Basarili: false,
+				Mesaj:    izinHatasiMesaji(),
+				Kod:      "PERMISSION_DENIED",
+			})
+			return
+		}
+
+		paylasimLinkiCevabiYaz(w, http.StatusNotFound, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşılacak dosya bulunamadı",
+			Kod:      "FILE_NOT_FOUND",
+		})
+		return
+	}
+
+	if dosyaBilgisi.IsDir() {
+		paylasimLinkiCevabiYaz(w, http.StatusBadRequest, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Klasör paylaşımı şimdilik desteklenmiyor",
+			Kod:      "FOLDER_SHARE_NOT_SUPPORTED",
+		})
+		return
+	}
+
+	paylasimTokeni, err := guvenliPaylasimTokeniOlustur()
+	if err != nil {
+		fmt.Println("Paylaşım token üretme hatası:", err)
+		paylasimLinkiCevabiYaz(w, http.StatusInternalServerError, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linki oluşturulamadı",
+			Kod:      "SHARE_TOKEN_CREATE_FAILED",
+		})
+		return
+	}
+
+	tokenHash := paylasimTokenHashle(paylasimTokeni)
+	dosyaYolu := paylasimDosyaYoluOlustur(bilgiler.Yol, bilgiler.DosyaAdi)
+
+	var sonGecerlilikDegeri interface{} = nil
+	sonGecerlilikMetni := ""
+
+	if sonGecerlilik != nil {
+		sonGecerlilikDegeri = *sonGecerlilik
+		sonGecerlilikMetni = sonGecerlilik.Format("2006-01-02 15:04")
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO share_links (
+			user_id,
+			server_id,
+			dosya_yolu,
+			dosya_adi,
+			token_hash,
+			son_gecerlilik_tarihi
+		)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, userID, bilgiler.ServerID, dosyaYolu, bilgiler.DosyaAdi, tokenHash, sonGecerlilikDegeri)
+
+	if err != nil {
+		fmt.Println("Paylaşım linki kayıt hatası:", err)
+		paylasimLinkiCevabiYaz(w, http.StatusInternalServerError, PaylasimLinkiOlusturCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linki kaydedilemedi",
+			Kod:      "SHARE_LINK_SAVE_FAILED",
+		})
+		return
+	}
+
+	paylasimLinki := publicPaylasimURLAl(paylasimTokeni)
+
+	paylasimLinkiCevabiYaz(w, http.StatusCreated, PaylasimLinkiOlusturCevabi{
+		Basarili:            true,
+		Mesaj:               "Paylaşım linki oluşturuldu",
+		PaylasimLinki:       paylasimLinki,
+		Token:               paylasimTokeni,
+		DosyaAdi:            bilgiler.DosyaAdi,
+		DosyaYolu:           dosyaYolu,
+		SonGecerlilikTarihi: sonGecerlilikMetni,
 	})
 }
 
