@@ -118,6 +118,12 @@ export default function AnaSayfa() {
     useState("");
   const [dosyaModalAcik, setDosyaModalAcik] = useState(false);
   const [yeniDosyaAdi, setYeniDosyaAdi] = useState("");
+  const [contextMenu, setContextMenu] = useState({
+    acik: false,
+    x: 0,
+    y: 0,
+    dosya: null,
+  });
 
   const t = sozluk[dil];
   const previewDuzenlemeKirliMi =
@@ -299,6 +305,88 @@ export default function AnaSayfa() {
     }
 
     return `${t.homeFolder}/${temizYol}`;
+  };
+
+  const contextMenuyuKapat = () => {
+    setContextMenu({
+      acik: false,
+      x: 0,
+      y: 0,
+      dosya: null,
+    });
+  };
+
+  const contextMenuyuAc = (e, dosya) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (yukleniyor || !dosya) return;
+
+    setAcikMenuIndex(null);
+
+    const menuGenisligi = 210;
+    const menuYuksekligi = dosya.klasorMu ? 190 : 250;
+    const padding = 12;
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (typeof window !== "undefined") {
+      x = Math.min(x, window.innerWidth - menuGenisligi - padding);
+      y = Math.min(y, window.innerHeight - menuYuksekligi - padding);
+    }
+
+    setContextMenu({
+      acik: true,
+      x: Math.max(padding, x),
+      y: Math.max(padding, y),
+      dosya,
+    });
+  };
+
+  const contextMenuAksiyonCalistir = (aksiyon) => {
+    const dosya = contextMenu.dosya;
+
+    if (!dosya) {
+      contextMenuyuKapat();
+      return;
+    }
+
+    contextMenuyuKapat();
+
+    if (aksiyon === "open") {
+      klasoreGir(dosya);
+      return;
+    }
+
+    if (aksiyon === "preview") {
+      dosyaPreviewGetir(dosya);
+      return;
+    }
+
+    if (aksiyon === "download") {
+      dosyayiIndir(dosya);
+      return;
+    }
+
+    if (aksiyon === "rename") {
+      dosyaVeyaKlasorYenidenAdlandir(dosya);
+      return;
+    }
+
+    if (aksiyon === "move") {
+      dosyaVeyaKlasorTasi(dosya);
+      return;
+    }
+
+    if (aksiyon === "share") {
+      paylasimModaliniAc(dosya);
+      return;
+    }
+
+    if (aksiyon === "delete") {
+      dosyaVeyaKlasorSil(dosya);
+    }
   };
 
   const shareLinkleriGetir = () => {
@@ -648,12 +736,15 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
     klasoruYenile(yeniYol);
+    contextMenuyuKapat();
   };
 
   const yolaGit = (hedefYol) => {
     if (yukleniyor) return;
 
     if (hedefYol === mevcutYol) return;
+
+    contextMenuyuKapat();
 
     setMevcutYol(hedefYol);
     setAramaMetni("");
@@ -693,6 +784,8 @@ export default function AnaSayfa() {
     setSunucuStats(null);
     setSunucuStatsYukleniyor(false);
     setSunucuStatsHatasi("");
+
+    contextMenuyuKapat();
 
     previewTemizle();
     previewCacheRef.current = {};
@@ -743,6 +836,8 @@ export default function AnaSayfa() {
     setSunucuStats(null);
     setSunucuStatsYukleniyor(false);
     setSunucuStatsHatasi("");
+
+    contextMenuyuKapat();
 
     setSeciliSunucu(null);
     setSunucular([]);
@@ -842,6 +937,8 @@ export default function AnaSayfa() {
     setSunucuStats(null);
     setSunucuStatsYukleniyor(false);
     setSunucuStatsHatasi("");
+
+    contextMenuyuKapat();
 
     setRenameModalAcik(false);
     setYenidenAdlandirilacakDosya(null);
@@ -2594,6 +2691,7 @@ export default function AnaSayfa() {
   };
 
   const hedefKlasoreGir = (klasorYolu) => {
+    contextMenuyuKapat();
     hedefKlasorYolunaGit(klasorYolu);
   };
 
@@ -3016,6 +3114,34 @@ export default function AnaSayfa() {
     previewKaydediliyor,
     previewDosyasiniKaydet,
   ]);
+
+  useEffect(() => {
+    if (!contextMenu.acik) return;
+
+    const kapat = () => {
+      contextMenuyuKapat();
+    };
+
+    const escapeIleKapat = (e) => {
+      if (e.key === "Escape") {
+        contextMenuyuKapat();
+      }
+    };
+
+    window.addEventListener("click", kapat);
+    window.addEventListener("contextmenu", kapat);
+    window.addEventListener("scroll", kapat, true);
+    window.addEventListener("resize", kapat);
+    window.addEventListener("keydown", escapeIleKapat);
+
+    return () => {
+      window.removeEventListener("click", kapat);
+      window.removeEventListener("contextmenu", kapat);
+      window.removeEventListener("scroll", kapat, true);
+      window.removeEventListener("resize", kapat);
+      window.removeEventListener("keydown", escapeIleKapat);
+    };
+  }, [contextMenu.acik]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -5580,6 +5706,83 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
+      {contextMenu.acik && contextMenu.dosya && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+          className="fixed z-[70] w-52 overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] py-1 text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+        >
+          {contextMenu.dosya.klasorMu ? (
+            <button
+              type="button"
+              onClick={() => contextMenuAksiyonCalistir("open")}
+              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+            >
+              {t.openFolder}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => contextMenuAksiyonCalistir("preview")}
+              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+            >
+              {t.previewItem}
+            </button>
+          )}
+
+          {!contextMenu.dosya.klasorMu && (
+            <button
+              type="button"
+              onClick={() => contextMenuAksiyonCalistir("download")}
+              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+            >
+              {t.downloadFile}
+            </button>
+          )}
+
+          <div className="my-1 border-t border-[#d5c4a1] dark:border-[#504945]" />
+
+          <button
+            type="button"
+            onClick={() => contextMenuAksiyonCalistir("rename")}
+            className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+          >
+            {t.renameItem}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => contextMenuAksiyonCalistir("move")}
+            className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+          >
+            {t.moveItem}
+          </button>
+
+          {!contextMenu.dosya.klasorMu && (
+            <button
+              type="button"
+              onClick={() => contextMenuAksiyonCalistir("share")}
+              className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+            >
+              {t.shareItem}
+            </button>
+          )}
+
+          <div className="my-1 border-t border-[#d5c4a1] dark:border-[#504945]" />
+
+          <button
+            type="button"
+            onClick={() => contextMenuAksiyonCalistir("delete")}
+            className="w-full px-4 py-2.5 text-left text-sm font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
+          >
+            {t.deleteItem}
+          </button>
+        </div>
+      )}
       <div
         onClick={() => {
           setAcikMenuIndex(null);
@@ -6863,6 +7066,7 @@ export default function AnaSayfa() {
                       }
                       onDragLeave={(e) => klasorKartindanAyril(e, dosya)}
                       onDrop={(e) => klasorKartinaBirak(e, dosya)}
+                      onContextMenu={(e) => contextMenuyuAc(e, dosya)}
                       onClick={() => klasoreGir(dosya)}
                       className={`group relative flex min-w-0 flex-col items-center rounded-xl bg-[#ebdbb2] p-4 transition-all hover:shadow-md dark:bg-[#3c3836] ${
                         dropHedefiMi
@@ -6916,6 +7120,7 @@ export default function AnaSayfa() {
                           aria-label={t.openFileMenu}
                           onClick={(e) => {
                             e.stopPropagation();
+                            contextMenuyuKapat();
                             setAcikMenuIndex(
                               acikMenuIndex === index ? null : index,
                             );

@@ -260,6 +260,8 @@ export const sozluk = {
     fileCreateSuccess: "File created successfully.",
     fileCreateFailed: "File could not be created.",
     fileNameEmpty: "File name cannot be empty.",
+    openFolder: "Open folder",
+    previewItem: "Preview",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -520,5 +522,7 @@ export const sozluk = {
     fileCreateSuccess: "Dosya başarıyla oluşturuldu.",
     fileCreateFailed: "Dosya oluşturulamadı.",
     fileNameEmpty: "Dosya adı boş olamaz.",
+    openFolder: "Klasörü aç",
+    previewItem: "Önizle",
   },
 };
