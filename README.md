@@ -21,7 +21,7 @@ Current phase status:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6 Real SSH Terminal: planned
+* v0.6 Real SSH Terminal: completed
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
@@ -40,6 +40,7 @@ PionterCloud lets users:
 * Edit supported text/code files with Monaco Editor
 * Save edited files back to the connected server over SFTP
 * Open an optional real SSH terminal for the selected server
+* Run real SSH terminal sessions through the saved SSH user
 * Rename files and folders
 * Delete files and folders, including non-empty folders
 * Move files and folders
@@ -163,11 +164,11 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 
 * Turkish/English language switch
 
-### Planned Terminal Access
+### Terminal Access
 
-The v0.6 terminal feature is planned as a real SSH terminal for the selected server.
+The v0.6 terminal feature adds real SSH terminal access for the selected server.
 
-Planned behavior:
+Behavior:
 
 * The terminal will connect using the saved SSH user for the selected server.
 * If the saved SSH user is `root`, terminal commands will run with root privileges.
@@ -346,26 +347,28 @@ Known notes:
 * Future editor polish may add custom PionterCloud Gruvbox dark/light Monaco themes.
 * Future editor polish may improve language-specific syntax colors without making the editor heavy by default.
 
-## v0.6 Real SSH Terminal Plan
+## v0.6 Real SSH Terminal Summary
 
-v0.6 will add optional real SSH terminal access to PionterCloud.
+v0.6 added optional real SSH terminal access to PionterCloud.
 
-The terminal will be designed as a real shell session, not a restricted command runner.
+The terminal is designed as a real shell session, not a restricted command runner.
 
-Planned implementation:
+Completed in v0.6:
 
-* Add a backend WebSocket endpoint for terminal sessions.
-* Authenticate terminal sessions with the current PionterCloud session token.
-* Connect to the selected server using the saved SSH credentials.
-* Start a real SSH session with PTY support.
-* Start the shell in the server's configured isolated folder when possible.
-* Stream frontend terminal input to SSH stdin.
-* Stream SSH stdout/stderr output back to the frontend terminal.
-* Use xterm.js on the frontend for terminal rendering.
-* Add a terminal warning modal before opening the terminal.
-* Add a "do not show again" checkbox for the warning modal.
-* Close the terminal session when the terminal modal is closed.
-* Close the terminal session when logging out or switching servers.
+* Added a backend WebSocket endpoint for terminal sessions.
+* Added token-authenticated terminal session startup.
+* Connected terminal sessions to the selected server using saved SSH credentials.
+* Added SSH session and PTY support.
+* Started the shell in the server's configured isolated folder when possible.
+* Streamed frontend terminal input to SSH stdin.
+* Streamed SSH stdout/stderr output back to the frontend terminal.
+* Added xterm.js terminal rendering on the frontend.
+* Added a terminal warning modal before opening the terminal.
+* Added a "do not show again" checkbox for the warning modal.
+* Added localStorage support for hiding the terminal warning after confirmation.
+* Added terminal status states for connecting, connected, and disconnected.
+* Added manual terminal close/disconnect behavior.
+* Closed the terminal session when logging out or switching servers.
 
 Security and permission model:
 
@@ -378,7 +381,7 @@ Security and permission model:
 * The isolated folder is not a security sandbox for terminal sessions.
 * Users should avoid leaving the isolated folder unless they understand what they are doing.
 
-Initial scope:
+Completed initial scope:
 
 * Real SSH terminal
 * Warning modal

@@ -17,7 +17,7 @@ Current high-level status:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6 Real SSH Terminal: planned
+* v0.6 Real SSH Terminal: completed
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
@@ -61,7 +61,7 @@ Current backend responsibilities:
 * Rename
 * Move
 * Server credential encryption and decryption
-* Planned: authenticated WebSocket SSH terminal sessions 
+* Authenticated WebSocket SSH terminal sessions 
 
 ### Frontend
 
@@ -91,8 +91,8 @@ Current frontend responsibilities:
 * Edit / Save / Cancel Edit flow for supported text/code files
 * Ctrl+S / Cmd+S save shortcut
 * Unsaved-change warnings for editor changes
-* Planned: xterm.js terminal modal UI
-* Planned: terminal safety warning modal
+* xterm.js terminal modal UI
+* Terminal safety warning modal
 
 ### Database
 
@@ -513,6 +513,73 @@ Deferred:
 * Production-grade terminal policy controls.
 
 Important note:
+
+## v0.6 Real SSH Terminal Implementation Summary
+
+The v0.6 phase added the first working version of real SSH terminal access.
+
+Backend changes:
+
+* Added `github.com/gorilla/websocket`.
+* Added `/api/terminal/ws` WebSocket endpoint.
+* Added terminal WebSocket upgrader for local development origins.
+* Added terminal message struct for auth, input, output, resize, error, ready, and close messages.
+* Added token-authenticated terminal startup flow.
+* Reused existing saved server credential lookup.
+* Reused existing SSH authentication method creation.
+* Opened SSH client sessions using the saved SSH user.
+* Requested PTY support with `xterm-256color`.
+* Started the shell in the configured isolated folder when possible.
+* Streamed WebSocket input messages to SSH stdin.
+* Streamed SSH stdout/stderr back to the frontend over WebSocket.
+* Added terminal resize support through SSH window-change messages.
+* Added terminal close cleanup for WebSocket, SSH session, and SSH client resources.
+
+Frontend changes:
+
+* Added `@xterm/xterm`.
+* Added `@xterm/addon-fit`.
+* Imported xterm CSS globally.
+* Added terminal modal state.
+* Added terminal warning modal state.
+* Added "do not show again" localStorage behavior.
+* Added terminal open/confirm/close lifecycle.
+* Added xterm.js terminal rendering.
+* Added xterm fit addon support.
+* Added terminal input forwarding to the backend WebSocket.
+* Added WebSocket output handling for terminal data, ready, error, and close messages.
+* Added terminal connection status UI.
+* Added terminal warning modal explaining root/non-root behavior and isolated-folder limitations.
+* Added terminal cleanup on logout and server switch.
+
+Manual validation:
+
+* Terminal warning modal opens before the first terminal session.
+* Cancel prevents opening the terminal.
+* Confirm opens the terminal modal.
+* Terminal connects to the selected server.
+* `pwd` runs successfully.
+* `whoami` shows the saved SSH user.
+* `ls` returns real shell output.
+* The terminal starts in the isolated folder when possible.
+* Users can leave the isolated folder because the terminal is a real shell.
+* Manual terminal close works.
+* Terminal closes on logout.
+* Terminal closes on server switch.
+* "Do not show again" hides the warning on later opens.
+* Backend and frontend startup tests passed.
+
+Known limitations / future improvements:
+
+* Terminal access is currently treated as a trusted-user feature.
+* The isolated folder is the starting directory only, not a security sandbox.
+* Terminal command history is not stored yet.
+* Terminal audit logs are not implemented yet.
+* Multi-tab terminal sessions are not implemented yet.
+* Terminal session restore is not implemented yet.
+* Command filtering is not implemented yet.
+* AI terminal control is deferred.
+* Production-grade terminal policy controls are deferred.
 
 The terminal feature is powerful and should be treated as a trusted-user feature in the early versions of PionterCloud.
 
