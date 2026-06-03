@@ -62,6 +62,12 @@ export default function AnaSayfa() {
   const [tasinacakDosya, setTasinacakDosya] = useState(null);
   const [deleteModalAcik, setDeleteModalAcik] = useState(false);
   const [silinecekDosya, setSilinecekDosya] = useState(null);
+  const [shareModalAcik, setShareModalAcik] = useState(false);
+  const [paylasilacakDosya, setPaylasilacakDosya] = useState(null);
+  const [shareSuresi, setShareSuresi] = useState("1h");
+  const [shareLinki, setShareLinki] = useState("");
+  const [shareOlusturuluyor, setShareOlusturuluyor] = useState(false);
+  const [shareHatasi, setShareHatasi] = useState("");
   const [silmeOnizlemeOgeleri, setSilmeOnizlemeOgeleri] = useState([]);
   const [silmeOnizlemeToplam, setSilmeOnizlemeToplam] = useState(0);
   const [silmeOnizlemeYukleniyor, setSilmeOnizlemeYukleniyor] = useState(false);
@@ -148,6 +154,39 @@ export default function AnaSayfa() {
     return veri?.mesaj || t.previewNotAvailable;
   };
 
+  const shareSuresiSecenekleri = [
+    {
+      value: "1h",
+      kisa: "1h",
+      label: t.shareDuration1h,
+    },
+    {
+      value: "1d",
+      kisa: "1d",
+      label: t.shareDuration1d,
+    },
+    {
+      value: "1w",
+      kisa: "1w",
+      label: t.shareDuration1w,
+    },
+    {
+      value: "1m",
+      kisa: "1m",
+      label: t.shareDuration1m,
+    },
+    {
+      value: "1y",
+      kisa: "1y",
+      label: t.shareDuration1y,
+    },
+    {
+      value: "unlimited",
+      kisa: "∞",
+      label: t.shareDurationUnlimited,
+    },
+  ];
+
   const secimleriTemizle = () => {
     setSeciliOgeAnahtarlari([]);
   };
@@ -170,6 +209,35 @@ export default function AnaSayfa() {
     setSilmeOnizlemeToplam(0);
     setSilmeOnizlemeYukleniyor(false);
     setSilmeOnizlemeHatasi("");
+  };
+
+  const shareModaliniTemizle = () => {
+    setShareModalAcik(false);
+    setPaylasilacakDosya(null);
+    setShareSuresi("1h");
+    setShareLinki("");
+    setShareOlusturuluyor(false);
+    setShareHatasi("");
+  };
+
+  const paylasimModaliniAc = (dosya) => {
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    if (!dosya || dosya.klasorMu) {
+      toastGoster(t.shareOnlyFiles, "error");
+      return;
+    }
+
+    setPaylasilacakDosya(dosya);
+    setShareSuresi("1h");
+    setShareLinki("");
+    setShareHatasi("");
+    setShareOlusturuluyor(false);
+    setShareModalAcik(true);
+    setAcikMenuIndex(null);
   };
 
   const yeniKayitOlustur = () => {
@@ -444,6 +512,7 @@ export default function AnaSayfa() {
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
+    shareModaliniTemizle();
   };
 
   const sunucuEklemeEkraniniAc = () => {
@@ -513,6 +582,7 @@ export default function AnaSayfa() {
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
+    shareModaliniTemizle();
 
     setYukleniyor(false);
     setYuklemeMesaji("");
@@ -587,6 +657,7 @@ export default function AnaSayfa() {
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
+    shareModaliniTemizle();
 
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
@@ -2322,6 +2393,95 @@ export default function AnaSayfa() {
       });
   };
 
+  const paylasimLinkiOlustur = () => {
+    if (shareOlusturuluyor) return;
+
+    if (!paylasilacakDosya || paylasilacakDosya.klasorMu) {
+      toastGoster(t.shareOnlyFiles, "error");
+      return;
+    }
+
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    setShareOlusturuluyor(true);
+    setShareHatasi("");
+    setShareLinki("");
+
+    fetch("http://localhost:8080/api/share/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: seciliSunucu.id,
+        yol: mevcutYol,
+        dosya_adi: paylasilacakDosya.ad,
+        sure: shareSuresi,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        return cevap.json().then((veri) => {
+          if (!cevap.ok || !veri.basarili) {
+            const hata = new Error(veri.mesaj || t.shareLinkCreateFailed);
+            hata.kod = veri.kod || "";
+            hata.status = cevap.status;
+            throw hata;
+          }
+
+          return veri;
+        });
+      })
+      .then((veri) => {
+        setShareOlusturuluyor(false);
+        setShareHatasi("");
+        setShareLinki(veri.paylasim_linki || "");
+        toastGoster(t.shareLinkCreated, "success");
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          setShareOlusturuluyor(false);
+          return;
+        }
+
+        const mesaj = apiHataMesajiAl(hata, t.shareLinkCreateFailed);
+
+        console.log("Paylaşım linki oluşturma hatası:", hata);
+        setShareOlusturuluyor(false);
+        setShareHatasi(mesaj);
+        toastGoster(mesaj, "error");
+      });
+  };
+
+  const shareLinkiniKopyala = async () => {
+    if (!shareLinki) return;
+
+    try {
+      await navigator.clipboard.writeText(shareLinki);
+      toastGoster(t.shareLinkCopied, "success");
+    } catch (hata) {
+      console.log("Share link kopyalama hatası:", hata);
+
+      const textarea = document.createElement("textarea");
+      textarea.value = shareLinki;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+
+      toastGoster(t.shareLinkCopied, "success");
+    }
+  };
+
   const toastGoster = (mesaj, tip = "info") => {
     setToast({ mesaj, tip });
 
@@ -3899,6 +4059,128 @@ export default function AnaSayfa() {
                 className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
               >
                 {t.createFolder}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {shareModalAcik && (
+        <div
+          onClick={shareModaliniTemizle}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-5 text-[#3c3836] shadow-xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <h2 className="mb-2 text-lg font-bold text-[#3c3836] dark:text-[#ebdbb2]">
+              {t.shareFileTitle}
+            </h2>
+
+            <p className="mb-4 truncate text-sm font-bold text-[#458588] dark:text-[#83a598]">
+              {paylasilacakDosya?.ad}
+            </p>
+
+            <p className="mb-3 text-sm leading-relaxed text-[#7c6f64] dark:text-[#a89984]">
+              {t.shareLinkHelp}
+            </p>
+
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+              {t.shareDuration}
+            </label>
+
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {shareSuresiSecenekleri.map((secenek) => {
+                const secili = shareSuresi === secenek.value;
+
+                return (
+                  <button
+                    key={secenek.value}
+                    type="button"
+                    disabled={shareOlusturuluyor}
+                    onClick={() => {
+                      setShareSuresi(secenek.value);
+                      setShareLinki("");
+                      setShareHatasi("");
+                    }}
+                    className={`rounded-xl border px-3 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
+                      secili
+                        ? "border-[#458588] bg-[#d5e4d2] shadow-sm ring-2 ring-[#458588]/30 dark:border-[#83a598] dark:bg-[#223437] dark:ring-[#83a598]/30"
+                        : "border-[#d5c4a1] bg-[#ebdbb2] hover:border-[#458588] hover:bg-[#d5c4a1] dark:border-[#504945] dark:bg-[#3c3836] dark:hover:border-[#83a598] dark:hover:bg-[#504945]"
+                    }`}
+                  >
+                    <span
+                      className={`mb-1 flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black ${
+                        secili
+                          ? "bg-[#458588] text-[#fbf1c7] dark:bg-[#83a598] dark:text-[#282828]"
+                          : "bg-[#d5c4a1] text-[#7c6f64] dark:bg-[#504945] dark:text-[#a89984]"
+                      }`}
+                    >
+                      {secenek.kisa}
+                    </span>
+
+                    <span
+                      className={`block text-sm font-black ${
+                        secili
+                          ? "text-[#076678] dark:text-[#83a598]"
+                          : "text-[#3c3836] dark:text-[#ebdbb2]"
+                      }`}
+                    >
+                      {secenek.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {shareHatasi && (
+              <div className="mb-4 rounded-lg border border-[#cc241d] bg-[#f4d0c8] px-4 py-3 text-sm font-bold text-[#9d0006] dark:border-[#fb4934] dark:bg-[#3b2422] dark:text-[#fb4934]">
+                {shareHatasi}
+              </div>
+            )}
+
+            {shareLinki && (
+              <div className="mb-4 rounded-lg border border-[#98971a] bg-[#ebdbb2] p-3 dark:border-[#b8bb26] dark:bg-[#32361a]">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                  {t.sharedLink}
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shareLinki}
+                    readOnly
+                    className="min-w-0 flex-1 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-bold text-[#3c3836] focus:outline-none dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={shareLinkiniKopyala}
+                    className="shrink-0 rounded-lg bg-[#98971a] px-3 py-2 text-xs font-black text-[#fbf1c7] transition-colors hover:bg-[#79740e] dark:bg-[#b8bb26] dark:text-[#282828] dark:hover:bg-[#98971a]"
+                  >
+                    {t.copyShareLink}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={shareModaliniTemizle}
+                disabled={shareOlusturuluyor}
+                className="rounded-lg bg-[#d5c4a1] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                onClick={paylasimLinkiOlustur}
+                disabled={shareOlusturuluyor || !paylasilacakDosya}
+                className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+              >
+                {shareOlusturuluyor ? t.creatingShareLink : t.createShareLink}
               </button>
             </div>
           </div>
@@ -5960,12 +6242,15 @@ export default function AnaSayfa() {
                         ✓
                       </button>
                       {dosyaIkonuGoster(dosya)}
-                      <span
-                        title={dosya.ad}
-                        className="block text-sm font-medium text-center w-full max-w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]"
-                      >
-                        {dosya.ad}
-                      </span>
+                      <div className="relative w-full max-w-full px-1">
+                        <span className="block w-full truncate text-center text-sm font-medium text-[#3c3836] dark:text-[#ebdbb2]">
+                          {dosya.ad}
+                        </span>
+
+                        <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 max-w-[220px] -translate-x-1/2 break-all rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-1 text-center text-xs font-bold text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                          {dosya.ad}
+                        </span>
+                      </div>
                       <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
                         <p>
                           {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
@@ -5976,7 +6261,8 @@ export default function AnaSayfa() {
                       </div>
                       <div className="absolute right-2 top-2">
                         <button
-                          title="Menu"
+                          type="button"
+                          aria-label={t.openFileMenu}
                           onClick={(e) => {
                             e.stopPropagation();
                             setAcikMenuIndex(
@@ -6017,6 +6303,19 @@ export default function AnaSayfa() {
                             >
                               {t.moveItem}
                             </button>
+
+                            {!dosya.klasorMu && (
+                              <button
+                                onClick={() => {
+                                  setAcikMenuIndex(null);
+                                  paylasimModaliniAc(dosya);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                              >
+                                {t.shareItem}
+                              </button>
+                            )}
+
                             <button
                               onClick={() => {
                                 setAcikMenuIndex(null);
