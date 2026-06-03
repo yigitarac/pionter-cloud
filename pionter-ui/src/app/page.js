@@ -52,6 +52,10 @@ export default function AnaSayfa() {
   const [tasinacakDosya, setTasinacakDosya] = useState(null);
   const [deleteModalAcik, setDeleteModalAcik] = useState(false);
   const [silinecekDosya, setSilinecekDosya] = useState(null);
+  const [silmeOnizlemeOgeleri, setSilmeOnizlemeOgeleri] = useState([]);
+  const [silmeOnizlemeToplam, setSilmeOnizlemeToplam] = useState(0);
+  const [silmeOnizlemeYukleniyor, setSilmeOnizlemeYukleniyor] = useState(false);
+  const [silmeOnizlemeHatasi, setSilmeOnizlemeHatasi] = useState("");
   const [yuklemeMesaji, setYuklemeMesaji] = useState("");
   const [hedefKlasorler, setHedefKlasorler] = useState([]);
   const [hedefKlasorlerYukleniyor, setHedefKlasorlerYukleniyor] =
@@ -78,6 +82,10 @@ export default function AnaSayfa() {
   const [previewHatasi, setPreviewHatasi] = useState("");
   const [thumbnailVerileri, setThumbnailVerileri] = useState({});
   const previewCacheRef = useRef({});
+  const [suruklenenOgeAnahtari, setSuruklenenOgeAnahtari] = useState("");
+  const [suruklemeHedefiAnahtari, setSuruklemeHedefiAnahtari] = useState("");
+  const [breadcrumbSuruklemeHedefYolu, setBreadcrumbSuruklemeHedefYolu] =
+    useState("");
 
   const t = sozluk[dil];
 
@@ -91,6 +99,13 @@ export default function AnaSayfa() {
     setPreviewVerisi(null);
     setPreviewYukleniyor(false);
     setPreviewHatasi("");
+  };
+
+  const silmeOnizlemesiniTemizle = () => {
+    setSilmeOnizlemeOgeleri([]);
+    setSilmeOnizlemeToplam(0);
+    setSilmeOnizlemeYukleniyor(false);
+    setSilmeOnizlemeHatasi("");
   };
 
   const yeniKayitOlustur = () => {
@@ -1335,6 +1350,7 @@ export default function AnaSayfa() {
           <img
             src={`data:${thumbnailVerisi.mime};base64,${thumbnailVerisi.base64}`}
             alt={dosya.ad}
+            draggable={false}
             className="h-full w-full object-cover"
           />
 
@@ -1469,7 +1485,7 @@ export default function AnaSayfa() {
       });
   };
 
-  const tekDosyaYukle = (dosya, sira = 1, toplam = 1) => {
+  const tekDosyaYukle = (dosya, sira = 1, toplam = 1, hedefYol = mevcutYol) => {
     if (!dosya) {
       return Promise.reject(new Error("Dosya bulunamadı"));
     }
@@ -1494,7 +1510,7 @@ export default function AnaSayfa() {
 
     const formData = new FormData();
     formData.append("token", oturumToken);
-    formData.append("yol", mevcutYol);
+    formData.append("yol", hedefYol);
     formData.append("server_id", seciliSunucu.id);
     formData.append("dosya", dosya);
 
@@ -1535,7 +1551,7 @@ export default function AnaSayfa() {
     });
   };
 
-  const dosyalariYukle = async (dosyaListesi) => {
+  const dosyalariYukle = async (dosyaListesi, hedefYol = mevcutYol) => {
     if (yukleniyor) return;
     if (!dosyaListesi || dosyaListesi.length === 0) return;
 
@@ -1564,6 +1580,7 @@ export default function AnaSayfa() {
           yuklenecekDosyalar[i],
           i + 1,
           yuklenecekDosyalar.length,
+          hedefYol,
         );
       }
 
@@ -1651,6 +1668,71 @@ export default function AnaSayfa() {
       });
   };
 
+  const ogeYoluOlustur = (anaYol, ogeAdi) => {
+    return anaYol === "/" ? "/" + ogeAdi : anaYol + "/" + ogeAdi;
+  };
+
+  const silmeOnizlemesiniGetir = (dosya) => {
+    silmeOnizlemesiniTemizle();
+
+    if (!dosya?.klasorMu) {
+      return;
+    }
+
+    if (!seciliSunucu || !oturumToken) {
+      return;
+    }
+
+    const klasorYolu = ogeYoluOlustur(mevcutYol, dosya.ad);
+
+    setSilmeOnizlemeYukleniyor(true);
+    setSilmeOnizlemeHatasi("");
+
+    fetch("http://localhost:8080/api/files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        yol: klasorYolu,
+        server_id: seciliSunucu.id,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Klasör içeriği alınamadı");
+        }
+
+        return cevap.json();
+      })
+      .then((veri) => {
+        const ogeler = veri.dosyalar || [];
+
+        setSilmeOnizlemeOgeleri(ogeler.slice(0, 5));
+        setSilmeOnizlemeToplam(ogeler.length);
+        setSilmeOnizlemeYukleniyor(false);
+        setSilmeOnizlemeHatasi("");
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
+
+        console.log("Silme önizleme hatası:", hata);
+        setSilmeOnizlemeOgeleri([]);
+        setSilmeOnizlemeToplam(0);
+        setSilmeOnizlemeYukleniyor(false);
+        setSilmeOnizlemeHatasi(
+          dil === "tr"
+            ? "Klasör içeriği önizlenemedi."
+            : "Folder contents could not be previewed.",
+        );
+      });
+  };
+
   const dosyaVeyaKlasorSil = (dosya) => {
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
@@ -1660,6 +1742,7 @@ export default function AnaSayfa() {
     setSilinecekDosya(dosya);
     setDeleteModalAcik(true);
     setAcikMenuIndex(null);
+    silmeOnizlemesiniGetir(dosya);
   };
 
   const silmeyiOnayla = () => {
@@ -1671,6 +1754,7 @@ export default function AnaSayfa() {
 
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
+    silmeOnizlemesiniTemizle();
     setYukleniyor(true);
     setYuklemeMesaji(t.deletingItem);
 
@@ -2021,9 +2105,15 @@ export default function AnaSayfa() {
     };
 
     const pencereDosyaBirakildi = (e) => {
+      if (e.defaultPrevented) {
+        return;
+      }
+
       if (!seciliSunucu || !dosyaSurukleniyorMu(e)) {
         return;
       }
+
+      e.preventDefault();
 
       e.preventDefault();
       dragCounterRef.current = 0;
@@ -2624,6 +2714,333 @@ export default function AnaSayfa() {
     return `${dosya.klasorMu ? "klasor" : "dosya"}:${dosya.ad}`;
   };
 
+  const kartSuruklemeBaslat = (e, dosya) => {
+    if (yukleniyor) {
+      e.preventDefault();
+      return;
+    }
+
+    const anahtar = dosyaAnahtariOlustur(dosya);
+
+    setSuruklenenOgeAnahtari(anahtar);
+    setSuruklemeHedefiAnahtari("");
+
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("application/x-pionter-item-key", anahtar);
+    e.dataTransfer.setData("text/plain", dosya.ad);
+  };
+
+  const suruklemeStateTemizle = () => {
+    setSuruklenenOgeAnahtari("");
+    setSuruklemeHedefiAnahtari("");
+    setBreadcrumbSuruklemeHedefYolu("");
+  };
+
+  const kartSuruklemeBitir = () => {
+    suruklemeStateTemizle();
+  };
+
+  const klasorKartininUstundeSurukle = (e, hedefKlasor) => {
+    if (yukleniyor || !hedefKlasor?.klasorMu) {
+      return;
+    }
+
+    const externalDosyaSurukleniyor = dosyaSurukleniyorMu(e);
+    const internalOgeSurukleniyor = Boolean(suruklenenOgeAnahtari);
+
+    if (!externalDosyaSurukleniyor && !internalOgeSurukleniyor) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    e.dataTransfer.dropEffect = externalDosyaSurukleniyor ? "copy" : "move";
+
+    const hedefAnahtar = dosyaAnahtariOlustur(hedefKlasor);
+
+    setSuruklemeHedefiAnahtari((mevcutAnahtar) =>
+      mevcutAnahtar === hedefAnahtar ? mevcutAnahtar : hedefAnahtar,
+    );
+  };
+
+  const klasorKartindanAyril = (e, hedefKlasor) => {
+    if (!hedefKlasor?.klasorMu) {
+      return;
+    }
+
+    e.stopPropagation();
+
+    const yeniHedef = e.relatedTarget;
+
+    if (yeniHedef instanceof Node && e.currentTarget.contains(yeniHedef)) {
+      return;
+    }
+
+    setSuruklemeHedefiAnahtari("");
+  };
+
+  const dosyayiSurukleyerekTasi = (kaynakAnahtar, hedefKlasor) => {
+    suruklemeStateTemizle();
+
+    if (yukleniyor) return;
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    const kaynakDosya = dosyalar.find(
+      (oge) => dosyaAnahtariOlustur(oge) === kaynakAnahtar,
+    );
+
+    if (!kaynakDosya || !hedefKlasor?.klasorMu) {
+      return;
+    }
+
+    const hedefAnahtar = dosyaAnahtariOlustur(hedefKlasor);
+
+    if (kaynakAnahtar === hedefAnahtar) {
+      suruklemeStateTemizle();
+      return;
+    }
+
+    const hedefYol = ogeYoluOlustur(mevcutYol, hedefKlasor.ad);
+    const kaynakYol = ogeYoluOlustur(mevcutYol, kaynakDosya.ad);
+
+    if (
+      kaynakDosya.klasorMu &&
+      (hedefYol === kaynakYol || hedefYol.startsWith(kaynakYol + "/"))
+    ) {
+      toastGoster(t.cannotMoveFolderIntoItself, "error");
+      suruklemeStateTemizle();
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeMesaji(t.movingItem);
+
+    fetch("http://localhost:8080/api/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: seciliSunucu.id,
+        kaynak_yol: mevcutYol,
+        hedef_yol: hedefYol,
+        dosya_adi: kaynakDosya.ad,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Sürükleyerek taşıma başarısız");
+        }
+
+        toastGoster(t.moveSuccess, "success");
+
+        suruklemeStateTemizle();
+        secimleriTemizle();
+        previewCacheRef.current = {};
+        setThumbnailVerileri({});
+        hedefKlasorCacheRef.current = {};
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
+
+        console.log("Sürükleyerek taşıma hatası:", hata);
+        suruklemeStateTemizle();
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        toastGoster(t.moveFailed, "error");
+      });
+  };
+
+  const klasorKartinaBirak = (e, hedefKlasor) => {
+    if (!hedefKlasor?.klasorMu) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const hedefYol = ogeYoluOlustur(mevcutYol, hedefKlasor.ad);
+
+    if (dosyaSurukleniyorMu(e) && e.dataTransfer.files?.length > 0) {
+      dragCounterRef.current = 0;
+      setSurukleniyor(false);
+      suruklemeStateTemizle();
+      dosyalariYukle(e.dataTransfer.files, hedefYol);
+      return;
+    }
+
+    const kaynakAnahtar =
+      e.dataTransfer.getData("application/x-pionter-item-key") ||
+      suruklenenOgeAnahtari;
+
+    if (!kaynakAnahtar) {
+      suruklemeStateTemizle();
+      return;
+    }
+
+    suruklemeStateTemizle();
+    dosyayiSurukleyerekTasi(kaynakAnahtar, hedefKlasor);
+  };
+
+  const breadcrumbSuruklemeAktifMi = (e, hedefYol) => {
+    if (yukleniyor) return false;
+    if (!seciliSunucu) return false;
+    if (!hedefYol) return false;
+    if (hedefYol === mevcutYol) return false;
+
+    const externalDosyaSurukleniyor = dosyaSurukleniyorMu(e);
+    const internalOgeSurukleniyor = Boolean(suruklenenOgeAnahtari);
+
+    return externalDosyaSurukleniyor || internalOgeSurukleniyor;
+  };
+
+  const breadcrumbUstundeSurukle = (e, hedefYol) => {
+    if (!breadcrumbSuruklemeAktifMi(e, hedefYol)) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const externalDosyaSurukleniyor = dosyaSurukleniyorMu(e);
+
+    e.dataTransfer.dropEffect = externalDosyaSurukleniyor ? "copy" : "move";
+
+    setBreadcrumbSuruklemeHedefYolu((mevcutHedefYol) =>
+      mevcutHedefYol === hedefYol ? mevcutHedefYol : hedefYol,
+    );
+  };
+
+  const breadcrumbAyril = (e, hedefYol) => {
+    if (!hedefYol) {
+      return;
+    }
+
+    e.stopPropagation();
+
+    const yeniHedef = e.relatedTarget;
+
+    if (yeniHedef instanceof Node && e.currentTarget.contains(yeniHedef)) {
+      return;
+    }
+
+    setBreadcrumbSuruklemeHedefYolu("");
+  };
+
+  const ogeleriBreadcrumbYolunaTasi = (kaynakAnahtar, hedefYol) => {
+    suruklemeStateTemizle();
+
+    if (yukleniyor) return;
+
+    if (!seciliSunucu) {
+      toastGoster(t.selectServerFirst, "error");
+      return;
+    }
+
+    if (!hedefYol || hedefYol === mevcutYol) {
+      toastGoster(t.alreadyInThisFolder, "error");
+      return;
+    }
+
+    const kaynakDosya = dosyalar.find(
+      (oge) => dosyaAnahtariOlustur(oge) === kaynakAnahtar,
+    );
+
+    if (!kaynakDosya) {
+      return;
+    }
+
+    const kaynakYol = ogeYoluOlustur(mevcutYol, kaynakDosya.ad);
+
+    if (
+      kaynakDosya.klasorMu &&
+      (hedefYol === kaynakYol || hedefYol.startsWith(kaynakYol + "/"))
+    ) {
+      toastGoster(t.cannotMoveFolderIntoItself, "error");
+      return;
+    }
+
+    setYukleniyor(true);
+    setYuklemeMesaji(t.movingItem);
+
+    fetch("http://localhost:8080/api/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: seciliSunucu.id,
+        kaynak_yol: mevcutYol,
+        hedef_yol: hedefYol,
+        dosya_adi: kaynakDosya.ad,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        if (!cevap.ok) {
+          throw new Error("Breadcrumb taşıma başarısız");
+        }
+
+        toastGoster(t.moveSuccess, "success");
+
+        secimleriTemizle();
+        previewCacheRef.current = {};
+        setThumbnailVerileri({});
+        hedefKlasorCacheRef.current = {};
+        klasoruYenile(mevcutYol);
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
+
+        console.log("Breadcrumb taşıma hatası:", hata);
+        setYukleniyor(false);
+        setYuklemeMesaji("");
+        toastGoster(t.moveFailed, "error");
+      });
+  };
+
+  const breadcrumbYolunaBirak = (e, hedefYol) => {
+    if (!breadcrumbSuruklemeAktifMi(e, hedefYol)) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (dosyaSurukleniyorMu(e) && e.dataTransfer.files?.length > 0) {
+      dragCounterRef.current = 0;
+      setSurukleniyor(false);
+      suruklemeStateTemizle();
+      dosyalariYukle(e.dataTransfer.files, hedefYol);
+      return;
+    }
+
+    const kaynakAnahtar =
+      e.dataTransfer.getData("application/x-pionter-item-key") ||
+      suruklenenOgeAnahtari;
+
+    if (!kaynakAnahtar) {
+      suruklemeStateTemizle();
+      return;
+    }
+
+    ogeleriBreadcrumbYolunaTasi(kaynakAnahtar, hedefYol);
+  };
+
   const dosyaSeciliMi = (dosya) => {
     return seciliOgeAnahtarlari.includes(dosyaAnahtariOlustur(dosya));
   };
@@ -3211,6 +3628,7 @@ export default function AnaSayfa() {
           onClick={() => {
             setDeleteModalAcik(false);
             setSilinecekDosya(null);
+            silmeOnizlemesiniTemizle();
           }}
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
         >
@@ -3230,11 +3648,55 @@ export default function AnaSayfa() {
               {silinecekDosya?.ad}
             </p>
 
+            {silinecekDosya?.klasorMu && (
+              <div className="mb-5 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-3 dark:border-[#504945] dark:bg-[#3c3836]">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                  {t.folderContentsPreview}
+                </p>
+
+                {silmeOnizlemeYukleniyor ? (
+                  <p className="text-xs text-[#928374] dark:text-[#a89984]">
+                    {t.loadingFolderContents}
+                  </p>
+                ) : silmeOnizlemeHatasi ? (
+                  <p className="text-xs text-[#cc241d]">
+                    {silmeOnizlemeHatasi}
+                  </p>
+                ) : silmeOnizlemeToplam === 0 ? (
+                  <p className="text-xs text-[#928374] dark:text-[#a89984]">
+                    {t.emptyFolder}
+                  </p>
+                ) : (
+                  <>
+                    <div className="space-y-1">
+                      {silmeOnizlemeOgeleri.map((oge) => (
+                        <p
+                          key={dosyaAnahtariOlustur(oge)}
+                          className="flex items-center gap-2 truncate text-xs text-[#3c3836] dark:text-[#ebdbb2]"
+                        >
+                          {dosyaMiniIkonuGoster(oge)}
+
+                          <span className="truncate">{oge.ad}</span>
+                        </p>
+                      ))}
+                    </div>
+
+                    {silmeOnizlemeToplam > 5 && (
+                      <p className="mt-2 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                        +{silmeOnizlemeToplam - 5} {t.moreItems}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
                   setDeleteModalAcik(false);
                   setSilinecekDosya(null);
+                  silmeOnizlemesiniTemizle();
                 }}
                 className="px-4 py-2 rounded-lg text-sm font-bold bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-colors cursor-pointer"
               >
@@ -3958,26 +4420,10 @@ export default function AnaSayfa() {
                             <div className="space-y-1">
                               {onizlemeOgeleri.map((oge) => (
                                 <p
-                                  key={`${oge.klasorMu ? "klasor" : "dosya"}:${oge.ad}`}
+                                  key={dosyaAnahtariOlustur(oge)}
                                   className="flex items-center gap-2 truncate text-xs text-[#3c3836] dark:text-[#ebdbb2]"
                                 >
-                                  {oge.klasorMu ? (
-                                    <svg
-                                      className="h-4 w-4 shrink-0 text-[#458588] dark:text-[#83a598]"
-                                      fill="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                                    </svg>
-                                  ) : (
-                                    <svg
-                                      className="h-4 w-4 shrink-0 text-[#a89984]"
-                                      fill="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM13 9V3.5L18.5 9H13z" />
-                                    </svg>
-                                  )}
+                                  {dosyaMiniIkonuGoster(oge)}
 
                                   <span className="truncate">{oge.ad}</span>
                                 </p>
@@ -4698,9 +5144,17 @@ export default function AnaSayfa() {
                     </span>
                   ) : (
                     <button
-                      type="button"
                       onClick={() => yolaGit("/")}
-                      className="font-bold transition-colors cursor-pointer hover:text-[#458588] dark:hover:text-[#83a598]"
+                      onDragOver={(e) => breadcrumbUstundeSurukle(e, "/")}
+                      onDragEnter={(e) => breadcrumbUstundeSurukle(e, "/")}
+                      onDragLeave={(e) => breadcrumbAyril(e, "/")}
+                      onDrop={(e) => breadcrumbYolunaBirak(e, "/")}
+                      className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
+                        breadcrumbSuruklemeHedefYolu === "/"
+                          ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
+                          : "text-[#458588] hover:bg-[#d5c4a1] hover:text-[#076678] dark:text-[#83a598] dark:hover:bg-[#3c3836] dark:hover:text-[#8ec07c]"
+                      }`}
+                      title={t.dropHereToMove}
                     >
                       {t.homeFolder}
                     </button>
@@ -4725,9 +5179,21 @@ export default function AnaSayfa() {
                           </span>
                         ) : (
                           <button
-                            type="button"
                             onClick={() => yolaGit(hedefYol)}
-                            className="font-bold truncate max-w-[140px] transition-colors cursor-pointer hover:text-[#458588] dark:hover:text-[#83a598]"
+                            onDragOver={(e) =>
+                              breadcrumbUstundeSurukle(e, hedefYol)
+                            }
+                            onDragEnter={(e) =>
+                              breadcrumbUstundeSurukle(e, hedefYol)
+                            }
+                            onDragLeave={(e) => breadcrumbAyril(e, hedefYol)}
+                            onDrop={(e) => breadcrumbYolunaBirak(e, hedefYol)}
+                            className={`rounded-md px-1.5 py-0.5 font-bold transition-all ${
+                              breadcrumbSuruklemeHedefYolu === hedefYol
+                                ? "bg-[#98971a] text-[#fbf1c7] ring-2 ring-[#98971a]/60 dark:bg-[#b8bb26] dark:text-[#282828] dark:ring-[#b8bb26]/50"
+                                : "text-[#458588] hover:bg-[#d5c4a1] hover:text-[#076678] dark:text-[#83a598] dark:hover:bg-[#3c3836] dark:hover:text-[#8ec07c]"
+                            }`}
+                            title={t.dropHereToMove}
                           >
                             {parca}
                           </button>
@@ -4769,101 +5235,127 @@ export default function AnaSayfa() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {gosterilecekDosyalar.map((dosya, index) => (
-                  <div
-                    key={index}
-                    onClick={() => klasoreGir(dosya)}
-                    className="group relative flex flex-col items-center min-w-0 rounded-xl border border-[#d5c4a1] dark:border-[#504945] bg-[#ebdbb2] dark:bg-[#3c3836] p-4 transition-all hover:border-[#458588] dark:hover:border-[#83a598] hover:shadow-md cursor-pointer"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dosyaSeciminiDegistir(dosya);
-                      }}
-                      className={`absolute left-3 top-3 z-10 flex h-5 w-5 items-center justify-center rounded border text-xs font-bold transition-colors ${
-                        dosyaSeciliMi(dosya)
-                          ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
-                          : "border-[#a89984] bg-[#fbf1c7] text-transparent dark:border-[#665c54] dark:bg-[#282828]"
-                      }`}
-                      aria-label={
-                        dosyaSeciliMi(dosya) ? t.unselectItem : t.selectItem
-                      }
-                    >
-                      ✓
-                    </button>
-                    {dosyaIkonuGoster(dosya)}
-                    <span
-                      title={dosya.ad}
-                      className="block text-sm font-medium text-center w-full max-w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]"
-                    >
-                      {dosya.ad}
-                    </span>
-                    <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
-                      <p>
-                        {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
-                      </p>
-                      <p className="truncate max-w-full">
-                        {dosya.degistirilme}
-                      </p>
-                    </div>
-                    <div className="absolute right-2 top-2">
-                      <button
-                        title="Menu"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAcikMenuIndex(
-                            acikMenuIndex === index ? null : index,
-                          );
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all cursor-pointer"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                        </svg>
-                      </button>
+                {gosterilecekDosyalar.map((dosya, index) => {
+                  const dosyaAnahtari = dosyaAnahtariOlustur(dosya);
+                  const surukleniyorMu =
+                    suruklenenOgeAnahtari === dosyaAnahtari;
+                  const dropHedefiMi =
+                    suruklemeHedefiAnahtari === dosyaAnahtari;
 
-                      {acikMenuIndex === index && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] shadow-lg overflow-hidden"
-                        >
-                          <button
-                            onClick={() => {
-                              setAcikMenuIndex(null);
-                              dosyaVeyaKlasorYenidenAdlandir(dosya);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-                          >
-                            {t.renameItem}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setAcikMenuIndex(null);
-                              dosyaVeyaKlasorTasi(dosya);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-                          >
-                            {t.moveItem}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setAcikMenuIndex(null);
-                              dosyaVeyaKlasorSil(dosya);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-[#cc241d] hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
-                          >
-                            {t.deleteItem}
-                          </button>
+                  return (
+                    <div
+                      key={dosyaAnahtari}
+                      draggable={!yukleniyor}
+                      onDragStart={(e) => kartSuruklemeBaslat(e, dosya)}
+                      onDragEnd={kartSuruklemeBitir}
+                      onDragOver={(e) => klasorKartininUstundeSurukle(e, dosya)}
+                      onDragEnter={(e) =>
+                        klasorKartininUstundeSurukle(e, dosya)
+                      }
+                      onDragLeave={(e) => klasorKartindanAyril(e, dosya)}
+                      onDrop={(e) => klasorKartinaBirak(e, dosya)}
+                      onClick={() => klasoreGir(dosya)}
+                      className={`group relative flex min-w-0 flex-col items-center rounded-xl bg-[#ebdbb2] p-4 transition-all hover:shadow-md dark:bg-[#3c3836] ${
+                        dropHedefiMi
+                          ? "border border-[#98971a] ring-2 ring-[#98971a]/60 dark:border-[#b8bb26] dark:ring-[#b8bb26]/50"
+                          : "border border-[#d5c4a1] hover:border-[#458588] dark:border-[#504945] dark:hover:border-[#83a598]"
+                      } ${surukleniyorMu ? "opacity-60" : ""} cursor-pointer`}
+                    >
+                      {dosya.klasorMu && dropHedefiMi && (
+                        <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-lg border border-dashed border-[#98971a] bg-[#fbf1c7]/80 px-3 text-center text-xs font-bold text-[#79740e] backdrop-blur-sm dark:border-[#b8bb26] dark:bg-[#282828]/80 dark:text-[#b8bb26]">
+                          {t.dropHereToMove}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dosyaSeciminiDegistir(dosya);
+                        }}
+                        className={`absolute left-3 top-3 z-10 flex h-5 w-5 items-center justify-center rounded border text-xs font-bold transition-colors ${
+                          dosyaSeciliMi(dosya)
+                            ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
+                            : "border-[#a89984] bg-[#fbf1c7] text-transparent dark:border-[#665c54] dark:bg-[#282828]"
+                        }`}
+                        aria-label={
+                          dosyaSeciliMi(dosya) ? t.unselectItem : t.selectItem
+                        }
+                      >
+                        ✓
+                      </button>
+                      {dosyaIkonuGoster(dosya)}
+                      <span
+                        title={dosya.ad}
+                        className="block text-sm font-medium text-center w-full max-w-full truncate px-1 text-[#3c3836] dark:text-[#ebdbb2]"
+                      >
+                        {dosya.ad}
+                      </span>
+                      <div className="mt-1 text-[11px] text-center text-[#928374] dark:text-[#a89984] leading-tight">
+                        <p>
+                          {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
+                        </p>
+                        <p className="truncate max-w-full">
+                          {dosya.degistirilme}
+                        </p>
+                      </div>
+                      <div className="absolute right-2 top-2">
+                        <button
+                          title="Menu"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAcikMenuIndex(
+                              acikMenuIndex === index ? null : index,
+                            );
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md bg-[#d5c4a1] dark:bg-[#504945] hover:bg-[#a89984] dark:hover:bg-[#665c54] text-[#3c3836] dark:text-[#ebdbb2] transition-all cursor-pointer"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                          </svg>
+                        </button>
+
+                        {acikMenuIndex === index && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] shadow-lg overflow-hidden"
+                          >
+                            <button
+                              onClick={() => {
+                                setAcikMenuIndex(null);
+                                dosyaVeyaKlasorYenidenAdlandir(dosya);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                            >
+                              {t.renameItem}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAcikMenuIndex(null);
+                                dosyaVeyaKlasorTasi(dosya);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                            >
+                              {t.moveItem}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAcikMenuIndex(null);
+                                dosyaVeyaKlasorSil(dosya);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-[#cc241d] hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                            >
+                              {t.deleteItem}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

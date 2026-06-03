@@ -873,11 +873,7 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 	}
 	defer sftpClient.Close()
 
-	if bilgiler.KlasorMu {
-		err = sftpClient.RemoveDirectory(silinecekYol)
-	} else {
-		err = sftpClient.Remove(silinecekYol)
-	}
+	err = sftpYolRecursiveSil(sftpClient, silinecekYol)
 
 	if err != nil {
 		fmt.Println("Silme Hatası:", err)
@@ -1936,6 +1932,33 @@ func previewTipiBelirle(uzanti string) string {
 	}
 
 	return "unsupported"
+}
+
+func sftpYolRecursiveSil(sftpClient *sftp.Client, hedefYol string) error {
+	bilgi, err := sftpClient.Lstat(hedefYol)
+	if err != nil {
+		return err
+	}
+
+	if bilgi.IsDir() && bilgi.Mode()&os.ModeSymlink == 0 {
+		ogeler, err := sftpClient.ReadDir(hedefYol)
+		if err != nil {
+			return err
+		}
+
+		for _, oge := range ogeler {
+			ogeYol := path.Join(hedefYol, oge.Name())
+
+			err = sftpYolRecursiveSil(sftpClient, ogeYol)
+			if err != nil {
+				return err
+			}
+		}
+
+		return sftpClient.RemoveDirectory(hedefYol)
+	}
+
+	return sftpClient.Remove(hedefYol)
 }
 
 func textDosyaPreviewOku(sftpClient *sftp.Client, dosyaYolu string, limit int64) (string, int64, error) {

@@ -52,6 +52,11 @@ export const sozluk = {
     renameFailed: "Rename failed.",
     moveItem: "Move",
     moveFailed: "Move failed.",
+    moveSuccess: "Moved successfully.",
+    dropHereToMove: "Drop here to move or upload",
+    cannotMoveFolderIntoItself: "A folder cannot be moved into itself.",
+    folderContentsPreview: "Folder contents",
+    loadingFolderContents: "Loading folder contents...",
     homeFolder: "Home",
     searchPlaceholder: "Search in current folder...",
     noSearchResults: "No matching files or folders found.",
@@ -185,6 +190,9 @@ export const sozluk = {
     close: "Close",
     pdfPreviewNotAvailable:
       "PDF preview is not available yet. You can download the file instead.",
+    moveSuccess: "Moved successfully.",
+    dropHereToMove: "Drop here to move",
+    cannotMoveFolderIntoItself: "A folder cannot be moved into itself.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -240,6 +248,11 @@ export const sozluk = {
     renameFailed: "Yeniden adlandırma başarısız.",
     moveItem: "Taşı",
     moveFailed: "Taşıma başarısız.",
+    moveSuccess: "Taşıma başarılı.",
+    dropHereToMove: "Taşımak veya yüklemek için buraya bırak",
+    cannotMoveFolderIntoItself: "Bir klasör kendi içine taşınamaz.",
+    folderContentsPreview: "Klasör içeriği",
+    loadingFolderContents: "Klasör içeriği yükleniyor...",
     homeFolder: "Home",
     searchPlaceholder: "Mevcut klasörde ara...",
     noSearchResults: "Eşleşen dosya veya klasör bulunamadı.",
@@ -371,5 +384,8 @@ export const sozluk = {
     close: "Kapat",
     pdfPreviewNotAvailable:
       "PDF önizleme henüz kullanılamıyor. Dosyayı indirebilirsin.",
+    moveSuccess: "Taşıma başarılı.",
+    dropHereToMove: "Taşımak için buraya bırak",
+    cannotMoveFolderIntoItself: "Bir klasör kendi içine taşınamaz.",
   },
 };
