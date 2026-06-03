@@ -193,6 +193,14 @@ export const sozluk = {
     moveSuccess: "Moved successfully.",
     dropHereToMove: "Drop here to move",
     cannotMoveFolderIntoItself: "A folder cannot be moved into itself.",
+    editFile: "Edit",
+    saveFile: "Save",
+    savingFile: "Saving...",
+    cancelEdit: "Cancel Edit",
+    fileSaveSuccess: "File saved successfully.",
+    fileSaveFailed: "File could not be saved.",
+    unsavedChangesConfirm:
+      "You have unsaved changes. Are you sure you want to close without saving?",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -387,5 +395,13 @@ export const sozluk = {
     moveSuccess: "Taşıma başarılı.",
     dropHereToMove: "Taşımak için buraya bırak",
     cannotMoveFolderIntoItself: "Bir klasör kendi içine taşınamaz.",
+    editFile: "Düzenle",
+    saveFile: "Kaydet",
+    savingFile: "Kaydediliyor...",
+    cancelEdit: "Düzenlemeyi İptal Et",
+    fileSaveSuccess: "Dosya başarıyla kaydedildi.",
+    fileSaveFailed: "Dosya kaydedilemedi.",
+    unsavedChangesConfirm:
+      "Kaydedilmemiş değişikliklerin var. Kaydetmeden kapatmak istediğine emin misin?",
   },
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { sozluk } from "./sozluk";
 import {
   dosyaBoyutuYaz,
@@ -9,6 +10,15 @@ import {
 } from "./yardimcilar";
 import Toast from "./components/Toast";
 import LoadingState from "./components/LoadingState";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[65vh] items-center justify-center rounded-lg border border-[#504945] bg-[#1d2021] text-sm font-bold text-[#a89984]">
+      Loading editor...
+    </div>
+  ),
+});
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -80,6 +90,11 @@ export default function AnaSayfa() {
   const [previewVerisi, setPreviewVerisi] = useState(null);
   const [previewYukleniyor, setPreviewYukleniyor] = useState(false);
   const [previewHatasi, setPreviewHatasi] = useState("");
+  const [previewDuzenlemeModu, setPreviewDuzenlemeModu] = useState(false);
+  const [previewEditIcerik, setPreviewEditIcerik] = useState("");
+  const [previewOrijinalIcerik, setPreviewOrijinalIcerik] = useState("");
+  const [previewKaydediliyor, setPreviewKaydediliyor] = useState(false);
+  const [previewKaydetHatasi, setPreviewKaydetHatasi] = useState("");
   const [thumbnailVerileri, setThumbnailVerileri] = useState({});
   const previewCacheRef = useRef({});
   const [suruklenenOgeAnahtari, setSuruklenenOgeAnahtari] = useState("");
@@ -88,6 +103,8 @@ export default function AnaSayfa() {
     useState("");
 
   const t = sozluk[dil];
+  const previewDuzenlemeKirliMi =
+    previewDuzenlemeModu && previewEditIcerik !== previewOrijinalIcerik;
   const miniTooltipClass =
     "pointer-events-none absolute left-1/2 top-full z-40 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-1 text-xs font-bold text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]";
 
@@ -101,6 +118,11 @@ export default function AnaSayfa() {
     setPreviewVerisi(null);
     setPreviewYukleniyor(false);
     setPreviewHatasi("");
+    setPreviewDuzenlemeModu(false);
+    setPreviewEditIcerik("");
+    setPreviewOrijinalIcerik("");
+    setPreviewKaydediliyor(false);
+    setPreviewKaydetHatasi("");
   };
 
   const silmeOnizlemesiniTemizle = () => {
@@ -671,6 +693,10 @@ export default function AnaSayfa() {
         setPreviewVerisi(cacheVerisi);
         setPreviewYukleniyor(false);
         setPreviewHatasi("");
+        setPreviewDuzenlemeModu(false);
+        setPreviewEditIcerik("");
+        setPreviewOrijinalIcerik("");
+        setPreviewKaydetHatasi("");
         setPreviewModalAcik(true);
       }
 
@@ -682,6 +708,10 @@ export default function AnaSayfa() {
       setPreviewVerisi(null);
       setPreviewYukleniyor(true);
       setPreviewHatasi("");
+      setPreviewDuzenlemeModu(false);
+      setPreviewEditIcerik("");
+      setPreviewOrijinalIcerik("");
+      setPreviewKaydetHatasi("");
       setPreviewModalAcik(true);
     }
 
@@ -856,6 +886,159 @@ export default function AnaSayfa() {
       textPreviewDosyasiMi(dosya.ad) ||
       pdfDosyasiMi(dosya.ad)
     );
+  };
+
+  const monacoDiliAl = (dosyaAdi) => {
+    const uzanti = dosyaUzantisiAl(dosyaAdi || "");
+
+    if (uzanti === ".js" || uzanti === ".jsx") return "javascript";
+    if (uzanti === ".ts" || uzanti === ".tsx") return "typescript";
+    if (uzanti === ".json") return "json";
+    if (uzanti === ".go") return "go";
+    if (uzanti === ".css") return "css";
+    if (uzanti === ".html") return "html";
+    if (uzanti === ".md") return "markdown";
+    if (uzanti === ".py") return "python";
+    if (uzanti === ".java") return "java";
+    if (uzanti === ".php") return "php";
+    if (uzanti === ".sql") return "sql";
+    if ([".yml", ".yaml"].includes(uzanti)) return "yaml";
+    if (uzanti === ".xml") return "xml";
+    if ([".sh", ".bash", ".zsh"].includes(uzanti)) return "shell";
+    if (uzanti === ".rs") return "rust";
+    if (uzanti === ".rb") return "ruby";
+    if (uzanti === ".cs") return "csharp";
+    if ([".c", ".h"].includes(uzanti)) return "c";
+    if ([".cpp", ".cc", ".cxx", ".hpp"].includes(uzanti)) return "cpp";
+    if (uzanti === ".dockerfile") return "dockerfile";
+    if (uzanti === ".toml") return "toml";
+    if (uzanti === ".ini" || uzanti === ".conf") return "ini";
+
+    return "plaintext";
+  };
+
+  const previewDuzenlenebilirMi = () => {
+    const dosyaAdi = previewDosya?.ad || previewVerisi?.dosya_adi || "";
+
+    return Boolean(
+      previewVerisi?.basarili &&
+      previewVerisi?.tip === "text" &&
+      textPreviewDosyasiMi(dosyaAdi),
+    );
+  };
+
+  const previewModaliniKapat = () => {
+    if (previewDuzenlemeKirliMi && !window.confirm(t.unsavedChangesConfirm)) {
+      return;
+    }
+
+    previewTemizle();
+  };
+
+  const previewDuzenlemeyiBaslat = () => {
+    if (!previewDuzenlenebilirMi()) return;
+
+    const icerik = previewVerisi?.icerik || "";
+
+    setPreviewEditIcerik(icerik);
+    setPreviewOrijinalIcerik(icerik);
+    setPreviewKaydetHatasi("");
+    setPreviewDuzenlemeModu(true);
+  };
+
+  const previewDuzenlemeyiIptalEt = () => {
+    if (previewDuzenlemeKirliMi && !window.confirm(t.unsavedChangesConfirm)) {
+      return;
+    }
+
+    setPreviewDuzenlemeModu(false);
+    setPreviewEditIcerik("");
+    setPreviewOrijinalIcerik("");
+    setPreviewKaydetHatasi("");
+  };
+
+  const previewDosyasiniKaydet = () => {
+    if (previewKaydediliyor) return;
+    if (!previewDuzenlenebilirMi()) return;
+
+    const dosyaAdi = previewDosya?.ad || previewVerisi?.dosya_adi || "";
+
+    if (!dosyaAdi) {
+      toastGoster(t.fileSaveFailed, "error");
+      return;
+    }
+
+    setPreviewKaydediliyor(true);
+    setPreviewKaydetHatasi("");
+
+    fetch("http://localhost:8080/api/file/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: seciliSunucu.id,
+        yol: mevcutYol,
+        dosya_adi: dosyaAdi,
+        icerik: previewEditIcerik,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        return cevap.json().then((veri) => {
+          if (!cevap.ok || !veri.basarili) {
+            throw new Error(veri.mesaj || "Dosya kaydedilemedi");
+          }
+
+          return veri;
+        });
+      })
+      .then((veri) => {
+        const guncelBoyut =
+          typeof veri.boyut === "number"
+            ? veri.boyut
+            : new Blob([previewEditIcerik]).size;
+
+        const guncelPreviewVerisi = {
+          ...previewVerisi,
+          basarili: true,
+          tip: "text",
+          dosya_adi: dosyaAdi,
+          icerik: previewEditIcerik,
+          boyut: guncelBoyut,
+        };
+
+        setPreviewVerisi(guncelPreviewVerisi);
+        setPreviewOrijinalIcerik(previewEditIcerik);
+        setPreviewDuzenlemeModu(false);
+        setPreviewKaydediliyor(false);
+        setPreviewKaydetHatasi("");
+
+        if (previewDosya) {
+          const cacheAnahtari = previewCacheAnahtariOlustur(previewDosya);
+
+          if (cacheAnahtari) {
+            previewCacheRef.current[cacheAnahtari] = guncelPreviewVerisi;
+          }
+        }
+
+        hedefKlasorCacheRef.current = {};
+        klasoruYenile(mevcutYol);
+        toastGoster(t.fileSaveSuccess, "success");
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          setPreviewKaydediliyor(false);
+          return;
+        }
+
+        console.log("Dosya kaydetme hatası:", hata);
+        setPreviewKaydediliyor(false);
+        setPreviewKaydetHatasi(hata.message || t.fileSaveFailed);
+        toastGoster(t.fileSaveFailed, "error");
+      });
   };
 
   const officeDosyaEtiketiAl = (dosyaAdi) => {
@@ -2225,7 +2408,7 @@ export default function AnaSayfa() {
 
     const escapeIleKapat = (e) => {
       if (e.key === "Escape") {
-        previewTemizle();
+        previewModaliniKapat();
       }
     };
 
@@ -2234,7 +2417,7 @@ export default function AnaSayfa() {
     return () => {
       window.removeEventListener("keydown", escapeIleKapat);
     };
-  }, [previewModalAcik]);
+  }, [previewModalAcik, previewDuzenlemeKirliMi]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -4079,7 +4262,7 @@ export default function AnaSayfa() {
       {previewModalAcik && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-          onClick={previewTemizle}
+          onClick={previewModaliniKapat}
         >
           <div
             className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#504945] bg-[#282828] text-[#ebdbb2] shadow-2xl"
@@ -4103,12 +4286,45 @@ export default function AnaSayfa() {
                   )}
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                {previewDuzenlenebilirMi() &&
+                  (previewDuzenlemeModu ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={previewDosyasiniKaydet}
+                        disabled={
+                          previewKaydediliyor || !previewDuzenlemeKirliMi
+                        }
+                        className="rounded-lg border border-[#98971a] bg-[#98971a] px-3 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#79740e] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#b8bb26] dark:bg-[#b8bb26] dark:text-[#282828] dark:hover:bg-[#98971a]"
+                      >
+                        {previewKaydediliyor ? t.savingFile : t.saveFile}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={previewDuzenlemeyiIptalEt}
+                        disabled={previewKaydediliyor}
+                        className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#d79921] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t.cancelEdit}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={previewDuzenlemeyiBaslat}
+                      className="rounded-lg border border-[#458588] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#83a598]"
+                    >
+                      {t.editFile}
+                    </button>
+                  ))}
+
                 {previewDosya && (
                   <button
                     type="button"
                     onClick={() => dosyayiIndir(previewDosya)}
-                    disabled={yukleniyor}
+                    disabled={yukleniyor || previewKaydediliyor}
                     className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#83a598] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {t.downloadFile}
@@ -4117,8 +4333,9 @@ export default function AnaSayfa() {
 
                 <button
                   type="button"
-                  onClick={previewTemizle}
-                  className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#fb4934]"
+                  onClick={previewModaliniKapat}
+                  disabled={previewKaydediliyor}
+                  className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#fb4934] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {t.close}
                 </button>
@@ -4145,9 +4362,40 @@ export default function AnaSayfa() {
                   />
                 </div>
               ) : previewVerisi?.tip === "text" ? (
-                <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#504945] bg-[#1d2021] p-4 text-sm leading-relaxed text-[#ebdbb2]">
-                  {previewVerisi.icerik || ""}
-                </pre>
+                previewDuzenlemeModu ? (
+                  <div className="overflow-hidden rounded-lg border border-[#504945] bg-[#1d2021]">
+                    {previewKaydetHatasi && (
+                      <div className="border-b border-[#504945] bg-[#3c3836] px-4 py-3">
+                        <p className="text-sm font-bold text-[#fb4934]">
+                          {previewKaydetHatasi}
+                        </p>
+                      </div>
+                    )}
+
+                    <MonacoEditor
+                      height="65vh"
+                      language={monacoDiliAl(
+                        previewDosya?.ad || previewVerisi?.dosya_adi || "",
+                      )}
+                      theme={karanlikMod ? "vs-dark" : "light"}
+                      value={previewEditIcerik}
+                      onChange={(deger) => setPreviewEditIcerik(deger ?? "")}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        wordWrap: "on",
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        tabSize: 2,
+                        renderWhitespace: "selection",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#504945] bg-[#1d2021] p-4 text-sm leading-relaxed text-[#ebdbb2]">
+                    {previewVerisi.icerik || ""}
+                  </pre>
+                )
               ) : previewVerisi?.tip === "pdf" ? (
                 <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
                   <p className="text-sm text-[#ebdbb2]">
