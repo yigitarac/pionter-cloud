@@ -6242,12 +6242,12 @@ export default function AnaSayfa() {
                         ✓
                       </button>
                       {dosyaIkonuGoster(dosya)}
-                      <div className="relative w-full max-w-full px-1">
-                        <span className="block w-full truncate text-center text-sm font-medium text-[#3c3836] dark:text-[#ebdbb2]">
+                      <div className="group/name relative max-w-full px-1">
+                        <span className="block max-w-full truncate text-center text-sm font-medium text-[#3c3836] dark:text-[#ebdbb2]">
                           {dosya.ad}
                         </span>
 
-                        <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 max-w-[220px] -translate-x-1/2 break-all rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-1 text-center text-xs font-bold text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                        <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-[360px] -translate-x-1/2 whitespace-normal break-words rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-1.5 text-center text-xs font-bold leading-snug text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 [transition-delay:0ms] group-hover/name:opacity-100 group-hover/name:[transition-delay:700ms] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
                           {dosya.ad}
                         </span>
                       </div>

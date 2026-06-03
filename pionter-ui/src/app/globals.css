@@ -40,3 +40,7 @@
     background: #a89984;
     background-clip: content-box;
 }
+html,
+body {
+    background: #282828;
+}
