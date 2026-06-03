@@ -16,7 +16,7 @@ Current high-level status:
 * v0.4 Server Monitoring: planned
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
-* v0.5B Basic Text Editor: planned
+* v0.5B Basic Text Editor + Monaco: completed
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
@@ -54,6 +54,8 @@ Current backend responsibilities:
 * File listing
 * File upload
 * File download
+* File preview
+* Safe text/code file save
 * Folder creation
 * Delete, including recursive folder delete
 * Rename
@@ -71,6 +73,8 @@ Current frontend responsibilities:
 * Server add/edit/delete/pin UI
 * File manager UI
 * Upload/download UI
+* File preview UI
+* Monaco-based text/code editor UI
 * Folder creation UI
 * Rename/delete/move modals
 * Bulk move and bulk delete modals
@@ -83,6 +87,9 @@ Current frontend responsibilities:
 * Loading states
 * Dark/light mode
 * Turkish/English language switch
+* Edit / Save / Cancel Edit flow for supported text/code files
+* Ctrl+S / Cmd+S save shortcut
+* Unsaved-change warnings for editor changes
 
 ### Database
 
@@ -359,6 +366,65 @@ Known limitations / future improvements:
 * Partial failure handling for multi-item move can be improved after stable backend error codes are introduced.
 * Move conflict feedback is still generic.
 * Drag/drop behavior should be re-tested after mobile/tablet layout work.
+
+## v0.5B Basic Text Editor + Monaco Summary
+
+The v0.5B phase focused on adding a safe, lightweight editor flow for supported text/code files.
+
+Backend changes:
+
+* Added `/api/file/save`.
+* Added save request and response structs.
+* Added a JSON response helper for file-save responses.
+* Added `textSaveLimit`.
+* Reused the existing text/code file whitelist for editable file types.
+* Added SFTP-based text file save helper.
+* Saved files using truncate-and-write behavior.
+* Avoided creating new files from the save endpoint for now.
+* Rejected unsupported file types.
+* Rejected folders as save targets.
+* Rejected oversized file contents.
+* Kept save operations protected by token authentication.
+* Kept save operations protected by isolated-folder path validation.
+* Kept file name validation through the existing safe-name helper.
+
+Frontend changes:
+
+* Added Monaco Editor through dynamic import.
+* Added editor state to the preview modal.
+* Added edit mode for supported text/code previews.
+* Added read-only preview mode and edit mode switching.
+* Added Save and Cancel Edit actions.
+* Added dirty-state tracking by comparing current editor content to original content.
+* Added Ctrl+S / Cmd+S save shortcut.
+* Added confirmation before closing with unsaved changes.
+* Added browser before-unload warning for unsaved editor changes.
+* Added editor information bar with save shortcut hint.
+* Added unsaved-change badge.
+* Disabled Download while editor content has unsaved changes.
+* Updated preview cache after successful save.
+* Refreshed the current file list after successful save.
+* Added Monaco language detection based on file extension.
+
+Manual validation:
+
+* `.txt` files can be opened, edited, saved, closed, and reopened with updated content.
+* Common code files such as `.js`, `.json`, `.md`, `.go`, and `.cpp` open in Monaco editor mode.
+* Ctrl+S / Cmd+S saves edited files.
+* Close, Escape, and outside-click behavior warn before discarding unsaved changes.
+* Browser refresh/navigation warns when editor changes are unsaved.
+* Download is disabled while unsaved changes exist.
+* Unsupported file types do not show the Edit button.
+* Large text/code files remain protected by preview/save limits.
+
+Known limitations / future improvements:
+
+* The editor currently provides lightweight text/code editing, not full IDE behavior.
+* Monaco standalone highlighting is not the same as language-server semantic highlighting.
+* Advanced IntelliSense, language servers, and semantic highlighting are deferred.
+* Future polish should add PionterCloud Gruvbox Dark and Gruvbox Light Monaco themes.
+* Future polish may add language-specific color tuning for Monaco and the file UI.
+* Advanced editor features should be lazy-loaded or optional so the file manager does not become heavy.
 
 ## Current Authentication Behavior
 

@@ -20,7 +20,7 @@ Current phase status:
 * v0.4 Server Monitoring: completed
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
-* v0.5B Basic Text Editor: planned
+* v0.5B Basic Text Editor + Monaco: completed
 * v0.6 Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
@@ -36,6 +36,9 @@ PionterCloud lets users:
 * Browse files and folders
 * Upload and download files
 * Create folders
+* Preview text/code files and images
+* Edit supported text/code files with Monaco Editor
+* Save edited files back to the connected server over SFTP
 * Rename files and folders
 * Delete files and folders, including non-empty folders
 * Move files and folders
@@ -112,6 +115,14 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Bulk delete selected items
 * Bulk move selected items
 * Preview selected items inside bulk move and bulk delete modals
+* Text/code file preview
+* Monaco-based text/code editor
+* Safe text/code file saving through SFTP
+* Edit / Save / Cancel Edit flow inside the preview modal
+* Ctrl+S / Cmd+S save shortcut
+* Unsaved-change warning before closing the modal
+* Browser before-unload warning for unsaved editor changes
+* Download is disabled while an edited file has unsaved changes
 * File metadata display
 
   * file size
@@ -284,6 +295,38 @@ Known notes:
 * Recursive delete is intentionally powerful and must remain protected by isolated-folder path validation.
 * Drag/drop move currently performs multiple `/api/move` calls for multi-item operations.
 * More advanced move conflict handling can be improved later with stable backend error codes.
+
+## v0.5B Basic Text Editor + Monaco Summary
+
+v0.5B focused on turning the file preview system into a lightweight, safe text/code editor.
+
+Completed in v0.5B:
+
+* Added `/api/file/save` backend endpoint.
+* Added safe text/code file saving over SFTP.
+* Added save size limit for editable files.
+* Reused the existing text/code file whitelist for editor support.
+* Blocked unsupported file types from being edited.
+* Blocked folders from being saved as files.
+* Kept save operations behind token authentication and isolated-folder path validation.
+* Added Monaco Editor integration to the file preview modal.
+* Added Edit / Save / Cancel Edit flow for supported text/code files.
+* Added language detection for Monaco based on file extension.
+* Added Ctrl+S / Cmd+S save shortcut.
+* Added unsaved-change detection.
+* Added confirmation before closing the editor with unsaved changes.
+* Added browser before-unload protection for unsaved editor changes.
+* Added editor status bar with save shortcut hint and unsaved-change badge.
+* Disabled Download while the editor has unsaved changes.
+* Updated preview cache after successful save.
+* Refreshed the file list after successful save.
+
+Known notes:
+
+* The editor currently supports lightweight text/code editing, not full IDE behavior.
+* Monaco syntax highlighting is available, but advanced semantic highlighting and language-server features are not included yet.
+* Future editor polish may add custom PionterCloud Gruvbox dark/light Monaco themes.
+* Future editor polish may improve language-specific syntax colors without making the editor heavy by default.
 
 ## Security Status
 
