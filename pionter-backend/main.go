@@ -37,6 +37,7 @@ var sunucuStatsCacheSuresi = 20 * time.Second
 
 const textPreviewLimit = 1 * 1024 * 1024
 const imagePreviewLimit = 5 * 1024 * 1024
+const textSaveLimit = 1 * 1024 * 1024
 
 func main() {
 	var err error
@@ -108,6 +109,7 @@ func main() {
 	http.HandleFunc("/api/files", dosyalariGetir)
 	http.HandleFunc("/api/download", dosyaIndir)
 	http.HandleFunc("/api/file/preview", dosyaPreviewGetir)
+	http.HandleFunc("/api/file/save", dosyaKaydet)
 	http.HandleFunc("/api/upload", dosyaYukle)
 	http.HandleFunc("/api/register", kullaniciKaydet)
 	http.HandleFunc("/api/login", kullaniciGirisYap)
@@ -153,6 +155,23 @@ type DosyaPreviewCevabi struct {
 	Icerik string `json:"icerik,omitempty"`
 	Base64 string `json:"base64,omitempty"`
 	Boyut  int64  `json:"boyut,omitempty"`
+}
+
+type DosyaKaydetBilgileri struct {
+	Token    string `json:"token"`
+	ServerID int    `json:"server_id"`
+	Yol      string `json:"yol"`
+	DosyaAdi string `json:"dosya_adi"`
+	Icerik   string `json:"icerik"`
+}
+
+type DosyaKaydetCevabi struct {
+	Basarili    bool   `json:"basarili"`
+	Mesaj       string `json:"mesaj"`
+	Kod         string `json:"kod,omitempty"`
+	DosyaAdi    string `json:"dosya_adi,omitempty"`
+	Boyut       int64  `json:"boyut,omitempty"`
+	KayitZamani string `json:"kayit_zamani,omitempty"`
 }
 
 type DosyaBilgileri struct {
@@ -495,6 +514,12 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, acilanDosya)
 }
 
+func dosyaKaydetCevabiYaz(w http.ResponseWriter, status int, cevap DosyaKaydetCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
 func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
 
@@ -655,6 +680,171 @@ func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(cevap)
+}
+
+func dosyaKaydet(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, textSaveLimit+(128*1024))
+
+	var bilgiler DosyaKaydetBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+	bilgiler.Yol = strings.TrimSpace(bilgiler.Yol)
+	bilgiler.DosyaAdi = strings.TrimSpace(bilgiler.DosyaAdi)
+
+	if bilgiler.Token == "" || bilgiler.ServerID <= 0 || bilgiler.DosyaAdi == "" {
+		dosyaKaydetCevabiYaz(w, http.StatusBadRequest, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Eksik veya geçersiz veri",
+			Kod:      "INVALID_REQUEST",
+		})
+		return
+	}
+
+	if !guvenliAdMi(bilgiler.DosyaAdi) {
+		dosyaKaydetCevabiYaz(w, http.StatusBadRequest, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz dosya adı",
+			Kod:      "INVALID_FILE_NAME",
+		})
+		return
+	}
+
+	icerikBoyutu := int64(len([]byte(bilgiler.Icerik)))
+	if icerikBoyutu > textSaveLimit {
+		dosyaKaydetCevabiYaz(w, http.StatusRequestEntityTooLarge, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Dosya kaydetmek için çok büyük",
+			Kod:      "FILE_TOO_LARGE",
+			DosyaAdi: bilgiler.DosyaAdi,
+			Boyut:    icerikBoyutu,
+		})
+		return
+	}
+
+	uzanti := dosyaUzantisiAl(bilgiler.DosyaAdi)
+	if !textPreviewDestekleniyorMu(uzanti) {
+		dosyaKaydetCevabiYaz(w, http.StatusUnsupportedMediaType, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Bu dosya türü düzenlenemez",
+			Kod:      "UNSUPPORTED_FILE_TYPE",
+			DosyaAdi: bilgiler.DosyaAdi,
+		})
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
+	if err != nil {
+		dosyaKaydetCevabiYaz(w, http.StatusUnauthorized, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş veya sunucu bulunamadı",
+			Kod:      "UNAUTHORIZED",
+		})
+		return
+	}
+
+	gercekKlasorYolu, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
+	if err != nil {
+		dosyaKaydetCevabiYaz(w, http.StatusBadRequest, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz yol",
+			Kod:      "INVALID_PATH",
+		})
+		return
+	}
+
+	gercekDosyaYolu := path.Join(gercekKlasorYolu, bilgiler.DosyaAdi)
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Save SSH auth hatası:", err)
+		dosyaKaydetCevabiYaz(w, http.StatusBadGateway, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "SSH kimlik doğrulama hazırlanamadı",
+			Kod:      "SSH_AUTH_FAILED",
+		})
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         5 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Save SSH bağlantı hatası:", err)
+		dosyaKaydetCevabiYaz(w, http.StatusBadGateway, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "SSH bağlantısı kurulamadı",
+			Kod:      "SSH_CONNECTION_FAILED",
+		})
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("Save SFTP hatası:", err)
+		dosyaKaydetCevabiYaz(w, http.StatusBadGateway, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "SFTP bağlantısı kurulamadı",
+			Kod:      "SFTP_CONNECTION_FAILED",
+		})
+		return
+	}
+	defer sftpClient.Close()
+
+	kaydedilenBoyut, err := textDosyaKaydet(sftpClient, gercekDosyaYolu, bilgiler.Icerik, textSaveLimit)
+	if err != nil {
+		fmt.Println("Dosya kaydetme hatası:", err)
+
+		if strings.Contains(err.Error(), "klasör düzenlenemez") {
+			dosyaKaydetCevabiYaz(w, http.StatusBadRequest, DosyaKaydetCevabi{
+				Basarili: false,
+				Mesaj:    "Klasör düzenlenemez",
+				Kod:      "TARGET_IS_DIRECTORY",
+				DosyaAdi: bilgiler.DosyaAdi,
+			})
+			return
+		}
+
+		if strings.Contains(err.Error(), "çok büyük") {
+			dosyaKaydetCevabiYaz(w, http.StatusRequestEntityTooLarge, DosyaKaydetCevabi{
+				Basarili: false,
+				Mesaj:    "Dosya kaydetmek için çok büyük",
+				Kod:      "FILE_TOO_LARGE",
+				DosyaAdi: bilgiler.DosyaAdi,
+			})
+			return
+		}
+
+		dosyaKaydetCevabiYaz(w, http.StatusInternalServerError, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Dosya kaydedilemedi",
+			Kod:      "SAVE_FAILED",
+			DosyaAdi: bilgiler.DosyaAdi,
+		})
+		return
+	}
+
+	dosyaKaydetCevabiYaz(w, http.StatusOK, DosyaKaydetCevabi{
+		Basarili:    true,
+		Mesaj:       "Dosya kaydedildi",
+		DosyaAdi:    bilgiler.DosyaAdi,
+		Boyut:       kaydedilenBoyut,
+		KayitZamani: time.Now().Format("2006-01-02 15:04"),
+	})
 }
 
 func dosyaYukle(w http.ResponseWriter, r *http.Request) {
@@ -1959,6 +2149,40 @@ func sftpYolRecursiveSil(sftpClient *sftp.Client, hedefYol string) error {
 	}
 
 	return sftpClient.Remove(hedefYol)
+}
+
+func textDosyaKaydet(sftpClient *sftp.Client, dosyaYolu string, icerik string, limit int64) (int64, error) {
+	icerikBytes := []byte(icerik)
+
+	if int64(len(icerikBytes)) > limit {
+		return int64(len(icerikBytes)), fmt.Errorf("dosya kaydetmek için çok büyük")
+	}
+
+	dosyaBilgisi, err := sftpClient.Stat(dosyaYolu)
+	if err != nil {
+		return 0, err
+	}
+
+	if dosyaBilgisi.IsDir() {
+		return 0, fmt.Errorf("klasör düzenlenemez")
+	}
+
+	acilanDosya, err := sftpClient.OpenFile(dosyaYolu, os.O_WRONLY|os.O_TRUNC)
+	if err != nil {
+		return 0, err
+	}
+	defer acilanDosya.Close()
+
+	yazilan, err := acilanDosya.Write(icerikBytes)
+	if err != nil {
+		return int64(yazilan), err
+	}
+
+	if yazilan != len(icerikBytes) {
+		return int64(yazilan), io.ErrShortWrite
+	}
+
+	return int64(yazilan), nil
 }
 
 func textDosyaPreviewOku(sftpClient *sftp.Client, dosyaYolu string, limit int64) (string, int64, error) {
