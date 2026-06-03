@@ -21,7 +21,7 @@ Current phase status:
 * v0.5A File Preview: completed
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
-* v0.6 Terminal: planned
+* v0.6 Real SSH Terminal: planned
 * v0.7 AI Features: planned
 * v0.8 Deployment / Production Hardening: planned
 * v1.0 Public-ready strong release: future goal
@@ -39,6 +39,7 @@ PionterCloud lets users:
 * Preview text/code files and images
 * Edit supported text/code files with Monaco Editor
 * Save edited files back to the connected server over SFTP
+* Open an optional real SSH terminal for the selected server
 * Rename files and folders
 * Delete files and folders, including non-empty folders
 * Move files and folders
@@ -161,6 +162,23 @@ The project is evolving toward a broader bring-your-own-server dashboard with:
 * Dark/light mode
 
 * Turkish/English language switch
+
+### Planned Terminal Access
+
+The v0.6 terminal feature is planned as a real SSH terminal for the selected server.
+
+Planned behavior:
+
+* The terminal will connect using the saved SSH user for the selected server.
+* If the saved SSH user is `root`, terminal commands will run with root privileges.
+* If the saved SSH user is a normal user, terminal commands will run with that user's normal Linux permissions.
+* PionterCloud will not grant extra root or sudo privileges.
+* Linux file permissions will remain the source of truth.
+* The isolated folder will be used as the initial working directory.
+* The isolated folder is not a terminal sandbox.
+* Users can technically leave the isolated folder from inside the terminal if their SSH user has permission to do so.
+* A warning modal will be shown before opening the terminal.
+* The warning modal will include a "do not show again" checkbox.
 
 ## v0.3 Completed Summary
 
@@ -327,6 +345,56 @@ Known notes:
 * Monaco syntax highlighting is available, but advanced semantic highlighting and language-server features are not included yet.
 * Future editor polish may add custom PionterCloud Gruvbox dark/light Monaco themes.
 * Future editor polish may improve language-specific syntax colors without making the editor heavy by default.
+
+## v0.6 Real SSH Terminal Plan
+
+v0.6 will add optional real SSH terminal access to PionterCloud.
+
+The terminal will be designed as a real shell session, not a restricted command runner.
+
+Planned implementation:
+
+* Add a backend WebSocket endpoint for terminal sessions.
+* Authenticate terminal sessions with the current PionterCloud session token.
+* Connect to the selected server using the saved SSH credentials.
+* Start a real SSH session with PTY support.
+* Start the shell in the server's configured isolated folder when possible.
+* Stream frontend terminal input to SSH stdin.
+* Stream SSH stdout/stderr output back to the frontend terminal.
+* Use xterm.js on the frontend for terminal rendering.
+* Add a terminal warning modal before opening the terminal.
+* Add a "do not show again" checkbox for the warning modal.
+* Close the terminal session when the terminal modal is closed.
+* Close the terminal session when logging out or switching servers.
+
+Security and permission model:
+
+* The terminal uses the SSH user saved for the selected server.
+* If that SSH user is `root`, commands run as root.
+* If that SSH user is a normal user, commands run with that user's permissions.
+* PionterCloud does not provide additional root or sudo privileges.
+* Linux permissions remain the authority for what can or cannot be done.
+* The isolated folder is used as the starting directory only.
+* The isolated folder is not a security sandbox for terminal sessions.
+* Users should avoid leaving the isolated folder unless they understand what they are doing.
+
+Initial scope:
+
+* Real SSH terminal
+* Warning modal
+* Do-not-show-again option
+* Terminal open/close lifecycle
+* Server switch/logout cleanup
+
+Deferred:
+
+* Terminal command history database logging
+* Command filtering
+* Multi-tab terminal sessions
+* Session restore
+* AI terminal command execution
+* chroot/container sandboxing
+* Full audit log integration
 
 ## Security Status
 
