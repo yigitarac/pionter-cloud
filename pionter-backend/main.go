@@ -147,6 +147,8 @@ func main() {
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
 	http.HandleFunc("/api/share/create", paylasimLinkiOlustur)
+	http.HandleFunc("/api/share/info/", paylasimBilgisiGetir)
+	http.HandleFunc("/api/share/preview/", paylasimPreviewGetir)
 	http.HandleFunc("/api/share/download/", paylasimDosyasiIndir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
 	http.ListenAndServe(":8080", nil)
@@ -365,6 +367,16 @@ type PaylasimLinkiKaydi struct {
 	DosyaAdi            string
 	SonGecerlilikTarihi sql.NullTime
 	IptalEdildi         bool
+}
+
+type PaylasimBilgisiCevabi struct {
+	Basarili            bool   `json:"basarili"`
+	Mesaj               string `json:"mesaj"`
+	Kod                 string `json:"kod,omitempty"`
+	DosyaAdi            string `json:"dosya_adi,omitempty"`
+	PaylasanKullanici   string `json:"paylasan_kullanici,omitempty"`
+	SonGecerlilikTarihi string `json:"son_gecerlilik_tarihi,omitempty"`
+	Suresiz             bool   `json:"suresiz"`
 }
 
 type SunucuStatsBilgileri struct {
@@ -622,6 +634,12 @@ func publicPaylasimHatasiYaz(w http.ResponseWriter, status int, mesaj string) {
 	w.Write([]byte(mesaj))
 }
 
+func paylasimBilgisiCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimBilgisiCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
 func dosyaListeHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -663,6 +681,24 @@ func guvenliPaylasimTokeniOlustur() (string, error) {
 func paylasimTokenHashle(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])
+}
+
+func urlPaylasimTokeniAl(r *http.Request, prefix string) string {
+	token := strings.TrimPrefix(r.URL.Path, prefix)
+	token = strings.TrimSpace(token)
+
+	return token
+}
+
+func paylasimTokeniGecerliFormattaMi(token string) bool {
+	if token == "" {
+		return false
+	}
+
+	return !strings.Contains(token, "/") &&
+		!strings.Contains(token, "\\") &&
+		!strings.Contains(token, "..") &&
+		!strings.Contains(token, "⁄")
 }
 
 func paylasimSuresiHesapla(sure string) (*time.Time, error) {
@@ -711,10 +747,10 @@ func publicPaylasimURLAl(token string) string {
 	publicURL := strings.TrimRight(strings.TrimSpace(os.Getenv("APP_PUBLIC_URL")), "/")
 
 	if publicURL == "" {
-		publicURL = "http://localhost:8080"
+		publicURL = "http://localhost:3000"
 	}
 
-	return publicURL + "/api/share/download/" + token
+	return publicURL + "/share/" + token
 }
 
 func dosyaKaydetCevabiYaz(w http.ResponseWriter, status int, cevap DosyaKaydetCevabi) {
@@ -1273,6 +1309,389 @@ func paylasimLinkiOlustur(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func paylasimBilgisiGetir(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "GET, OPTIONS")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		paylasimBilgisiCevabiYaz(w, http.StatusMethodNotAllowed, PaylasimBilgisiCevabi{
+			Basarili: false,
+			Mesaj:    "Sadece GET isteği kabul edilir",
+			Kod:      "METHOD_NOT_ALLOWED",
+		})
+		return
+	}
+
+	paylasimTokeni := urlPaylasimTokeniAl(r, "/api/share/info/")
+
+	if !paylasimTokeniGecerliFormattaMi(paylasimTokeni) {
+		paylasimBilgisiCevabiYaz(w, http.StatusBadRequest, PaylasimBilgisiCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz paylaşım linki",
+			Kod:      "INVALID_SHARE_TOKEN",
+		})
+		return
+	}
+
+	tokenHash := paylasimTokenHashle(paylasimTokeni)
+
+	var dosyaAdi string
+	var paylasanKullanici string
+	var sonGecerlilik sql.NullTime
+	var iptalEdildi bool
+
+	err := db.QueryRow(`
+		SELECT
+			sl.dosya_adi,
+			k.pionter_kullanici,
+			sl.son_gecerlilik_tarihi,
+			sl.iptal_edildi
+		FROM share_links sl
+		INNER JOIN kullanicilar k ON k.id = sl.user_id
+		WHERE sl.token_hash = $1
+		LIMIT 1
+	`, tokenHash).Scan(
+		&dosyaAdi,
+		&paylasanKullanici,
+		&sonGecerlilik,
+		&iptalEdildi,
+	)
+
+	if err != nil {
+		paylasimBilgisiCevabiYaz(w, http.StatusNotFound, PaylasimBilgisiCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linki bulunamadı",
+			Kod:      "SHARE_LINK_NOT_FOUND",
+		})
+		return
+	}
+
+	if iptalEdildi {
+		paylasimBilgisiCevabiYaz(w, http.StatusGone, PaylasimBilgisiCevabi{
+			Basarili: false,
+			Mesaj:    "Bu paylaşım linki iptal edilmiş",
+			Kod:      "SHARE_LINK_REVOKED",
+		})
+		return
+	}
+
+	if sonGecerlilik.Valid && time.Now().After(sonGecerlilik.Time) {
+		paylasimBilgisiCevabiYaz(w, http.StatusGone, PaylasimBilgisiCevabi{
+			Basarili: false,
+			Mesaj:    "Bu paylaşım linkinin süresi dolmuş",
+			Kod:      "SHARE_LINK_EXPIRED",
+		})
+		return
+	}
+
+	sonGecerlilikMetni := ""
+
+	if sonGecerlilik.Valid {
+		sonGecerlilikMetni = sonGecerlilik.Time.Format("2006-01-02 15:04")
+	}
+
+	paylasimBilgisiCevabiYaz(w, http.StatusOK, PaylasimBilgisiCevabi{
+		Basarili:            true,
+		Mesaj:               "Paylaşım bilgisi getirildi",
+		DosyaAdi:            dosyaAdi,
+		PaylasanKullanici:   paylasanKullanici,
+		SonGecerlilikTarihi: sonGecerlilikMetni,
+		Suresiz:             !sonGecerlilik.Valid,
+	})
+}
+
+func paylasimPreviewGetir(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "GET, OPTIONS")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Sadece GET isteği kabul edilir",
+			Kod:      "METHOD_NOT_ALLOWED",
+		})
+		return
+	}
+
+	paylasimTokeni := urlPaylasimTokeniAl(r, "/api/share/preview/")
+
+	if !paylasimTokeniGecerliFormattaMi(paylasimTokeni) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Geçersiz paylaşım linki",
+			Kod:      "INVALID_SHARE_TOKEN",
+		})
+		return
+	}
+
+	tokenHash := paylasimTokenHashle(paylasimTokeni)
+
+	var kayit PaylasimLinkiKaydi
+
+	err := db.QueryRow(`
+		SELECT
+			user_id,
+			server_id,
+			dosya_yolu,
+			dosya_adi,
+			son_gecerlilik_tarihi,
+			iptal_edildi
+		FROM share_links
+		WHERE token_hash = $1
+		LIMIT 1
+	`, tokenHash).Scan(
+		&kayit.UserID,
+		&kayit.ServerID,
+		&kayit.DosyaYolu,
+		&kayit.DosyaAdi,
+		&kayit.SonGecerlilikTarihi,
+		&kayit.IptalEdildi,
+	)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşım linki bulunamadı",
+			Kod:      "SHARE_LINK_NOT_FOUND",
+		})
+		return
+	}
+
+	if kayit.IptalEdildi {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusGone)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Bu paylaşım linki iptal edilmiş",
+			Kod:      "SHARE_LINK_REVOKED",
+		})
+		return
+	}
+
+	if kayit.SonGecerlilikTarihi.Valid && time.Now().After(kayit.SonGecerlilikTarihi.Time) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusGone)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Bu paylaşım linkinin süresi dolmuş",
+			Kod:      "SHARE_LINK_EXPIRED",
+		})
+		return
+	}
+
+	uzanti := dosyaUzantisiAl(kayit.DosyaAdi)
+	tip := previewTipiBelirle(uzanti)
+
+	cevap := DosyaPreviewCevabi{
+		Basarili: true,
+		Mesaj:    "Paylaşım önizlemesi hazır",
+		Tip:      tip,
+		DosyaAdi: kayit.DosyaAdi,
+		Uzanti:   uzanti,
+		Mime:     imageMimeBelirle(uzanti),
+	}
+
+	if tip != "text" && tip != "image" {
+		cevap.Basarili = false
+		cevap.Kod = "UNSUPPORTED_FILE_TYPE"
+		cevap.Mesaj = "Bu dosya türü için paylaşım önizlemesi yok"
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cevap)
+		return
+	}
+
+	kimlik, err := sunucuKimlikSorgulaUserIDIle(kayit.UserID, kayit.ServerID)
+	if err != nil {
+		fmt.Println("Paylaşım preview credential hatası:", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşılan dosyanın bağlı olduğu sunucu bulunamadı",
+			Kod:      "SERVER_NOT_FOUND",
+		})
+		return
+	}
+
+	gercekDosyaYolu, err := guvenliYolOlustur(kimlik.IzoleKlasor, kayit.DosyaYolu)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "Paylaşılan dosya yolu geçersiz",
+			Kod:      "INVALID_PATH",
+		})
+		return
+	}
+
+	authMethods, err := sshAuthMethodOlustur(kimlik)
+	if err != nil {
+		fmt.Println("Paylaşım preview SSH auth hatası:", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "SSH kimlik doğrulama hazırlanamadı",
+			Kod:      "SSH_AUTH_FAILED",
+		})
+		return
+	}
+
+	config := &ssh.ClientConfig{
+		User:            kimlik.SunucuKullanici,
+		Auth:            authMethods,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         8 * time.Second,
+	}
+
+	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
+	if err != nil {
+		fmt.Println("Paylaşım preview SSH bağlantı hatası:", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "SSH bağlantısı kurulamadı",
+			Kod:      "SSH_CONNECTION_FAILED",
+		})
+		return
+	}
+	defer client.Close()
+
+	sftpClient, err := sftp.NewClient(client)
+	if err != nil {
+		fmt.Println("Paylaşım preview SFTP hatası:", err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(DosyaPreviewCevabi{
+			Basarili: false,
+			Mesaj:    "SFTP bağlantısı kurulamadı",
+			Kod:      "SFTP_CONNECTION_FAILED",
+		})
+		return
+	}
+	defer sftpClient.Close()
+
+	dosyaBilgisi, err := sftpClient.Stat(gercekDosyaYolu)
+	if err != nil {
+		fmt.Println("Paylaşım preview stat hatası:", err)
+
+		if izinHatasiMi(err) {
+			cevap.Basarili = false
+			cevap.Kod = "PERMISSION_DENIED"
+			cevap.Mesaj = izinHatasiMesaji()
+		} else {
+			cevap.Basarili = false
+			cevap.Kod = "FILE_NOT_FOUND"
+			cevap.Mesaj = "Paylaşılan dosya bulunamadı"
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cevap)
+		return
+	}
+
+	if dosyaBilgisi.IsDir() {
+		cevap.Basarili = false
+		cevap.Kod = "FOLDER_PREVIEW_NOT_SUPPORTED"
+		cevap.Mesaj = "Klasör önizlemesi desteklenmiyor"
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(cevap)
+		return
+	}
+
+	if tip == "text" {
+		icerik, boyut, err := textDosyaPreviewOku(sftpClient, gercekDosyaYolu, textPreviewLimit)
+		if err != nil {
+			fmt.Println("Paylaşım text preview hatası:", err)
+
+			cevap.Basarili = false
+			cevap.Icerik = ""
+			cevap.Boyut = boyut
+
+			if boyut > textPreviewLimit {
+				cevap.Kod = "FILE_TOO_LARGE"
+				cevap.Mesaj = "Dosya önizleme için çok büyük"
+			} else if izinHatasiMi(err) {
+				cevap.Kod = "PERMISSION_DENIED"
+				cevap.Mesaj = izinHatasiMesaji()
+			} else {
+				cevap.Kod = "PREVIEW_FAILED"
+				cevap.Mesaj = "Dosya önizlemesi alınamadı"
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cevap)
+			return
+		}
+
+		cevap.Mesaj = "Dosya önizlemesi alındı"
+		cevap.Icerik = icerik
+		cevap.Boyut = boyut
+	}
+
+	if tip == "image" {
+		base64Icerik, boyut, err := imageDosyaPreviewOku(sftpClient, gercekDosyaYolu, imagePreviewLimit)
+		if err != nil {
+			fmt.Println("Paylaşım image preview hatası:", err)
+
+			cevap.Basarili = false
+			cevap.Base64 = ""
+			cevap.Boyut = boyut
+
+			if boyut > imagePreviewLimit {
+				cevap.Kod = "FILE_TOO_LARGE"
+				cevap.Mesaj = "Görsel önizleme için çok büyük"
+			} else if izinHatasiMi(err) {
+				cevap.Kod = "PERMISSION_DENIED"
+				cevap.Mesaj = izinHatasiMesaji()
+			} else {
+				cevap.Kod = "PREVIEW_FAILED"
+				cevap.Mesaj = "Görsel önizlemesi alınamadı"
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(cevap)
+			return
+		}
+
+		cevap.Mesaj = "Görsel önizlemesi alındı"
+		cevap.Base64 = base64Icerik
+		cevap.Boyut = boyut
+		cevap.Mime = imageMimeBelirle(uzanti)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(cevap)
+}
+
 func paylasimDosyasiIndir(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "GET, OPTIONS")
 
@@ -1286,14 +1705,9 @@ func paylasimDosyasiIndir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paylasimTokeni := strings.TrimPrefix(r.URL.Path, "/api/share/download/")
-	paylasimTokeni = strings.TrimSpace(paylasimTokeni)
+	paylasimTokeni := urlPaylasimTokeniAl(r, "/api/share/download/")
 
-	if paylasimTokeni == "" ||
-		strings.Contains(paylasimTokeni, "/") ||
-		strings.Contains(paylasimTokeni, "\\") ||
-		strings.Contains(paylasimTokeni, "..") ||
-		strings.Contains(paylasimTokeni, "⁄") {
+	if !paylasimTokeniGecerliFormattaMi(paylasimTokeni) {
 		publicPaylasimHatasiYaz(w, http.StatusBadRequest, "Geçersiz paylaşım linki")
 		return
 	}
