@@ -42,7 +42,7 @@ Core product direction:
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
-* v0.7 Share Links: planned
+* v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs: planned
 * v0.9 Editor Polish: planned
 * v1.0 Public-ready strong release: future goal
@@ -68,12 +68,19 @@ Current backend responsibilities:
 * File preview
 * Safe text/code file save
 * Folder creation
+* Empty file creation
 * Delete, including recursive folder delete
 * Rename
 * Move
 * Server stats collection
 * In-memory server stats cache
 * Permission-aware file operation error handling
+* Share link creation
+* Share link listing
+* Share link revocation
+* Public share info
+* Public share preview
+* Public share download
 
 ### Frontend
 
@@ -87,9 +94,12 @@ Current frontend responsibilities:
 * Sidebar navigation
 * File manager UI
 * Upload/download UI
+* New file UI
+* New folder UI
 * File preview UI
 * Monaco-based text/code editor UI
 * Folder creation UI
+* File creation UI
 * Rename/delete/move modals
 * Bulk move and bulk delete modals
 * Multi-select toolbar
@@ -103,9 +113,15 @@ Current frontend responsibilities:
 * Server monitoring UI
 * Edit / Save / Cancel Edit flow for supported text/code files
 * Ctrl+S / Cmd+S save shortcut
-* Unsaved-change warnings for editor changes
+* Custom unsaved-change confirmation modal
 * Shared frontend API error parsing
 * User-friendly permission error messages
+* Share link modal
+* Share link management modal
+* Public share landing page
+* Public share page theme/language controls
+* Public share preview UI
+* Custom right-click context menus
 
 ### Database
 
@@ -116,10 +132,10 @@ Current main tables:
 * `kullanicilar`
 * `sunucular`
 * `oturumlar`
+* `share_links`
 
 Expected future tables:
 
-* `share_links`
 * `activity_logs`
 * possibly `email_verifications`
 * possibly `password_resets`
@@ -162,12 +178,30 @@ Expected future tables:
 * Download uses SFTP.
 * Preview uses SFTP.
 * Editor save uses SFTP.
+* Empty file creation uses SFTP.
 * Recursive delete is supported but remains behind isolated-folder path checks.
 * Move operations block moving folders into themselves.
 * Text preview and text save operations have size limits.
 * Unsupported file types are blocked from editing.
 * Permission denied errors are detected and returned with clearer error codes.
 * The frontend maps permission denied errors to localized user-facing messages.
+
+### Share Links
+
+* Share links are file-only for now.
+* Folder sharing is intentionally deferred.
+* Share links support expiring and unlimited durations.
+* Share tokens are generated with secure random bytes.
+* Raw share tokens are shown only at creation time.
+* Raw share tokens are not stored in the database.
+* Share token hashes are stored in the database.
+* Public share info exposes only safe metadata.
+* Public share preview supports image and text/code files.
+* Public share download streams the original file without re-encoding or quality loss.
+* Public endpoints do not expose server credentials, server IPs, SSH users, isolated folders, or raw internal paths.
+* Revoked and expired links are blocked.
+* Share management currently lists the most recent 100 share records.
+* A future retention policy should clean old expired/revoked records.
 
 ## Completed Phase Summaries
 
@@ -434,61 +468,22 @@ Frontend changes:
 * Updated bulk move error handling.
 * Updated download error handling.
 
-Manual validation:
-
-* Normal folder listing still works.
-* Normal preview still works.
-* Normal editor save still works.
-* Normal delete still works.
-* Normal upload still works.
-* Normal folder creation still works.
-* Normal rename still works.
-* Normal move still works.
-* Normal bulk move still works.
-* Normal drag move still works.
-* Normal download still works.
-* Permission denied cases now show a clearer localized message instead of only generic operation-failed text.
-* Backend startup passed.
-* Frontend startup/lint passed after syntax cleanup.
-
 Known limitations:
 
 * Error handling is better, but not fully standardized across every backend endpoint yet.
 * Some non-permission SSH/SFTP errors still use generic messages.
 * Public SaaS features still need email verification, rate limiting, password reset, and stronger abuse-prevention planning.
 
-## Planned Roadmap
+## v0.7 Share Links, New File and Context Menu Summary
 
-## v0.7 Share Links
+The v0.7 phase added file sharing and several high-impact file-manager UX features.
 
-Goals:
+Backend changes:
 
-* Allow users to share files through generated links.
-* Support time-limited and unlimited links.
-
-Planned backend work:
-
-* Add `share_links` table.
-* Generate secure random share tokens.
-* Store:
-
-  * user id
-  * server id
-  * file path
-  * token hash or token value
-  * expiration time
-  * created time
-  * revoked status
-* Add share-create endpoint.
-* Add public share-download endpoint.
-* Add share-revoke endpoint.
-* Validate expiration and revoked state.
-
-Planned frontend work:
-
-* Share action in file menu.
-* Share modal.
-* Expiration selector:
+* Added `share_links` table.
+* Added secure share token generation.
+* Added SHA-256 share token hashing.
+* Added share duration calculation:
 
   * 1 hour
   * 1 day
@@ -496,16 +491,102 @@ Planned frontend work:
   * 1 month
   * 1 year
   * unlimited
-* Copy link button.
-* Revoke link behavior.
-* Share management UI later.
+* Added share file path generation.
+* Added public share URL generation through `APP_PUBLIC_URL`.
+* Added `/api/share/create`.
+* Added `/api/share/info/{token}`.
+* Added `/api/share/preview/{token}`.
+* Added `/api/share/download/{token}`.
+* Added `/api/share/list`.
+* Added `/api/share/revoke`.
+* Added token-format validation helpers.
+* Added tokenless server credential lookup for public share access based on validated share records.
+* Added public share metadata response.
+* Added public share preview response for image and text/code files.
+* Added public share download streaming.
+* Added active/expired/revoked share status calculation.
+* Added share list limiting to the most recent 100 records.
+* Added empty file creation endpoint:
 
-Security notes:
+  * `/api/files/create`
+* Added conflict detection for new file creation.
+* Added permission-aware new file creation errors.
 
-* Share tokens must be long and random.
-* Shared file access must not require account login.
-* Shared access must not expose server credentials.
-* Expired and revoked links must stop working.
+Frontend changes:
+
+* Added file share action.
+* Added share modal.
+* Replaced share duration dropdown with card/chip selector.
+* Added share link creation UI.
+* Added share link copy behavior.
+* Added public share landing page:
+
+  * `/share/[token]`
+* Added public share file metadata display.
+* Added public share download button.
+* Added public share image preview.
+* Added public share text/code preview.
+* Added public share page Turkish/English toggle.
+* Added public share page dark/light toggle with icons.
+* Added share links management modal.
+* Added share link status badges:
+
+  * active
+  * expired
+  * revoked
+* Added revoke share link action.
+* Replaced browser revoke confirmation with custom Gruvbox-style modal.
+* Added user-friendly `Home/...` path display for share records.
+* Added new file modal.
+* Added new file toolbar button.
+* Added file creation validation.
+* Added custom right-click context menu for files.
+* Added custom right-click context menu for folders.
+* Added custom right-click context menu for empty file-area space.
+* Added empty-area context actions:
+
+  * upload
+  * new file
+  * new folder
+* Polished context-menu hover spacing.
+* Fixed empty-area context-menu hitbox.
+* Kept three-dot menu available for mobile/tablet accessibility.
+* Replaced in-app editor unsaved-change browser confirm with custom modal.
+* Improved file/folder custom tooltip behavior.
+
+Manual validation:
+
+* Share links can be created.
+* Expiring share links work.
+* Unlimited share links work.
+* Public share landing page opens instead of direct download.
+* Public share info does not expose credentials or server details.
+* Public share preview works for supported image and text/code files.
+* Public share download works and preserves original file contents.
+* Share links can be listed.
+* Active, expired, and revoked statuses display correctly.
+* Share links can be revoked.
+* Revoked public links stop working.
+* New file creation works.
+* Duplicate file names are rejected.
+* Permission errors are displayed for file creation when needed.
+* File/folder item context menu works.
+* Empty-area context menu works.
+* Existing three-dot menu still works.
+* Browser native context menu is replaced in supported file-manager areas.
+* In-app unsaved-change confirmation uses custom UI.
+
+Known limitations:
+
+* Share link records are retained in the database for now.
+* Old raw share URLs cannot be regenerated from the management list because raw tokens are intentionally not stored.
+* Share retention cleanup is not implemented yet.
+* Folder sharing is not implemented yet.
+* Folder upload with directory structure preservation is not implemented yet.
+* Public share preview does not support PDF/Office/archive preview yet.
+* Context menu is currently file-manager focused; additional polish may be needed for mobile/tablet behavior.
+
+## Planned Roadmap
 
 ## v0.8 Activity Logs
 
@@ -524,6 +605,8 @@ Planned backend work:
   * server add/edit/delete
   * upload
   * download
+  * create file
+  * create folder
   * preview
   * save
   * rename
@@ -591,6 +674,8 @@ Potential future features:
 
 * Google Docs-like collaborative editing
 * Server-to-server file transfer
+* Folder upload with preserved directory structure
+* Folder sharing through generated archives or safe bundles
 * File versioning
 * File rollback
 * AI-assisted file search
@@ -605,6 +690,7 @@ Potential future features:
 * Rate limiting
 * Admin dashboard
 * Abuse prevention tools
+* Share retention cleanup for old expired/revoked records
 
 ## Public SaaS Security Backlog
 
@@ -627,6 +713,7 @@ Before public release, the project should consider:
 * Production-grade environment config
 * Backups and recovery strategy
 * Deployment hardening
+* Share link retention and cleanup policy
 
 ## AI Direction
 

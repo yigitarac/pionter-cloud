@@ -38,7 +38,7 @@ Current phase status:
 * v0.5A.5 Core File Operations Reliability: completed
 * v0.5B Basic Text Editor + Monaco: completed
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
-* v0.7 Share Links: planned
+* v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs: planned
 * v0.9 Editor Polish: planned
 * v1.0 Public-ready strong release: future goal
@@ -57,6 +57,7 @@ PionterCloud lets users:
 * Upload and download files
 * Upload multiple files
 * Create folders
+* Create empty files
 * Rename files and folders
 * Move files and folders
 * Delete files and folders, including non-empty folders
@@ -71,6 +72,13 @@ PionterCloud lets users:
 * Preview images
 * Edit supported text/code files with Monaco Editor
 * Save edited files back to the connected server over SFTP
+* Share files through expiring or unlimited public links
+* Open public share landing pages
+* Preview shared image and text/code files
+* Download shared files from public links
+* Manage and revoke created share links
+* Use a custom right-click context menu for file actions
+* Use a custom right-click context menu for empty-folder actions
 * View basic read-only server status
 * Pin frequently used servers
 * Use a collapsible left sidebar for server navigation
@@ -116,6 +124,7 @@ PionterCloud lets users:
 * Multi-file upload
 * Download files
 * Create folders
+* Create empty files
 * Delete files and folders, including non-empty folders
 * Preview folder contents before deleting a folder
 * Rename files and folders
@@ -137,6 +146,32 @@ PionterCloud lets users:
   * file size
   * last modified date
 
+### Context Menus
+
+* Custom right-click menu for files
+* Custom right-click menu for folders
+* Custom right-click menu for empty file-area space
+* File context menu actions:
+
+  * preview
+  * download
+  * rename
+  * move
+  * share
+  * delete
+* Folder context menu actions:
+
+  * open
+  * rename
+  * move
+  * delete
+* Empty-area context menu actions:
+
+  * upload
+  * new file
+  * new folder
+* Three-dot file menu remains available for mobile/tablet accessibility
+
 ### File Preview and Editor
 
 * Text/code file preview
@@ -151,9 +186,38 @@ PionterCloud lets users:
 * Safe text/code file saving through SFTP
 * Edit / Save / Cancel Edit flow inside the preview modal
 * Ctrl+S / Cmd+S save shortcut
-* Unsaved-change warning before closing the modal
+* Custom unsaved-changes confirmation modal for in-app close/cancel actions
 * Browser before-unload warning for unsaved editor changes
 * Download is disabled while an edited file has unsaved changes
+
+### Share Links
+
+* File share link creation
+* Expiring share links:
+
+  * 1 hour
+  * 1 day
+  * 1 week
+  * 1 month
+  * 1 year
+* Unlimited share links
+* Secure random share tokens
+* Stored token hashes instead of storing raw tokens
+* Public share landing page
+* Public share info endpoint
+* Public share download endpoint
+* Public share preview endpoint
+* Shared image preview
+* Shared text/code preview
+* Shared file download
+* Turkish/English controls on the public share page
+* Dark/light mode controls on the public share page
+* Share link management modal
+* Active / expired / revoked share link states
+* Revoke share link support
+* Custom revoke confirmation modal
+* Share list limited to the most recent 100 records
+* Public share pages do not expose server credentials, server IP, isolated folders, or real server paths
 
 ### Server Monitoring
 
@@ -179,6 +243,7 @@ PionterCloud lets users:
 * Permission-aware delete errors
 * Permission-aware upload errors
 * Permission-aware folder creation errors
+* Permission-aware file creation errors
 * Permission-aware rename errors
 * Permission-aware move, bulk move, and drag move errors
 * Permission-aware download errors
@@ -190,12 +255,14 @@ PionterCloud lets users:
 * Loading states
 * Upload progress indicator
 * Custom modal dialogs
+* Custom confirmation modals
 * Click outside to close menus and modals
 * Drag and drop upload
 * Drag and drop move
 * Multi-item drag preview
 * File-type-aware drag preview colors
 * Custom breadcrumb/up-folder tooltips
+* Custom file/folder name tooltips
 * Collapsible left sidebar
 * Server preview inside the sidebar
 * Profile/settings controls inside the sidebar
@@ -220,32 +287,17 @@ Current security decisions:
 * Unsupported file types are blocked from editing.
 * Recursive delete remains protected by isolated-folder path validation.
 * Permission denied errors are detected and shown with clearer user-facing messages.
+* Share link tokens are generated with cryptographically secure randomness.
+* Share link tokens are stored as hashes.
+* Public share endpoints do not expose saved server credentials.
+* Public share endpoints do not expose server IPs, SSH usernames, isolated folders, or raw internal server paths.
+* Revoked and expired share links stop working.
 
 Important limitation:
 
 The isolated folder protects PionterCloud file operations. It is not a general-purpose server sandbox.
 
 ## Roadmap
-
-### v0.7 Share Links
-
-Planned:
-
-* Share files with generated links.
-* Expiring share links:
-
-  * 1 hour
-  * 1 day
-  * 1 week
-  * 1 month
-  * 1 year
-  * unlimited
-* Secure random share tokens.
-* Share link database table.
-* Expiration validation.
-* Public download endpoint for shared files.
-* Optional share management UI.
-* Share revoke/delete support.
 
 ### v0.8 Activity Logs
 
@@ -257,28 +309,30 @@ Planned:
   * server add/edit/delete
   * upload
   * download
+  * create file
+  * create folder
   * rename
   * move
   * delete
   * editor save
   * share link create/revoke
-* Activity log database table.
-* Activity log UI.
-* Per-server and per-file filtering.
-* Foundation for future rollback and AI-assisted activity review.
+* Activity log database table
+* Activity log UI
+* Per-server and per-file filtering
+* Foundation for future rollback and AI-assisted activity review
 
 ### v0.9 Editor Polish
 
 Planned:
 
-* PionterCloud Gruvbox Dark Monaco theme.
-* PionterCloud Gruvbox Light Monaco theme.
-* Better language-specific syntax colors.
-* More polished editor toolbar.
-* Better editor loading state.
-* Better large-file handling.
-* Optional editor settings.
-* Keep advanced editor features lightweight and lazy-loaded.
+* PionterCloud Gruvbox Dark Monaco theme
+* PionterCloud Gruvbox Light Monaco theme
+* Better language-specific syntax colors
+* More polished editor toolbar
+* Better editor loading state
+* Better large-file handling
+* Optional editor settings
+* Keep advanced editor features lightweight and lazy-loaded
 
 ### Future Features
 
@@ -286,6 +340,8 @@ Potential future features:
 
 * Google Docs-like collaborative editing
 * Server-to-server file transfer
+* Folder upload with directory structure preservation
+* Folder sharing through archived/safe bundles
 * Advanced file versioning
 * File rollback support
 * AI-assisted file search and summarization
@@ -299,6 +355,7 @@ Potential future features:
 * Rate limiting
 * Audit logs
 * Admin dashboard
+* Share retention policy / automatic cleanup for old expired and revoked links
 
 ## AI Direction
 
