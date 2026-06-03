@@ -108,6 +108,46 @@ export default function AnaSayfa() {
   const miniTooltipClass =
     "pointer-events-none absolute left-1/2 top-full z-40 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-1 text-xs font-bold text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]";
 
+  const apiCevapHatasiOlustur = async (cevap, varsayilanMesaj) => {
+    let veri = null;
+    let metin = "";
+
+    try {
+      const contentType = cevap.headers.get("content-type") || "";
+
+      if (contentType.includes("application/json")) {
+        veri = await cevap.json();
+      } else {
+        metin = await cevap.text();
+      }
+    } catch {
+      // backend bazen boş/plain response dönebilir bu durumda varsayılan mesajı kullanıyoz.
+    }
+
+    const hata = new Error(veri?.mesaj || metin || varsayilanMesaj);
+
+    hata.kod = veri?.kod || "";
+    hata.status = cevap.status;
+
+    return hata;
+  };
+
+  const apiHataMesajiAl = (hata, varsayilanMesaj) => {
+    if (hata?.kod === "PERMISSION_DENIED") {
+      return t.permissionDenied;
+    }
+
+    return hata?.message || varsayilanMesaj;
+  };
+
+  const previewHataMesajiAl = (veri) => {
+    if (veri?.kod === "PERMISSION_DENIED") {
+      return t.permissionDenied;
+    }
+
+    return veri?.mesaj || t.previewNotAvailable;
+  };
+
   const secimleriTemizle = () => {
     setSeciliOgeAnahtarlari([]);
   };
@@ -204,7 +244,11 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Dosyalar getirilemedi");
+          return apiCevapHatasiOlustur(cevap, t.filesLoadFailed).then(
+            (hata) => {
+              throw hata;
+            },
+          );
         }
 
         return cevap.json();
@@ -223,9 +267,9 @@ export default function AnaSayfa() {
         } else {
           setDosyalar([]);
           setDosyaMesaji(
-            dil === "tr"
-              ? "Dosyalar getirilemedi."
-              : "Files could not be loaded.",
+            veri.kod === "PERMISSION_DENIED"
+              ? t.permissionDenied
+              : t.filesLoadFailed,
           );
         }
 
@@ -238,18 +282,11 @@ export default function AnaSayfa() {
         }
         console.log("Hata:", hata);
         setDosyalar([]);
-        setDosyaMesaji(
-          dil === "tr"
-            ? "Dosyalar getirilemedi."
-            : "Files could not be loaded.",
-        );
+        const mesaj = apiHataMesajiAl(hata, t.filesLoadFailed);
+
+        setDosyaMesaji(mesaj);
         setYukleniyor(false);
-        toastGoster(
-          dil === "tr"
-            ? "Dosyalar getirilemedi."
-            : "Files could not be loaded.",
-          "error",
-        );
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -731,7 +768,11 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Preview alınamadı");
+          return apiCevapHatasiOlustur(cevap, t.previewLoadFailed).then(
+            (hata) => {
+              throw hata;
+            },
+          );
         }
 
         return cevap.json();
@@ -744,7 +785,7 @@ export default function AnaSayfa() {
           setPreviewYukleniyor(false);
 
           if (!veri.basarili) {
-            setPreviewHatasi(veri.mesaj || t.previewNotAvailable);
+            setPreviewHatasi(previewHataMesajiAl(veri));
           } else {
             setPreviewHatasi("");
           }
@@ -762,7 +803,7 @@ export default function AnaSayfa() {
         if (!sessiz) {
           setPreviewVerisi(null);
           setPreviewYukleniyor(false);
-          setPreviewHatasi(t.previewLoadFailed);
+          setPreviewHatasi(apiHataMesajiAl(hata, t.previewLoadFailed));
         }
 
         return null;
@@ -989,7 +1030,10 @@ export default function AnaSayfa() {
 
         return cevap.json().then((veri) => {
           if (!cevap.ok || !veri.basarili) {
-            throw new Error(veri.mesaj || "Dosya kaydedilemedi");
+            const hata = new Error(veri.mesaj || t.fileSaveFailed);
+            hata.kod = veri.kod || "";
+            hata.status = cevap.status;
+            throw hata;
           }
 
           return veri;
@@ -1034,10 +1078,12 @@ export default function AnaSayfa() {
           return;
         }
 
+        const mesaj = apiHataMesajiAl(hata, t.fileSaveFailed);
+
         console.log("Dosya kaydetme hatası:", hata);
         setPreviewKaydediliyor(false);
-        setPreviewKaydetHatasi(hata.message || t.fileSaveFailed);
-        toastGoster(t.fileSaveFailed, "error");
+        setPreviewKaydetHatasi(mesaj);
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -1642,7 +1688,9 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Dosya indirilemedi");
+          return apiCevapHatasiOlustur(cevap, t.downloadFailed).then((hata) => {
+            throw hata;
+          });
         }
 
         return cevap.blob();
@@ -1663,15 +1711,12 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+        const mesaj = apiHataMesajiAl(hata, t.downloadFailed);
+
         console.log(hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(
-          dil === "tr"
-            ? "Dosya indirilemedi."
-            : "File could not be downloaded.",
-          "error",
-        );
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -1729,7 +1774,21 @@ export default function AnaSayfa() {
         }
 
         console.log("Yükleme başarısız:", xhr.status, xhr.responseText);
-        reject(new Error("Yükleme başarısız"));
+
+        let veri = null;
+
+        try {
+          veri = JSON.parse(xhr.responseText || "{}");
+        } catch {
+          veri = null;
+        }
+
+        const hata = new Error(veri?.mesaj || t.uploadFailed);
+
+        hata.kod = veri?.kod || "";
+        hata.status = xhr.status;
+
+        reject(hata);
       };
 
       xhr.onerror = () => {
@@ -1789,11 +1848,13 @@ export default function AnaSayfa() {
         return;
       }
 
+      const mesaj = apiHataMesajiAl(hata, t.uploadFailed);
+
       console.log("Yükleme hatası:", hata);
       setYukleniyor(false);
       setYuklemeMesaji("");
       setYuklemeYuzdesi(null);
-      toastGoster(t.uploadFailed, "error");
+      toastGoster(mesaj, "error");
     }
   };
 
@@ -1836,7 +1897,11 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Klasör oluşturulamadı");
+          return apiCevapHatasiOlustur(cevap, t.folderCreateFailed).then(
+            (hata) => {
+              throw hata;
+            },
+          );
         }
 
         setYeniKlasorAdi("");
@@ -1851,10 +1916,12 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+        const mesaj = apiHataMesajiAl(hata, t.folderCreateFailed);
+
         console.log("Klasör oluşturma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(t.folderCreateFailed, "error");
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -1965,7 +2032,9 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Silme başarısız");
+          return apiCevapHatasiOlustur(cevap, t.deleteFailed).then((hata) => {
+            throw hata;
+          });
         }
 
         toastGoster(
@@ -1980,10 +2049,12 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+        const mesaj = apiHataMesajiAl(hata, t.deleteFailed);
+
         console.log("Silme hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(t.deleteFailed, "error");
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -2041,7 +2112,9 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Yeniden adlandırma başarısız");
+          return apiCevapHatasiOlustur(cevap, t.renameFailed).then((hata) => {
+            throw hata;
+          });
         }
 
         toastGoster(
@@ -2061,10 +2134,12 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+        const mesaj = apiHataMesajiAl(hata, t.renameFailed);
+
         console.log("Yeniden adlandırma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(t.renameFailed, "error");
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -2219,7 +2294,9 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Taşıma başarısız");
+          return apiCevapHatasiOlustur(cevap, t.moveFailed).then((hata) => {
+            throw hata;
+          });
         }
 
         toastGoster(
@@ -2236,10 +2313,12 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+        const mesaj = apiHataMesajiAl(hata, t.moveFailed);
+
         console.log("Taşıma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(t.moveFailed, "error");
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -3296,7 +3375,8 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Sürükleyerek taşıma başarısız");
+          const hata = await apiCevapHatasiOlustur(cevap, t.moveFailed);
+          throw hata;
         }
       }
 
@@ -3315,11 +3395,13 @@ export default function AnaSayfa() {
         return;
       }
 
+      const mesaj = apiHataMesajiAl(hata, t.moveFailed);
+
       console.log("Sürükleyerek taşıma hatası:", hata);
       suruklemeStateTemizle();
       setYukleniyor(false);
       setYuklemeMesaji("");
-      toastGoster(t.moveFailed, "error");
+      toastGoster(mesaj, "error");
     }
   };
 
@@ -3647,7 +3729,8 @@ export default function AnaSayfa() {
         }
 
         if (!cevap.ok) {
-          throw new Error("Toplu taşıma başarısız");
+          const hata = await apiCevapHatasiOlustur(cevap, t.bulkMoveFailed);
+          throw hata;
         }
       }
 
@@ -3664,13 +3747,15 @@ export default function AnaSayfa() {
         return;
       }
 
+      const mesaj = apiHataMesajiAl(hata, t.bulkMoveFailed);
+
       console.log("Toplu taşıma hatası:", hata);
       setYukleniyor(false);
       setYuklemeMesaji("");
       setTopluTasimaModalAcik(false);
       setHedefKlasorGezintiYolu("/");
       setHedefKlasorler([]);
-      toastGoster(t.bulkMoveFailed, "error");
+      toastGoster(mesaj, "error");
     }
   };
 

@@ -203,6 +203,10 @@ export const sozluk = {
       "You have unsaved changes. Are you sure you want to close without saving?",
     unsavedChanges: "Unsaved changes",
     saveShortcutHint: "Press Ctrl+S / Cmd+S to save",
+    permissionDenied:
+      "The SSH user does not have permission for this operation.",
+    filesLoadFailed: "Files could not be loaded.",
+    downloadFailed: "File could not be downloaded.",
   },
   tr: {
     loginIdentifierPlaceholder: "Kullanıcı adı veya e-posta",
@@ -407,5 +411,8 @@ export const sozluk = {
       "Kaydedilmemiş değişikliklerin var. Kaydetmeden kapatmak istediğine emin misin?",
     unsavedChanges: "Kaydedilmemiş değişiklik var",
     saveShortcutHint: "Kaydetmek için Ctrl+S / Cmd+S",
+    permissionDenied: "Bu işlem için SSH kullanıcısının yetkisi yok.",
+    filesLoadFailed: "Dosyalar getirilemedi.",
+    downloadFailed: "Dosya indirilemedi.",
   },
 };

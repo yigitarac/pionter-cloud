@@ -184,7 +184,14 @@ type DosyaBilgileri struct {
 type DosyaListeCevabi struct {
 	Basarili bool             `json:"basarili"`
 	Mesaj    string           `json:"mesaj"`
+	Kod      string           `json:"kod,omitempty"`
 	Dosyalar []DosyaBilgileri `json:"dosyalar"`
+}
+
+type ApiHataCevabi struct {
+	Basarili bool   `json:"basarili"`
+	Mesaj    string `json:"mesaj"`
+	Kod      string `json:"kod,omitempty"`
 }
 
 type GizliKimlik struct {
@@ -417,20 +424,36 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
 	defer sftpClient.Close()
-	sftpClient.MkdirAll(gercekYol)
-	dosyalar, err := sftpClient.ReadDir(gercekYol)
+
+	err = sftpClient.MkdirAll(gercekYol)
 	if err != nil {
-		fmt.Println("Klasör okunamadı", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(DosyaListeCevabi{
-			Basarili: false,
-			Mesaj:    "Klasör okunamadı",
-			Dosyalar: []DosyaBilgileri{},
-		})
+		fmt.Println("Klasör hazırlanamadı:", err)
+
+		if izinHatasiMi(err) {
+			dosyaListeHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		dosyaListeHatasiYaz(w, http.StatusInternalServerError, "FOLDER_PREPARE_FAILED", "Klasör hazırlanamadı")
 		return
 	}
+
+	dosyalar, err := sftpClient.ReadDir(gercekYol)
+
+	if err != nil {
+		fmt.Println("Klasör okunamadı:", err)
+
+		if izinHatasiMi(err) {
+			dosyaListeHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		dosyaListeHatasiYaz(w, http.StatusInternalServerError, "FOLDER_READ_FAILED", "Klasör okunamadı")
+		return
+	}
+
 	dosyaListesi := []DosyaBilgileri{}
 	for _, dosya := range dosyalar {
 		yeniDosya := DosyaBilgileri{}
@@ -472,19 +495,19 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	}
 	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
-		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
+		apiHatasiYaz(w, http.StatusUnauthorized, "UNAUTHORIZED", "Yetkisiz giriş")
 		return
 	}
 	gercekYol, err := guvenliYolOlustur(kimlik.IzoleKlasor, bilgiler.Yol)
 	if err != nil {
-		http.Error(w, "Geçersiz yol", http.StatusBadRequest)
+		apiHatasiYaz(w, http.StatusBadRequest, "INVALID_PATH", "Geçersiz yol")
 		return
 	}
 
 	authMethods, err := sshAuthMethodOlustur(kimlik)
 	if err != nil {
-		fmt.Println("SSH auth hatası:", err)
-		http.Error(w, "SSH kimlik doğrulama hazırlanamadı", http.StatusBadGateway)
+		fmt.Println("Download SSH auth hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SSH_AUTH_FAILED", "SSH kimlik doğrulama hazırlanamadı")
 		return
 	}
 
@@ -495,23 +518,72 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Download SSH bağlantı hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SSH_CONNECTION_FAILED", "SSH bağlantısı kurulamadı")
 		return
 	}
 	defer client.Close()
 	sftpClient, err := sftp.NewClient(client)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Download SFTP hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SFTP_CONNECTION_FAILED", "SFTP bağlantısı kurulamadı")
 		return
 	}
 	defer sftpClient.Close()
 	acilanDosya, err := sftpClient.Open(gercekYol)
 	if err != nil {
-		fmt.Println("Dosya açılamadı!", err)
+		fmt.Println("Download dosya açma hatası:", err)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "DOWNLOAD_OPEN_FAILED", "Dosya açılamadı")
 		return
 	}
 	defer acilanDosya.Close()
-	io.Copy(w, acilanDosya)
+	_, err = io.Copy(w, acilanDosya)
+	if err != nil {
+		fmt.Println("Download stream hatası:", err)
+	}
+}
+
+func apiHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(ApiHataCevabi{
+		Basarili: false,
+		Mesaj:    mesaj,
+		Kod:      kod,
+	})
+}
+
+func dosyaListeHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(DosyaListeCevabi{
+		Basarili: false,
+		Mesaj:    mesaj,
+		Kod:      kod,
+		Dosyalar: []DosyaBilgileri{},
+	})
+}
+
+func izinHatasiMi(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	hataMetni := strings.ToLower(err.Error())
+
+	return strings.Contains(hataMetni, "permission denied") ||
+		strings.Contains(hataMetni, "operation not permitted") ||
+		strings.Contains(hataMetni, "access denied")
+}
+
+func izinHatasiMesaji() string {
+	return "Bu işlem için SSH kullanıcısının yetkisi yok"
 }
 
 func dosyaKaydetCevabiYaz(w http.ResponseWriter, status int, cevap DosyaKaydetCevabi) {
@@ -632,6 +704,9 @@ func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 			if boyut > textPreviewLimit {
 				cevap.Kod = "FILE_TOO_LARGE"
 				cevap.Mesaj = "Dosya önizleme için çok büyük"
+			} else if izinHatasiMi(err) {
+				cevap.Kod = "PERMISSION_DENIED"
+				cevap.Mesaj = izinHatasiMesaji()
 			} else {
 				cevap.Kod = "PREVIEW_FAILED"
 				cevap.Mesaj = "Dosya önizlemesi alınamadı"
@@ -660,6 +735,9 @@ func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 			if boyut > imagePreviewLimit {
 				cevap.Kod = "FILE_TOO_LARGE"
 				cevap.Mesaj = "Görsel önizleme için çok büyük"
+			} else if izinHatasiMi(err) {
+				cevap.Kod = "PERMISSION_DENIED"
+				cevap.Mesaj = izinHatasiMesaji()
 			} else {
 				cevap.Kod = "PREVIEW_FAILED"
 				cevap.Mesaj = "Görsel önizlemesi alınamadı"
@@ -829,12 +907,23 @@ func dosyaKaydet(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if izinHatasiMi(err) {
+			dosyaKaydetCevabiYaz(w, http.StatusForbidden, DosyaKaydetCevabi{
+				Basarili: false,
+				Mesaj:    izinHatasiMesaji(),
+				Kod:      "PERMISSION_DENIED",
+				DosyaAdi: bilgiler.DosyaAdi,
+			})
+			return
+		}
+
 		dosyaKaydetCevabiYaz(w, http.StatusInternalServerError, DosyaKaydetCevabi{
 			Basarili: false,
 			Mesaj:    "Dosya kaydedilemedi",
 			Kod:      "SAVE_FAILED",
 			DosyaAdi: bilgiler.DosyaAdi,
 		})
+
 		return
 	}
 
@@ -905,24 +994,66 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Upload SSH bağlantı hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SSH_CONNECTION_FAILED", "SSH bağlantısı kurulamadı")
 		return
 	}
 	defer client.Close()
+
 	sftpClient, err := sftp.NewClient(client)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Upload SFTP hatası:", err)
+		apiHatasiYaz(w, http.StatusBadGateway, "SFTP_CONNECTION_FAILED", "SFTP bağlantısı kurulamadı")
 		return
 	}
 	defer sftpClient.Close()
-	sftpClient.MkdirAll(gercekYol)
+
+	err = sftpClient.MkdirAll(gercekYol)
+	if err != nil {
+		fmt.Println("Upload klasör hazırlama hatası:", err)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "FOLDER_PREPARE_FAILED", "Klasör hazırlanamadı")
+		return
+	}
+
 	hedefDosya, err := sftpClient.Create(tamYol)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Upload dosya oluşturma hatası:", err)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "UPLOAD_CREATE_FAILED", "Dosya oluşturulamadı")
 		return
 	}
 	defer hedefDosya.Close()
-	io.Copy(hedefDosya, gelenDosya)
+
+	_, err = io.Copy(hedefDosya, gelenDosya)
+	if err != nil {
+		fmt.Println("Upload dosya yazma hatası:", err)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "UPLOAD_WRITE_FAILED", "Dosya yazılamadı")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"basarili": true,
+		"mesaj":    "Dosya yüklendi",
+	})
 }
 func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
@@ -994,13 +1125,23 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 
 	err = sftpClient.MkdirAll(yeniKlasorYolu)
 	if err != nil {
-		fmt.Println("Klasör oluşturulamadı:", err)
-		http.Error(w, "Klasör oluşturulamadı", http.StatusInternalServerError)
+		fmt.Println("Klasör oluşturma hatası:", err)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "FOLDER_CREATE_FAILED", "Klasör oluşturulamadı")
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"}`))
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"basarili": true,
+		"mesaj":    "Klasör oluşturuldu",
+	})
 }
 func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
@@ -1067,7 +1208,13 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Println("Silme Hatası:", err)
-		http.Error(w, "Dosya veya klasör silinemedi", http.StatusInternalServerError)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "DELETE_FAILED", "Dosya veya klasör silinemedi")
 		return
 	}
 
@@ -1150,12 +1297,22 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 	err = sftpClient.Rename(eskiYol, yeniYol)
 	if err != nil {
 		fmt.Println("Yeniden adlandırma hatası:", err)
-		http.Error(w, "Dosya veya klasör yeniden adlandırılamadı", http.StatusInternalServerError)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "RENAME_FAILED", "Yeniden adlandırma başarısız")
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mesaj": "Yeniden adlandırma başarılı"}`))
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"basarili": true,
+		"mesaj":    "Yeniden adlandırma başarılı",
+	})
 }
 func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
@@ -1251,13 +1408,22 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 	err = sftpClient.Rename(eskiYol, yeniYol)
 	if err != nil {
 		fmt.Println("Taşıma hatası:", err)
-		http.Error(w, "Dosya veya klasör taşınamadı", http.StatusInternalServerError)
+
+		if izinHatasiMi(err) {
+			apiHatasiYaz(w, http.StatusForbidden, "PERMISSION_DENIED", izinHatasiMesaji())
+			return
+		}
+
+		apiHatasiYaz(w, http.StatusInternalServerError, "MOVE_FAILED", "Taşıma başarısız")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"mesaj": "Taşıma başarılı"}`))
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"basarili": true,
+		"mesaj":    "Taşıma başarılı",
+	})
 }
 func kullaniciKaydet(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
