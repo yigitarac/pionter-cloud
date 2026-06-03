@@ -68,6 +68,11 @@ export default function AnaSayfa() {
   const [shareLinki, setShareLinki] = useState("");
   const [shareOlusturuluyor, setShareOlusturuluyor] = useState(false);
   const [shareHatasi, setShareHatasi] = useState("");
+  const [shareYonetimModalAcik, setShareYonetimModalAcik] = useState(false);
+  const [shareLinkleri, setShareLinkleri] = useState([]);
+  const [shareLinkleriYukleniyor, setShareLinkleriYukleniyor] = useState(false);
+  const [shareLinkleriHatasi, setShareLinkleriHatasi] = useState("");
+  const [shareIptalEdiliyorID, setShareIptalEdiliyorID] = useState(null);
   const [silmeOnizlemeOgeleri, setSilmeOnizlemeOgeleri] = useState([]);
   const [silmeOnizlemeToplam, setSilmeOnizlemeToplam] = useState(0);
   const [silmeOnizlemeYukleniyor, setSilmeOnizlemeYukleniyor] = useState(false);
@@ -238,6 +243,156 @@ export default function AnaSayfa() {
     setShareOlusturuluyor(false);
     setShareModalAcik(true);
     setAcikMenuIndex(null);
+  };
+
+  const shareYonetimModaliniTemizle = () => {
+    setShareYonetimModalAcik(false);
+    setShareLinkleri([]);
+    setShareLinkleriYukleniyor(false);
+    setShareLinkleriHatasi("");
+    setShareIptalEdiliyorID(null);
+  };
+
+  const shareLinkDurumMetniAl = (durum) => {
+    if (durum === "active") return t.shareStatusActive;
+    if (durum === "expired") return t.shareStatusExpired;
+    if (durum === "revoked") return t.shareStatusRevoked;
+
+    return durum || "-";
+  };
+
+  const shareLinkDurumClassAl = (durum) => {
+    if (durum === "active") {
+      return "border-[#98971a] bg-[#ebdbb2] text-[#79740e] dark:border-[#b8bb26] dark:bg-[#32361a] dark:text-[#b8bb26]";
+    }
+
+    if (durum === "expired") {
+      return "border-[#d79921] bg-[#f3e4bd] text-[#b57614] dark:border-[#fabd2f] dark:bg-[#3b321d] dark:text-[#fabd2f]";
+    }
+
+    if (durum === "revoked") {
+      return "border-[#cc241d] bg-[#f4d0c8] text-[#9d0006] dark:border-[#fb4934] dark:bg-[#3b2422] dark:text-[#fb4934]";
+    }
+
+    return "border-[#d5c4a1] bg-[#ebdbb2] text-[#7c6f64] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#a89984]";
+  };
+
+  const shareLinkleriGetir = () => {
+    if (!oturumToken) {
+      toastGoster(t.sessionExpired, "error");
+      return;
+    }
+
+    setShareLinkleriYukleniyor(true);
+    setShareLinkleriHatasi("");
+
+    fetch("http://localhost:8080/api/share/list", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        return cevap.json().then((veri) => {
+          if (!cevap.ok || !veri.basarili) {
+            const hata = new Error(veri.mesaj || t.shareLinksLoadFailed);
+            hata.kod = veri.kod || "";
+            hata.status = cevap.status;
+            throw hata;
+          }
+
+          return veri;
+        });
+      })
+      .then((veri) => {
+        setShareLinkleri(veri.linkler || []);
+        setShareLinkleriYukleniyor(false);
+        setShareLinkleriHatasi("");
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          setShareLinkleriYukleniyor(false);
+          return;
+        }
+
+        const mesaj = apiHataMesajiAl(hata, t.shareLinksLoadFailed);
+
+        console.log("Paylaşım linkleri listeleme hatası:", hata);
+        setShareLinkleri([]);
+        setShareLinkleriYukleniyor(false);
+        setShareLinkleriHatasi(mesaj);
+        toastGoster(mesaj, "error");
+      });
+  };
+
+  const shareYonetimModaliniAc = () => {
+    if (!oturumToken) {
+      toastGoster(t.sessionExpired, "error");
+      return;
+    }
+
+    setShareYonetimModalAcik(true);
+    setShareLinkleri([]);
+    setShareLinkleriHatasi("");
+    setShareIptalEdiliyorID(null);
+    shareLinkleriGetir();
+  };
+
+  const shareLinkiniIptalEt = (shareID) => {
+    if (!shareID || shareIptalEdiliyorID) return;
+
+    if (!window.confirm(t.revokeShareConfirm)) {
+      return;
+    }
+
+    setShareIptalEdiliyorID(shareID);
+
+    fetch("http://localhost:8080/api/share/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        share_id: shareID,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        return cevap.json().then((veri) => {
+          if (!cevap.ok || !veri.basarili) {
+            const hata = new Error(veri.mesaj || t.shareRevokeFailed);
+            hata.kod = veri.kod || "";
+            hata.status = cevap.status;
+            throw hata;
+          }
+
+          return veri;
+        });
+      })
+      .then(() => {
+        setShareIptalEdiliyorID(null);
+        toastGoster(t.shareRevoked, "success");
+        shareLinkleriGetir();
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          setShareIptalEdiliyorID(null);
+          return;
+        }
+
+        const mesaj = apiHataMesajiAl(hata, t.shareRevokeFailed);
+
+        console.log("Paylaşım linki iptal hatası:", hata);
+        setShareIptalEdiliyorID(null);
+        toastGoster(mesaj, "error");
+      });
   };
 
   const yeniKayitOlustur = () => {
@@ -513,6 +668,7 @@ export default function AnaSayfa() {
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
     shareModaliniTemizle();
+    shareYonetimModaliniTemizle();
   };
 
   const sunucuEklemeEkraniniAc = () => {
@@ -583,6 +739,7 @@ export default function AnaSayfa() {
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
     shareModaliniTemizle();
+    shareYonetimModaliniTemizle();
 
     setYukleniyor(false);
     setYuklemeMesaji("");
@@ -658,6 +815,7 @@ export default function AnaSayfa() {
     setDeleteModalAcik(false);
     setSilinecekDosya(null);
     shareModaliniTemizle();
+    shareYonetimModaliniTemizle();
 
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
@@ -4186,6 +4344,155 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
+      {shareYonetimModalAcik && (
+        <div
+          onClick={shareYonetimModaliniTemizle}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[86vh] w-full max-w-4xl flex-col rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#d5c4a1] p-5 dark:border-[#504945]">
+              <div>
+                <h2 className="text-lg font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                  {t.manageShareLinks}
+                </h2>
+
+                <p className="mt-1 text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+                  {t.manageShareLinksHelp}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={shareYonetimModaliniTemizle}
+                className="rounded-lg bg-[#d5c4a1] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.close}
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto p-5">
+              {shareLinkleriYukleniyor && (
+                <div className="rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-5 dark:border-[#504945] dark:bg-[#3c3836]">
+                  <p className="animate-pulse text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+                    {t.loadingShareLinks}
+                  </p>
+                </div>
+              )}
+
+              {!shareLinkleriYukleniyor && shareLinkleriHatasi && (
+                <div className="rounded-xl border border-[#cc241d] bg-[#f4d0c8] p-5 dark:border-[#fb4934] dark:bg-[#3b2422]">
+                  <p className="text-sm font-black text-[#9d0006] dark:text-[#fb4934]">
+                    {shareLinkleriHatasi}
+                  </p>
+                </div>
+              )}
+
+              {!shareLinkleriYukleniyor &&
+                !shareLinkleriHatasi &&
+                shareLinkleri.length === 0 && (
+                  <div className="rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-5 dark:border-[#504945] dark:bg-[#3c3836]">
+                    <p className="text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+                      {t.noShareLinks}
+                    </p>
+                  </div>
+                )}
+
+              {!shareLinkleriYukleniyor &&
+                !shareLinkleriHatasi &&
+                shareLinkleri.length > 0 && (
+                  <div className="space-y-3">
+                    {shareLinkleri.map((link) => {
+                      const aktifMi = link.durum === "active";
+
+                      return (
+                        <div
+                          key={link.id}
+                          className="rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-4 dark:border-[#504945] dark:bg-[#3c3836]"
+                        >
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <span
+                                  className={`rounded-full border px-2.5 py-1 text-xs font-black ${shareLinkDurumClassAl(
+                                    link.durum,
+                                  )}`}
+                                >
+                                  {shareLinkDurumMetniAl(link.durum)}
+                                </span>
+
+                                <span className="rounded-full border border-[#d5c4a1] bg-[#fbf1c7] px-2.5 py-1 text-xs font-black text-[#7c6f64] dark:border-[#504945] dark:bg-[#282828] dark:text-[#a89984]">
+                                  {link.suresiz
+                                    ? t.shareDurationUnlimited
+                                    : link.son_gecerlilik_tarihi}
+                                </span>
+                              </div>
+
+                              <h3 className="break-words text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                                {link.dosya_adi}
+                              </h3>
+
+                              <div className="mt-2 grid gap-1 text-xs font-bold text-[#7c6f64] dark:text-[#a89984] sm:grid-cols-2">
+                                <p>
+                                  {t.server}:{" "}
+                                  <span className="text-[#458588] dark:text-[#83a598]">
+                                    {link.sunucu_takma_ad || "-"}
+                                  </span>
+                                </p>
+
+                                <p>
+                                  {t.createdAt}:{" "}
+                                  <span className="text-[#3c3836] dark:text-[#ebdbb2]">
+                                    {link.olusturma_tarihi}
+                                  </span>
+                                </p>
+
+                                <p className="sm:col-span-2">
+                                  {t.path}:{" "}
+                                  <span className="break-all text-[#3c3836] dark:text-[#ebdbb2]">
+                                    {link.dosya_yolu}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex shrink-0 gap-2 lg:flex-col">
+                              <button
+                                type="button"
+                                onClick={() => shareLinkiniIptalEt(link.id)}
+                                disabled={
+                                  !aktifMi || shareIptalEdiliyorID === link.id
+                                }
+                                className="rounded-lg border border-[#cc241d] px-3 py-2 text-xs font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#fb4934] dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
+                              >
+                                {shareIptalEdiliyorID === link.id
+                                  ? t.revokingShare
+                                  : t.revokeShare}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+            </div>
+
+            <div className="flex shrink-0 justify-end border-t border-[#d5c4a1] p-5 dark:border-[#504945]">
+              <button
+                type="button"
+                onClick={shareLinkleriGetir}
+                disabled={shareLinkleriYukleniyor}
+                className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+              >
+                {t.refreshShareLinks}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {renameModalAcik && (
         <div
           onClick={() => {
@@ -6022,6 +6329,15 @@ export default function AnaSayfa() {
                         className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                       >
                         {t.newFolder}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={shareYonetimModaliniAc}
+                        disabled={yukleniyor || !oturumToken}
+                        className="shrink-0 rounded-lg border border-[#d79921] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#fabd2f] dark:hover:bg-[#3b321d]"
+                      >
+                        {t.manageShareLinks}
                       </button>
 
                       {gosterilecekDosyalar.length > 0 &&
