@@ -391,11 +391,15 @@ export default function AnaSayfa() {
       share_revoke: t.lastActivityShareRevoked,
     };
 
-    const aksiyonMetni = actionMap[aktivite.action_type] || "";
+    return actionMap[aktivite.action_type] || "";
+  };
+
+  const sonAktiviteDetayMetniAl = (aktivite) => {
+    const aksiyonMetni = sonAktiviteMetniAl(aktivite);
 
     if (!aksiyonMetni) return "";
 
-    if (!aktivite.olusturma_tarihi) {
+    if (!aktivite?.olusturma_tarihi) {
       return aksiyonMetni;
     }
 
@@ -458,6 +462,12 @@ export default function AnaSayfa() {
         console.log("Dosya son aktivite hatası:", hata);
         setDosyaSonAktiviteleri({});
       });
+  };
+
+  const mevcutKlasorSonAktiviteleriniYenile = () => {
+    if (!seciliSunucu || dosyalar.length === 0) return;
+
+    dosyaSonAktiviteleriniGetir(dosyalar, mevcutYol, seciliSunucu);
   };
 
   const activityLoglariniGetir = () => {
@@ -568,7 +578,7 @@ export default function AnaSayfa() {
 
     setAcikMenuIndex(null);
 
-    const konum = contextMenuKonumuHesapla(e, 210, dosya.klasorMu ? 190 : 250);
+    const konum = contextMenuKonumuHesapla(e, 210, dosya.klasorMu ? 230 : 330);
 
     setContextMenu({
       acik: true,
@@ -576,6 +586,51 @@ export default function AnaSayfa() {
       x: konum.x,
       y: konum.y,
       dosya,
+    });
+  };
+
+  const dosyaTamYoluAl = (dosya) => {
+    if (!dosya?.ad) return mevcutYol || "/";
+
+    if (mevcutYol === "/") {
+      return `/${dosya.ad}`;
+    }
+
+    return `${mevcutYol}/${dosya.ad}`;
+  };
+
+  const dosyaOzellikleriniAc = (dosya) => {
+    if (!dosya) return;
+
+    setOzellikDosyasi(dosya);
+    setOzellikModalAcik(true);
+    setAcikMenuIndex(null);
+    contextMenuyuKapat();
+  };
+
+  const dosyaOzellikleriniKapat = () => {
+    setOzellikModalAcik(false);
+    setOzellikDosyasi(null);
+  };
+
+  const dosyaDirektDuzenle = (dosya) => {
+    if (!dosya || dosya.klasorMu || !textPreviewDosyasiMi(dosya.ad)) {
+      toastGoster(t.previewNotAvailable, "error");
+      return;
+    }
+
+    setAcikMenuIndex(null);
+    contextMenuyuKapat();
+
+    dosyaPreviewGetir(dosya).then((veri) => {
+      if (!veri?.basarili || veri.tip !== "text") return;
+
+      const icerik = veri.icerik || "";
+
+      setPreviewEditIcerik(icerik);
+      setPreviewOrijinalIcerik(icerik);
+      setPreviewKaydetHatasi("");
+      setPreviewDuzenlemeModu(true);
     });
   };
 
@@ -599,6 +654,11 @@ export default function AnaSayfa() {
       return;
     }
 
+    if (aksiyon === "edit") {
+      dosyaDirektDuzenle(dosya);
+      return;
+    }
+
     if (aksiyon === "download") {
       dosyayiIndir(dosya);
       return;
@@ -616,6 +676,11 @@ export default function AnaSayfa() {
 
     if (aksiyon === "share") {
       paylasimModaliniAc(dosya);
+      return;
+    }
+
+    if (aksiyon === "properties") {
+      dosyaOzellikleriniAc(dosya);
       return;
     }
 
@@ -778,6 +843,7 @@ export default function AnaSayfa() {
         setIptalEdilecekShareLink(null);
         toastGoster(t.shareRevoked, "success");
         shareLinkleriGetir();
+        mevcutKlasorSonAktiviteleriniYenile();
       })
       .catch((hata) => {
         if (hata.message === "Oturum geçersiz") {
@@ -3174,6 +3240,7 @@ export default function AnaSayfa() {
         setShareHatasi("");
         setShareLinki(veri.paylasim_linki || "");
         toastGoster(t.shareLinkCreated, "success");
+        mevcutKlasorSonAktiviteleriniYenile();
       })
       .catch((hata) => {
         if (hata.message === "Oturum geçersiz") {
@@ -5830,6 +5897,97 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
+      {ozellikModalAcik && ozellikDosyasi && (
+        <div
+          onClick={dosyaOzellikleriniKapat}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-5 text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                  {t.fileProperties}
+                </p>
+
+                <h2 className="mt-1 break-words text-lg font-black">
+                  {ozellikDosyasi.ad}
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={dosyaOzellikleriniKapat}
+                className="rounded-lg bg-[#d5c4a1] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.close}
+              </button>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-4 text-sm dark:border-[#504945] dark:bg-[#3c3836]">
+              <div className="grid gap-1 sm:grid-cols-[130px_1fr]">
+                <span className="font-black text-[#7c6f64] dark:text-[#a89984]">
+                  {t.nameColumn}
+                </span>
+                <span className="break-words font-bold">
+                  {ozellikDosyasi.ad}
+                </span>
+              </div>
+
+              <div className="grid gap-1 sm:grid-cols-[130px_1fr]">
+                <span className="font-black text-[#7c6f64] dark:text-[#a89984]">
+                  {t.path}
+                </span>
+                <span className="break-all font-bold">
+                  {gorunenAktiviteYoluAl(dosyaTamYoluAl(ozellikDosyasi))}
+                </span>
+              </div>
+
+              <div className="grid gap-1 sm:grid-cols-[130px_1fr]">
+                <span className="font-black text-[#7c6f64] dark:text-[#a89984]">
+                  {t.typeColumn}
+                </span>
+                <span className="font-bold">
+                  {ozellikDosyasi.klasorMu
+                    ? t.folderItem
+                    : dosyaTipEtiketiAl(ozellikDosyasi)}
+                </span>
+              </div>
+
+              <div className="grid gap-1 sm:grid-cols-[130px_1fr]">
+                <span className="font-black text-[#7c6f64] dark:text-[#a89984]">
+                  {t.sizeColumn}
+                </span>
+                <span className="font-bold">
+                  {ozellikDosyasi.klasorMu
+                    ? "-"
+                    : dosyaBoyutuYaz(ozellikDosyasi.boyut)}
+                </span>
+              </div>
+
+              <div className="grid gap-1 sm:grid-cols-[130px_1fr]">
+                <span className="font-black text-[#7c6f64] dark:text-[#a89984]">
+                  {t.modifiedColumn}
+                </span>
+                <span className="font-bold">{ozellikDosyasi.degistirilme}</span>
+              </div>
+
+              <div className="grid gap-1 sm:grid-cols-[130px_1fr]">
+                <span className="font-black text-[#7c6f64] dark:text-[#a89984]">
+                  {t.latestActivity}
+                </span>
+                <span className="font-bold text-[#458588] dark:text-[#83a598]">
+                  {sonAktiviteDetayMetniAl(
+                    dosyaSonAktiviteleri[ozellikDosyasi.ad],
+                  ) || t.noLatestActivity}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {previewModalAcik && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
@@ -6210,13 +6368,25 @@ export default function AnaSayfa() {
                   {t.openFolder}
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => contextMenuAksiyonCalistir("preview")}
-                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
-                >
-                  {t.previewItem}
-                </button>
+                <>
+                  {textPreviewDosyasiMi(contextMenu.dosya.ad) && (
+                    <button
+                      type="button"
+                      onClick={() => contextMenuAksiyonCalistir("edit")}
+                      className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                    >
+                      {t.editItem}
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => contextMenuAksiyonCalistir("preview")}
+                    className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                  >
+                    {t.previewItem}
+                  </button>
+                </>
               )}
 
               {!contextMenu.dosya.klasorMu && (
@@ -6265,6 +6435,13 @@ export default function AnaSayfa() {
                 className="w-full px-4 py-2.5 text-left text-sm font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
               >
                 {t.deleteItem}
+              </button>
+              <button
+                type="button"
+                onClick={() => contextMenuAksiyonCalistir("properties")}
+                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+              >
+                {t.propertiesItem}
               </button>
             </>
           )}
@@ -7803,11 +7980,19 @@ export default function AnaSayfa() {
                           {sonAktiviteMetniAl(
                             dosyaSonAktiviteleri[dosya.ad],
                           ) && (
-                            <p className="mt-1 max-w-full truncate font-bold text-[#458588] dark:text-[#83a598]">
-                              {sonAktiviteMetniAl(
-                                dosyaSonAktiviteleri[dosya.ad],
-                              )}
-                            </p>
+                            <div className="group/activity relative mx-auto mt-0.5 w-fit max-w-full">
+                              <p className="truncate text-xs font-bold text-[#458588] dark:text-[#83a598]">
+                                {sonAktiviteMetniAl(
+                                  dosyaSonAktiviteleri[dosya.ad],
+                                )}
+                              </p>
+
+                              <span className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-[260px] -translate-x-1/2 whitespace-normal break-words rounded-md border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-1.5 text-center text-xs font-bold leading-snug text-[#3c3836] opacity-0 shadow-lg transition-opacity duration-150 [transition-delay:0ms] group-hover/activity:opacity-100 group-hover/activity:[transition-delay:500ms] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
+                                {sonAktiviteDetayMetniAl(
+                                  dosyaSonAktiviteleri[dosya.ad],
+                                )}
+                              </span>
+                            </div>
                           )}
                         </div>
                         <div className="absolute right-2 top-2">
@@ -7835,47 +8020,117 @@ export default function AnaSayfa() {
                           {acikMenuIndex === index && (
                             <div
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute right-0 top-9 z-20 w-44 rounded-lg border border-[#d5c4a1] dark:border-[#504945] bg-[#fbf1c7] dark:bg-[#282828] shadow-lg overflow-hidden"
+                              className="absolute right-0 top-9 z-20 w-52 overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-lg dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
                             >
+                              {dosya.klasorMu ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAcikMenuIndex(null);
+                                    klasoreGir(dosya);
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                                >
+                                  {t.openFolder}
+                                </button>
+                              ) : (
+                                <>
+                                  {textPreviewDosyasiMi(dosya.ad) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setAcikMenuIndex(null);
+                                        dosyaDirektDuzenle(dosya);
+                                      }}
+                                      className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                                    >
+                                      {t.editItem}
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAcikMenuIndex(null);
+                                      dosyaPreviewGetir(dosya);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                                  >
+                                    {t.previewItem}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAcikMenuIndex(null);
+                                      dosyayiIndir(dosya);
+                                    }}
+                                    className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                                  >
+                                    {t.downloadFile}
+                                  </button>
+                                </>
+                              )}
+
+                              <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
+
                               <button
+                                type="button"
                                 onClick={() => {
                                   setAcikMenuIndex(null);
                                   dosyaVeyaKlasorYenidenAdlandir(dosya);
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
                               >
                                 {t.renameItem}
                               </button>
+
                               <button
+                                type="button"
                                 onClick={() => {
                                   setAcikMenuIndex(null);
                                   dosyaVeyaKlasorTasi(dosya);
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
                               >
                                 {t.moveItem}
                               </button>
 
                               {!dosya.klasorMu && (
                                 <button
+                                  type="button"
                                   onClick={() => {
                                     setAcikMenuIndex(null);
                                     paylasimModaliniAc(dosya);
                                   }}
-                                  className="w-full px-4 py-2 text-left text-sm hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                                  className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
                                 >
                                   {t.shareItem}
                                 </button>
                               )}
 
+                              <div className="border-t border-[#d5c4a1] dark:border-[#504945]" />
+
                               <button
+                                type="button"
                                 onClick={() => {
                                   setAcikMenuIndex(null);
                                   dosyaVeyaKlasorSil(dosya);
                                 }}
-                                className="w-full px-4 py-2 text-left text-sm text-[#cc241d] hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836] transition-colors"
+                                className="w-full px-4 py-2.5 text-left text-sm font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
                               >
                                 {t.deleteItem}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAcikMenuIndex(null);
+                                  dosyaOzellikleriniAc(dosya);
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-sm font-bold transition-colors hover:bg-[#ebdbb2] dark:hover:bg-[#3c3836]"
+                              >
+                                {t.propertiesItem}
                               </button>
                             </div>
                           )}
