@@ -40,6 +40,28 @@ const textPreviewLimit = 1 * 1024 * 1024
 const imagePreviewLimit = 5 * 1024 * 1024
 const textSaveLimit = 1 * 1024 * 1024
 
+const (
+	aktiviteDurumBasarili = "success"
+	aktiviteDurumHata     = "error"
+
+	aktiviteLogin        = "login"
+	aktiviteLogout       = "logout"
+	aktiviteUpload       = "upload"
+	aktiviteDownload     = "download"
+	aktivitePreview      = "preview"
+	aktiviteEditorSave   = "editor_save"
+	aktiviteCreateFile   = "create_file"
+	aktiviteCreateFolder = "create_folder"
+	aktiviteRename       = "rename"
+	aktiviteMove         = "move"
+	aktiviteDelete       = "delete"
+	aktiviteShareCreate  = "share_create"
+	aktiviteShareRevoke  = "share_revoke"
+	aktiviteServerCreate = "server_create"
+	aktiviteServerUpdate = "server_update"
+	aktiviteServerDelete = "server_delete"
+)
+
 func main() {
 	var err error
 	godotenv.Load()
@@ -104,6 +126,31 @@ func main() {
 
 		CREATE INDEX IF NOT EXISTS share_links_token_hash_index
 		ON share_links (token_hash);
+
+		CREATE TABLE IF NOT EXISTS activity_logs (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER REFERENCES kullanicilar(id) ON DELETE CASCADE,
+			server_id INTEGER REFERENCES sunucular(id) ON DELETE SET NULL,
+			action_type VARCHAR(80) NOT NULL,
+			target_path TEXT,
+			target_name TEXT,
+			status VARCHAR(30) NOT NULL,
+			error_code VARCHAR(80),
+			metadata_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+
+		CREATE INDEX IF NOT EXISTS activity_logs_user_id_created_at_index
+		ON activity_logs (user_id, created_at DESC);
+
+		CREATE INDEX IF NOT EXISTS activity_logs_server_id_created_at_index
+		ON activity_logs (server_id, created_at DESC);
+
+		CREATE INDEX IF NOT EXISTS activity_logs_action_type_index
+		ON activity_logs (action_type);
+
+		CREATE INDEX IF NOT EXISTS activity_logs_status_index
+		ON activity_logs (status);
 
 		ALTER TABLE sunucular
 		ALTER COLUMN sunucu_sifre TYPE TEXT;
@@ -667,6 +714,97 @@ func apiHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
 		Mesaj:    mesaj,
 		Kod:      kod,
 	})
+}
+
+func aktiviteLogla(
+	userID int,
+	serverID int,
+	actionType string,
+	targetPath string,
+	targetName string,
+	status string,
+	errorCode string,
+	metadata map[string]interface{},
+) {
+	if userID <= 0 {
+		return
+	}
+
+	actionType = strings.TrimSpace(actionType)
+	status = strings.TrimSpace(status)
+	targetPath = strings.TrimSpace(targetPath)
+	targetName = strings.TrimSpace(targetName)
+	errorCode = strings.TrimSpace(errorCode)
+
+	if actionType == "" || status == "" {
+		return
+	}
+
+	if metadata == nil {
+		metadata = map[string]interface{}{}
+	}
+
+	metadataBytes, err := json.Marshal(metadata)
+	if err != nil {
+		fmt.Println("Aktivite log metadata marshal hatası:", err)
+		metadataBytes = []byte(`{"metadata_error":true}`)
+	}
+
+	var serverIDDegeri interface{} = nil
+	if serverID > 0 {
+		serverIDDegeri = serverID
+	}
+
+	var errorCodeDegeri interface{} = nil
+	if errorCode != "" {
+		errorCodeDegeri = errorCode
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO activity_logs (
+			user_id,
+			server_id,
+			action_type,
+			target_path,
+			target_name,
+			status,
+			error_code,
+			metadata_json
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+	`,
+		userID,
+		serverIDDegeri,
+		actionType,
+		targetPath,
+		targetName,
+		status,
+		errorCodeDegeri,
+		string(metadataBytes),
+	)
+
+	if err != nil {
+		fmt.Println("Aktivite log kayıt hatası:", err)
+	}
+}
+
+func aktiviteYoluOlustur(klasorYolu string, ad string) string {
+	klasorYolu = strings.TrimSpace(klasorYolu)
+	ad = strings.TrimSpace(ad)
+
+	if ad == "" {
+		if klasorYolu == "" {
+			return "/"
+		}
+
+		return path.Clean("/" + strings.TrimPrefix(klasorYolu, "/"))
+	}
+
+	if klasorYolu == "" || klasorYolu == "/" {
+		return "/" + ad
+	}
+
+	return path.Clean("/" + strings.TrimPrefix(path.Join(klasorYolu, ad), "/"))
 }
 
 func paylasimLinkiCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimLinkiOlusturCevabi) {
@@ -1369,6 +1507,23 @@ func paylasimLinkiOlustur(w http.ResponseWriter, r *http.Request) {
 
 	paylasimLinki := publicPaylasimURLAl(paylasimTokeni)
 
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteShareCreate,
+		dosyaYolu,
+		bilgiler.DosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"duration":               bilgiler.Sure,
+			"unlimited":              sonGecerlilik == nil,
+			"son_gecerlilik_tarihi":  sonGecerlilikMetni,
+			"public_link_generated":  true,
+			"raw_share_token_stored": false,
+		},
+	)
+
 	paylasimLinkiCevabiYaz(w, http.StatusCreated, PaylasimLinkiOlusturCevabi{
 		Basarili:            true,
 		Mesaj:               "Paylaşım linki oluşturuldu",
@@ -1545,13 +1700,27 @@ func paylasimLinkiniIptalEt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sonuc, err := db.Exec(`
+	var serverID int
+	var dosyaYolu string
+	var dosyaAdi string
+
+	err = db.QueryRow(`
 		UPDATE share_links
 		SET iptal_edildi = TRUE
 		WHERE id = $1 AND user_id = $2
-	`, bilgiler.ShareID, userID)
+		RETURNING server_id, dosya_yolu, dosya_adi
+`, bilgiler.ShareID, userID).Scan(&serverID, &dosyaYolu, &dosyaAdi)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			paylasimLinkiIptalCevabiYaz(w, http.StatusNotFound, PaylasimLinkiIptalCevabi{
+				Basarili: false,
+				Mesaj:    "Paylaşım linki bulunamadı",
+				Kod:      "SHARE_LINK_NOT_FOUND",
+			})
+			return
+		}
+
 		fmt.Println("Paylaşım linki iptal hatası:", err)
 		paylasimLinkiIptalCevabiYaz(w, http.StatusInternalServerError, PaylasimLinkiIptalCevabi{
 			Basarili: false,
@@ -1561,19 +1730,18 @@ func paylasimLinkiniIptalEt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	etkilenenSatir, err := sonuc.RowsAffected()
-	if err != nil {
-		fmt.Println("Paylaşım linki iptal rows affected hatası:", err)
-	}
-
-	if etkilenenSatir == 0 {
-		paylasimLinkiIptalCevabiYaz(w, http.StatusNotFound, PaylasimLinkiIptalCevabi{
-			Basarili: false,
-			Mesaj:    "Paylaşım linki bulunamadı",
-			Kod:      "SHARE_LINK_NOT_FOUND",
-		})
-		return
-	}
+	aktiviteLogla(
+		userID,
+		serverID,
+		aktiviteShareRevoke,
+		dosyaYolu,
+		dosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"share_id": bilgiler.ShareID,
+		},
+	)
 
 	paylasimLinkiIptalCevabiYaz(w, http.StatusOK, PaylasimLinkiIptalCevabi{
 		Basarili: true,
@@ -2261,6 +2429,12 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz klasör adı", http.StatusBadRequest)
 		return
 	}
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+		return
+	}
+
 	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
@@ -2319,12 +2493,22 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteCreateFolder,
+		aktiviteYoluOlustur(bilgiler.Yol, bilgiler.KlasorAdi),
+		bilgiler.KlasorAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"parent_path": bilgiler.Yol,
+		},
+	)
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"basarili": true,
-		"mesaj":    "Klasör oluşturuldu",
-	})
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"mesaj": "Klasör oluşturuldu"}`))
 }
 
 func dosyaOlustur(w http.ResponseWriter, r *http.Request) {
@@ -2350,6 +2534,12 @@ func dosyaOlustur(w http.ResponseWriter, r *http.Request) {
 
 	if !guvenliAdMi(bilgiler.DosyaAdi) {
 		apiHatasiYaz(w, http.StatusBadRequest, "INVALID_FILE_NAME", "Geçersiz dosya adı")
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		apiHatasiYaz(w, http.StatusUnauthorized, "UNAUTHORIZED", "Yetkisiz giriş veya sunucu bulunamadı")
 		return
 	}
 
@@ -2420,6 +2610,19 @@ func dosyaOlustur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer yeniDosya.Close()
+
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteCreateFile,
+		aktiviteYoluOlustur(bilgiler.Yol, bilgiler.DosyaAdi),
+		bilgiler.DosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"parent_path": bilgiler.Yol,
+		},
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -2793,6 +2996,17 @@ func kullaniciGirisYap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	aktiviteLogla(
+		userID,
+		0,
+		aktiviteLogin,
+		"",
+		"",
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{},
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(GirisCevabi{
@@ -2819,7 +3033,7 @@ func kullaniciCikisYap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := tokenIleKullaniciDogrula(veri.Token)
+	userID, err := tokenIleKullaniciDogrula(veri.Token)
 	if err != nil {
 		http.Error(w, "Oturum geçersiz", http.StatusUnauthorized)
 		return
@@ -2835,6 +3049,17 @@ func kullaniciCikisYap(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Çıkış yapılamadı", http.StatusInternalServerError)
 		return
 	}
+
+	aktiviteLogla(
+		userID,
+		0,
+		aktiviteLogout,
+		"",
+		"",
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{},
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
