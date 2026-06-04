@@ -81,6 +81,9 @@ export default function AnaSayfa() {
   const [activityLoglariYukleniyor, setActivityLoglariYukleniyor] =
     useState(false);
   const [activityLoglariHatasi, setActivityLoglariHatasi] = useState("");
+  const [dosyaSonAktiviteleri, setDosyaSonAktiviteleri] = useState({});
+  const [ozellikModalAcik, setOzellikModalAcik] = useState(false);
+  const [ozellikDosyasi, setOzellikDosyasi] = useState(null);
   const [silmeOnizlemeOgeleri, setSilmeOnizlemeOgeleri] = useState([]);
   const [silmeOnizlemeToplam, setSilmeOnizlemeToplam] = useState(0);
   const [silmeOnizlemeYukleniyor, setSilmeOnizlemeYukleniyor] = useState(false);
@@ -372,6 +375,89 @@ export default function AnaSayfa() {
     }
 
     return "border-[#d5c4a1] bg-[#ebdbb2] text-[#7c6f64] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#a89984]";
+  };
+
+  const sonAktiviteMetniAl = (aktivite) => {
+    if (!aktivite?.action_type) return "";
+
+    const actionMap = {
+      upload: t.lastActivityUploaded,
+      create_file: t.lastActivityCreated,
+      create_folder: t.lastActivityCreated,
+      editor_save: t.lastActivityEdited,
+      rename: t.lastActivityRenamed,
+      move: t.lastActivityMoved,
+      share_create: t.lastActivityShared,
+      share_revoke: t.lastActivityShareRevoked,
+    };
+
+    const aksiyonMetni = actionMap[aktivite.action_type] || "";
+
+    if (!aksiyonMetni) return "";
+
+    if (!aktivite.olusturma_tarihi) {
+      return aksiyonMetni;
+    }
+
+    return `${aksiyonMetni} · ${aktivite.olusturma_tarihi}`;
+  };
+
+  const dosyaSonAktiviteleriniGetir = (
+    dosyaListesi,
+    yol = mevcutYol,
+    sunucu = seciliSunucu,
+  ) => {
+    if (!oturumToken || !sunucu || !Array.isArray(dosyaListesi)) {
+      setDosyaSonAktiviteleri({});
+      return;
+    }
+
+    const dosyaAdlari = dosyaListesi
+      .map((dosya) => dosya?.ad || "")
+      .filter(Boolean);
+
+    if (dosyaAdlari.length === 0) {
+      setDosyaSonAktiviteleri({});
+      return;
+    }
+
+    fetch("http://localhost:8080/api/activity/latest-for-folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        server_id: sunucu.id,
+        yol,
+        dosya_adlari: dosyaAdlari,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        return cevap.json().then((veri) => {
+          if (!cevap.ok || !veri.basarili) {
+            const hata = new Error(veri.mesaj || t.latestActivityLoadFailed);
+            hata.kod = veri.kod || "";
+            hata.status = cevap.status;
+            throw hata;
+          }
+
+          return veri;
+        });
+      })
+      .then((veri) => {
+        setDosyaSonAktiviteleri(veri.aktiviteler || {});
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          return;
+        }
+
+        console.log("Dosya son aktivite hatası:", hata);
+        setDosyaSonAktiviteleri({});
+      });
   };
 
   const activityLoglariniGetir = () => {
@@ -761,15 +847,19 @@ export default function AnaSayfa() {
   };
 
   const klasoruYenile = (hedefYol, sunucu = seciliSunucu) => {
+    setDosyaSonAktiviteleri({});
+
     if (!sunucu) {
       toastGoster(t.selectServerFirst, "error");
       return;
     }
+
     const gonderilecekVeri = {
       token: oturumToken,
       yol: hedefYol,
       server_id: sunucu.id,
     };
+
     fetch("http://localhost:8080/api/files", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -795,6 +885,7 @@ export default function AnaSayfa() {
           const gelenDosyalar = veri.dosyalar || [];
 
           setDosyalar(gelenDosyalar);
+          dosyaSonAktiviteleriniGetir(gelenDosyalar, hedefYol, sunucu);
 
           if (gelenDosyalar.length === 0) {
             setDosyaMesaji("");
@@ -803,6 +894,7 @@ export default function AnaSayfa() {
           }
         } else {
           setDosyalar([]);
+          setDosyaSonAktiviteleri({});
           setDosyaMesaji(
             veri.kod === "PERMISSION_DENIED"
               ? t.permissionDenied
@@ -817,12 +909,16 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+
         console.log("Hata:", hata);
         setDosyalar([]);
+        setDosyaSonAktiviteleri({});
+
         const mesaj = apiHataMesajiAl(hata, t.filesLoadFailed);
 
         setDosyaMesaji(mesaj);
         setYukleniyor(false);
+        setYuklemeMesaji("");
         toastGoster(mesaj, "error");
       });
   };
@@ -991,6 +1087,7 @@ export default function AnaSayfa() {
     shareModaliniTemizle();
     shareYonetimModaliniTemizle();
     activityModaliniKapat();
+    setDosyaSonAktiviteleri({});
   };
 
   const sunucuEklemeEkraniniAc = () => {
@@ -1067,6 +1164,7 @@ export default function AnaSayfa() {
     shareModaliniTemizle();
     shareYonetimModaliniTemizle();
     activityModaliniKapat();
+    setDosyaSonAktiviteleri({});
 
     setYukleniyor(false);
     setYuklemeMesaji("");
@@ -1148,6 +1246,7 @@ export default function AnaSayfa() {
     shareModaliniTemizle();
     shareYonetimModaliniTemizle();
     activityModaliniKapat();
+    setDosyaSonAktiviteleri({});
 
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
@@ -7606,6 +7705,15 @@ export default function AnaSayfa() {
                               ? t.folderItem
                               : dosyaTipEtiketiAl(dosya)}
                           </p>
+                          {sonAktiviteMetniAl(
+                            dosyaSonAktiviteleri[dosya.ad],
+                          ) && (
+                            <p className="mt-0.5 truncate text-xs font-bold text-[#458588] dark:text-[#83a598]">
+                              {sonAktiviteMetniAl(
+                                dosyaSonAktiviteleri[dosya.ad],
+                              )}
+                            </p>
+                          )}
                         </div>
 
                         <div className="hidden w-28 shrink-0 text-right text-xs font-bold text-[#7c6f64] dark:text-[#a89984] sm:block">
@@ -7692,6 +7800,15 @@ export default function AnaSayfa() {
                           <p className="truncate max-w-full">
                             {dosya.degistirilme}
                           </p>
+                          {sonAktiviteMetniAl(
+                            dosyaSonAktiviteleri[dosya.ad],
+                          ) && (
+                            <p className="mt-1 max-w-full truncate font-bold text-[#458588] dark:text-[#83a598]">
+                              {sonAktiviteMetniAl(
+                                dosyaSonAktiviteleri[dosya.ad],
+                              )}
+                            </p>
+                          )}
                         </div>
                         <div className="absolute right-2 top-2">
                           <button

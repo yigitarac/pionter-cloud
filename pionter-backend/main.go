@@ -195,6 +195,7 @@ func main() {
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
 	http.HandleFunc("/api/activity/list", aktiviteLoglariniListele)
+	http.HandleFunc("/api/activity/latest-for-folder", aktiviteSonKlasorLoglariniGetir)
 	http.HandleFunc("/api/share/create", paylasimLinkiOlustur)
 	http.HandleFunc("/api/share/list", paylasimLinkleriniListele)
 	http.HandleFunc("/api/share/revoke", paylasimLinkiniIptalEt)
@@ -530,6 +531,27 @@ type AktiviteLogListeCevabi struct {
 	Mesaj    string             `json:"mesaj"`
 	Kod      string             `json:"kod,omitempty"`
 	Loglar   []AktiviteLogOgesi `json:"loglar"`
+}
+
+type AktiviteSonKlasorBilgileri struct {
+	Token       string   `json:"token"`
+	ServerID    int      `json:"server_id"`
+	Yol         string   `json:"yol"`
+	DosyaAdlari []string `json:"dosya_adlari"`
+}
+
+type AktiviteSonOgesi struct {
+	ActionType      string `json:"action_type"`
+	TargetPath      string `json:"target_path"`
+	TargetName      string `json:"target_name"`
+	OlusturmaTarihi string `json:"olusturma_tarihi"`
+}
+
+type AktiviteSonKlasorCevabi struct {
+	Basarili    bool                        `json:"basarili"`
+	Mesaj       string                      `json:"mesaj"`
+	Kod         string                      `json:"kod,omitempty"`
+	Aktiviteler map[string]AktiviteSonOgesi `json:"aktiviteler"`
 }
 
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
@@ -893,6 +915,12 @@ func paylasimLinkiIptalCevabiYaz(w http.ResponseWriter, status int, cevap Paylas
 }
 
 func aktiviteLogListeCevabiYaz(w http.ResponseWriter, status int, cevap AktiviteLogListeCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
+func aktiviteSonKlasorCevabiYaz(w http.ResponseWriter, status int, cevap AktiviteSonKlasorCevabi) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(cevap)
@@ -2029,6 +2057,188 @@ func aktiviteLoglariniListele(w http.ResponseWriter, r *http.Request) {
 		Basarili: true,
 		Mesaj:    "Aktivite logları getirildi",
 		Loglar:   loglar,
+	})
+}
+
+func aktiviteSonKlasorLoglariniGetir(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler AktiviteSonKlasorBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+	bilgiler.Yol = strings.TrimSpace(bilgiler.Yol)
+
+	if bilgiler.Token == "" || bilgiler.ServerID <= 0 {
+		aktiviteSonKlasorCevabiYaz(w, http.StatusBadRequest, AktiviteSonKlasorCevabi{
+			Basarili:    false,
+			Mesaj:       "Eksik veya geçersiz veri",
+			Kod:         "INVALID_REQUEST",
+			Aktiviteler: map[string]AktiviteSonOgesi{},
+		})
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		aktiviteSonKlasorCevabiYaz(w, http.StatusUnauthorized, AktiviteSonKlasorCevabi{
+			Basarili:    false,
+			Mesaj:       "Yetkisiz giriş",
+			Kod:         "UNAUTHORIZED",
+			Aktiviteler: map[string]AktiviteSonOgesi{},
+		})
+		return
+	}
+
+	temizAdlar := []string{}
+	gorulenAdlar := map[string]bool{}
+
+	for _, ad := range bilgiler.DosyaAdlari {
+		ad = strings.TrimSpace(ad)
+
+		if ad == "" {
+			continue
+		}
+
+		if !guvenliAdMi(ad) {
+			continue
+		}
+
+		if gorulenAdlar[ad] {
+			continue
+		}
+
+		gorulenAdlar[ad] = true
+		temizAdlar = append(temizAdlar, ad)
+	}
+
+	if len(temizAdlar) == 0 {
+		aktiviteSonKlasorCevabiYaz(w, http.StatusOK, AktiviteSonKlasorCevabi{
+			Basarili:    true,
+			Mesaj:       "Aktivite bulunamadı",
+			Aktiviteler: map[string]AktiviteSonOgesi{},
+		})
+		return
+	}
+
+	if len(temizAdlar) > 300 {
+		temizAdlar = temizAdlar[:300]
+	}
+
+	hedefYollar := []string{}
+	for _, ad := range temizAdlar {
+		hedefYollar = append(hedefYollar, aktiviteYoluOlustur(bilgiler.Yol, ad))
+	}
+
+	placeholderlar := []string{}
+	argumanlar := []interface{}{userID, bilgiler.ServerID}
+
+	for index, hedefYol := range hedefYollar {
+		placeholderlar = append(placeholderlar, fmt.Sprintf("$%d", index+3))
+		argumanlar = append(argumanlar, hedefYol)
+	}
+
+	sorgu := fmt.Sprintf(`
+		SELECT DISTINCT ON (al.target_path)
+			al.target_path,
+			al.target_name,
+			al.action_type,
+			al.created_at
+		FROM activity_logs al
+		WHERE al.user_id = $1
+			AND al.server_id = $2
+			AND al.status = 'success'
+			AND al.action_type IN (
+				'upload',
+				'create_file',
+				'create_folder',
+				'editor_save',
+				'rename',
+				'move',
+				'share_create',
+				'share_revoke'
+			)
+			AND al.target_path IN (%s)
+		ORDER BY al.target_path, al.created_at DESC
+	`, strings.Join(placeholderlar, ", "))
+
+	rows, err := db.Query(sorgu, argumanlar...)
+	if err != nil {
+		fmt.Println("Klasör son aktivite listeleme hatası:", err)
+
+		aktiviteSonKlasorCevabiYaz(w, http.StatusInternalServerError, AktiviteSonKlasorCevabi{
+			Basarili:    false,
+			Mesaj:       "Son aktiviteler getirilemedi",
+			Kod:         "LATEST_ACTIVITY_LIST_FAILED",
+			Aktiviteler: map[string]AktiviteSonOgesi{},
+		})
+		return
+	}
+	defer rows.Close()
+
+	aktiviteler := map[string]AktiviteSonOgesi{}
+
+	for rows.Next() {
+		var targetPath string
+		var targetName sql.NullString
+		var actionType string
+		var createdAt time.Time
+
+		err = rows.Scan(
+			&targetPath,
+			&targetName,
+			&actionType,
+			&createdAt,
+		)
+
+		if err != nil {
+			fmt.Println("Klasör son aktivite satır okuma hatası:", err)
+			continue
+		}
+
+		dosyaAdi := ""
+		if targetName.Valid {
+			dosyaAdi = targetName.String
+		}
+
+		if dosyaAdi == "" {
+			dosyaAdi = path.Base(targetPath)
+		}
+
+		if dosyaAdi == "." || dosyaAdi == "/" {
+			continue
+		}
+
+		aktiviteler[dosyaAdi] = AktiviteSonOgesi{
+			ActionType:      actionType,
+			TargetPath:      targetPath,
+			TargetName:      dosyaAdi,
+			OlusturmaTarihi: createdAt.Format("2006-01-02 15:04"),
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		fmt.Println("Klasör son aktivite rows hatası:", err)
+
+		aktiviteSonKlasorCevabiYaz(w, http.StatusInternalServerError, AktiviteSonKlasorCevabi{
+			Basarili:    false,
+			Mesaj:       "Son aktiviteler getirilemedi",
+			Kod:         "LATEST_ACTIVITY_LIST_FAILED",
+			Aktiviteler: map[string]AktiviteSonOgesi{},
+		})
+		return
+	}
+
+	aktiviteSonKlasorCevabiYaz(w, http.StatusOK, AktiviteSonKlasorCevabi{
+		Basarili:    true,
+		Mesaj:       "Son aktiviteler getirildi",
+		Aktiviteler: aktiviteler,
 	})
 }
 
