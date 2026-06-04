@@ -75,6 +75,11 @@ export default function AnaSayfa() {
   const [shareIptalEdiliyorID, setShareIptalEdiliyorID] = useState(null);
   const [shareIptalOnayModalAcik, setShareIptalOnayModalAcik] = useState(false);
   const [iptalEdilecekShareLink, setIptalEdilecekShareLink] = useState(null);
+  const [activityModalAcik, setActivityModalAcik] = useState(false);
+  const [activityLoglari, setActivityLoglari] = useState([]);
+  const [activityLoglariYukleniyor, setActivityLoglariYukleniyor] =
+    useState(false);
+  const [activityLoglariHatasi, setActivityLoglariHatasi] = useState("");
   const [silmeOnizlemeOgeleri, setSilmeOnizlemeOgeleri] = useState([]);
   const [silmeOnizlemeToplam, setSilmeOnizlemeToplam] = useState(0);
   const [silmeOnizlemeYukleniyor, setSilmeOnizlemeYukleniyor] = useState(false);
@@ -306,6 +311,139 @@ export default function AnaSayfa() {
     }
 
     return `${t.homeFolder}/${temizYol}`;
+  };
+
+  const gorunenAktiviteYoluAl = (yol) => {
+    const temizYol = String(yol || "").trim();
+
+    if (!temizYol) {
+      return "-";
+    }
+
+    if (temizYol === "/") {
+      return t.homeFolder;
+    }
+
+    if (temizYol.startsWith("/")) {
+      return `${t.homeFolder}${temizYol}`;
+    }
+
+    return `${t.homeFolder}/${temizYol}`;
+  };
+
+  const activityActionMetniAl = (actionType) => {
+    const actionMap = {
+      login: t.activityActionLogin,
+      logout: t.activityActionLogout,
+      upload: t.activityActionUpload,
+      download: t.activityActionDownload,
+      preview: t.activityActionPreview,
+      editor_save: t.activityActionEditorSave,
+      create_file: t.activityActionCreateFile,
+      create_folder: t.activityActionCreateFolder,
+      rename: t.activityActionRename,
+      move: t.activityActionMove,
+      delete: t.activityActionDelete,
+      share_create: t.activityActionShareCreate,
+      share_revoke: t.activityActionShareRevoke,
+      server_create: t.activityActionServerCreate,
+      server_update: t.activityActionServerUpdate,
+      server_delete: t.activityActionServerDelete,
+    };
+
+    return actionMap[actionType] || actionType || "-";
+  };
+
+  const activityStatusMetniAl = (status) => {
+    if (status === "success") return t.activityStatusSuccess;
+    if (status === "error") return t.activityStatusError;
+
+    return status || "-";
+  };
+
+  const activityStatusClassAl = (status) => {
+    if (status === "success") {
+      return "border-[#98971a] bg-[#ebdbb2] text-[#79740e] dark:border-[#b8bb26] dark:bg-[#32361a] dark:text-[#b8bb26]";
+    }
+
+    if (status === "error") {
+      return "border-[#cc241d] bg-[#f4d0c8] text-[#9d0006] dark:border-[#fb4934] dark:bg-[#3b2422] dark:text-[#fb4934]";
+    }
+
+    return "border-[#d5c4a1] bg-[#ebdbb2] text-[#7c6f64] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#a89984]";
+  };
+
+  const activityLoglariniGetir = () => {
+    if (!oturumToken) {
+      toastGoster(t.sessionExpired, "error");
+      return;
+    }
+
+    setActivityLoglariYukleniyor(true);
+    setActivityLoglariHatasi("");
+
+    fetch("http://localhost:8080/api/activity/list", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: oturumToken,
+        limit: 100,
+      }),
+    })
+      .then((cevap) => {
+        if (oturumHatasiKontrolEt(cevap)) {
+          throw new Error("Oturum geçersiz");
+        }
+
+        return cevap.json().then((veri) => {
+          if (!cevap.ok || !veri.basarili) {
+            const hata = new Error(veri.mesaj || t.activityLogsLoadFailed);
+            hata.kod = veri.kod || "";
+            hata.status = cevap.status;
+            throw hata;
+          }
+
+          return veri;
+        });
+      })
+      .then((veri) => {
+        setActivityLoglari(veri.loglar || []);
+        setActivityLoglariYukleniyor(false);
+        setActivityLoglariHatasi("");
+      })
+      .catch((hata) => {
+        if (hata.message === "Oturum geçersiz") {
+          setActivityLoglariYukleniyor(false);
+          return;
+        }
+
+        const mesaj = apiHataMesajiAl(hata, t.activityLogsLoadFailed);
+
+        console.log("Aktivite logları listeleme hatası:", hata);
+        setActivityLoglari([]);
+        setActivityLoglariYukleniyor(false);
+        setActivityLoglariHatasi(mesaj);
+        toastGoster(mesaj, "error");
+      });
+  };
+
+  const activityModaliniAc = () => {
+    if (!oturumToken) {
+      toastGoster(t.sessionExpired, "error");
+      return;
+    }
+
+    setActivityModalAcik(true);
+    setActivityLoglari([]);
+    setActivityLoglariHatasi("");
+    activityLoglariniGetir();
+  };
+
+  const activityModaliniKapat = () => {
+    setActivityModalAcik(false);
+    setActivityLoglari([]);
+    setActivityLoglariYukleniyor(false);
+    setActivityLoglariHatasi("");
   };
 
   const contextMenuyuKapat = () => {
@@ -851,6 +989,7 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
     shareModaliniTemizle();
     shareYonetimModaliniTemizle();
+    activityModaliniKapat();
   };
 
   const sunucuEklemeEkraniniAc = () => {
@@ -926,6 +1065,7 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
     shareModaliniTemizle();
     shareYonetimModaliniTemizle();
+    activityModaliniKapat();
 
     setYukleniyor(false);
     setYuklemeMesaji("");
@@ -1006,6 +1146,7 @@ export default function AnaSayfa() {
     setSilinecekDosya(null);
     shareModaliniTemizle();
     shareYonetimModaliniTemizle();
+    activityModaliniKapat();
 
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingFiles);
@@ -4880,6 +5021,141 @@ export default function AnaSayfa() {
           </div>
         </div>
       )}
+      {activityModalAcik && (
+        <div
+          onClick={activityModaliniKapat}
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[86vh] w-full max-w-5xl flex-col rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+          >
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#d5c4a1] p-5 dark:border-[#504945]">
+              <div>
+                <h2 className="text-lg font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                  {t.activityLogs}
+                </h2>
+
+                <p className="mt-1 text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+                  {t.activityLogsHelp}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={activityModaliniKapat}
+                className="rounded-lg bg-[#d5c4a1] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#a89984] dark:bg-[#504945] dark:text-[#ebdbb2] dark:hover:bg-[#665c54]"
+              >
+                {t.close}
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto p-5">
+              {activityLoglariYukleniyor && (
+                <div className="rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-5 dark:border-[#504945] dark:bg-[#3c3836]">
+                  <p className="animate-pulse text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+                    {t.loadingActivityLogs}
+                  </p>
+                </div>
+              )}
+
+              {!activityLoglariYukleniyor && activityLoglariHatasi && (
+                <div className="rounded-xl border border-[#cc241d] bg-[#f4d0c8] p-5 dark:border-[#fb4934] dark:bg-[#3b2422]">
+                  <p className="text-sm font-black text-[#9d0006] dark:text-[#fb4934]">
+                    {activityLoglariHatasi}
+                  </p>
+                </div>
+              )}
+
+              {!activityLoglariYukleniyor &&
+                !activityLoglariHatasi &&
+                activityLoglari.length === 0 && (
+                  <div className="rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-5 dark:border-[#504945] dark:bg-[#3c3836]">
+                    <p className="text-sm font-bold text-[#7c6f64] dark:text-[#a89984]">
+                      {t.noActivityLogs}
+                    </p>
+                  </div>
+                )}
+
+              {!activityLoglariYukleniyor &&
+                !activityLoglariHatasi &&
+                activityLoglari.length > 0 && (
+                  <div className="space-y-3">
+                    {activityLoglari.map((log) => (
+                      <div
+                        key={log.id}
+                        className="rounded-xl border border-[#d5c4a1] bg-[#ebdbb2] p-4 dark:border-[#504945] dark:bg-[#3c3836]"
+                      >
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <span
+                                className={`rounded-full border px-2.5 py-1 text-xs font-black ${activityStatusClassAl(
+                                  log.status,
+                                )}`}
+                              >
+                                {activityStatusMetniAl(log.status)}
+                              </span>
+
+                              <span className="rounded-full border border-[#d5c4a1] bg-[#fbf1c7] px-2.5 py-1 text-xs font-black text-[#7c6f64] dark:border-[#504945] dark:bg-[#282828] dark:text-[#a89984]">
+                                {activityActionMetniAl(log.action_type)}
+                              </span>
+
+                              <span className="rounded-full border border-[#d5c4a1] bg-[#fbf1c7] px-2.5 py-1 text-xs font-black text-[#7c6f64] dark:border-[#504945] dark:bg-[#282828] dark:text-[#a89984]">
+                                {log.olusturma_tarihi}
+                              </span>
+                            </div>
+
+                            <h3 className="break-words text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                              {log.target_name ||
+                                activityActionMetniAl(log.action_type)}
+                            </h3>
+
+                            <div className="mt-2 grid gap-1 text-xs font-bold text-[#7c6f64] dark:text-[#a89984] sm:grid-cols-2">
+                              <p>
+                                {t.server}:{" "}
+                                <span className="text-[#458588] dark:text-[#83a598]">
+                                  {log.sunucu_takma_ad || "-"}
+                                </span>
+                              </p>
+
+                              <p>
+                                {t.path}:{" "}
+                                <span className="break-all text-[#3c3836] dark:text-[#ebdbb2]">
+                                  {gorunenAktiviteYoluAl(log.target_path)}
+                                </span>
+                              </p>
+
+                              {log.error_code && (
+                                <p className="sm:col-span-2">
+                                  {t.errorCode}:{" "}
+                                  <span className="text-[#cc241d] dark:text-[#fb4934]">
+                                    {log.error_code}
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </div>
+
+            <div className="flex shrink-0 justify-end border-t border-[#d5c4a1] p-5 dark:border-[#504945]">
+              <button
+                type="button"
+                onClick={activityLoglariniGetir}
+                disabled={activityLoglariYukleniyor}
+                className="rounded-lg bg-[#458588] px-4 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+              >
+                {t.refreshActivityLogs}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {shareIptalOnayModalAcik && (
         <div
           onClick={shareIptalOnayModaliniKapat}
@@ -6957,6 +7233,15 @@ export default function AnaSayfa() {
                         className="shrink-0 rounded-lg border border-[#d79921] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#fabd2f] dark:hover:bg-[#3b321d]"
                       >
                         {t.manageShareLinks}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={activityModaliniAc}
+                        disabled={yukleniyor || !oturumToken}
+                        className="shrink-0 rounded-lg border border-[#98971a] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#b8bb26] dark:bg-[#282828] dark:text-[#b8bb26] dark:hover:bg-[#32361a]"
+                      >
+                        {t.activityLogs}
                       </button>
 
                       {gosterilecekDosyalar.length > 0 &&

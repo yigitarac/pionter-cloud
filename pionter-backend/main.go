@@ -194,6 +194,7 @@ func main() {
 	http.HandleFunc("/api/servers/pin", sunucuSabitle)
 	http.HandleFunc("/api/servers/test", sunucuBaglantisiniTestEt)
 	http.HandleFunc("/api/server/stats", sunucuStatsGetir)
+	http.HandleFunc("/api/activity/list", aktiviteLoglariniListele)
 	http.HandleFunc("/api/share/create", paylasimLinkiOlustur)
 	http.HandleFunc("/api/share/list", paylasimLinkleriniListele)
 	http.HandleFunc("/api/share/revoke", paylasimLinkiniIptalEt)
@@ -501,6 +502,34 @@ type SunucuStatsCevabi struct {
 type SunucuStatsCacheKaydi struct {
 	Cevap         SunucuStatsCevabi
 	SonGuncelleme time.Time
+}
+
+type AktiviteLogListeleBilgileri struct {
+	Token      string `json:"token"`
+	ServerID   int    `json:"server_id"`
+	ActionType string `json:"action_type"`
+	Status     string `json:"status"`
+	Limit      int    `json:"limit"`
+}
+
+type AktiviteLogOgesi struct {
+	ID              int                    `json:"id"`
+	ServerID        int                    `json:"server_id,omitempty"`
+	SunucuTakmaAd   string                 `json:"sunucu_takma_ad,omitempty"`
+	ActionType      string                 `json:"action_type"`
+	TargetPath      string                 `json:"target_path,omitempty"`
+	TargetName      string                 `json:"target_name,omitempty"`
+	Status          string                 `json:"status"`
+	ErrorCode       string                 `json:"error_code,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata"`
+	OlusturmaTarihi string                 `json:"olusturma_tarihi"`
+}
+
+type AktiviteLogListeCevabi struct {
+	Basarili bool               `json:"basarili"`
+	Mesaj    string             `json:"mesaj"`
+	Kod      string             `json:"kod,omitempty"`
+	Loglar   []AktiviteLogOgesi `json:"loglar"`
 }
 
 func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
@@ -858,6 +887,12 @@ func paylasimLinkiListeCevabiYaz(w http.ResponseWriter, status int, cevap Paylas
 }
 
 func paylasimLinkiIptalCevabiYaz(w http.ResponseWriter, status int, cevap PaylasimLinkiIptalCevabi) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(cevap)
+}
+
+func aktiviteLogListeCevabiYaz(w http.ResponseWriter, status int, cevap AktiviteLogListeCevabi) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(cevap)
@@ -1797,6 +1832,203 @@ func paylasimLinkiniIptalEt(w http.ResponseWriter, r *http.Request) {
 		Basarili: true,
 		Mesaj:    "Paylaşım linki iptal edildi",
 		ShareID:  bilgiler.ShareID,
+	})
+}
+
+func aktiviteLoglariniListele(w http.ResponseWriter, r *http.Request) {
+	corsAyarla(w, "POST, OPTIONS")
+
+	if !postIstekKontrolu(w, r) {
+		return
+	}
+
+	var bilgiler AktiviteLogListeleBilgileri
+	if !jsonOku(w, r, &bilgiler) {
+		return
+	}
+
+	bilgiler.Token = strings.TrimSpace(bilgiler.Token)
+	bilgiler.ActionType = strings.TrimSpace(bilgiler.ActionType)
+	bilgiler.Status = strings.TrimSpace(bilgiler.Status)
+
+	if bilgiler.Token == "" {
+		aktiviteLogListeCevabiYaz(w, http.StatusBadRequest, AktiviteLogListeCevabi{
+			Basarili: false,
+			Mesaj:    "Eksik veya geçersiz veri",
+			Kod:      "INVALID_REQUEST",
+			Loglar:   []AktiviteLogOgesi{},
+		})
+		return
+	}
+
+	if bilgiler.Limit <= 0 {
+		bilgiler.Limit = 100
+	}
+
+	if bilgiler.Limit > 200 {
+		bilgiler.Limit = 200
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		aktiviteLogListeCevabiYaz(w, http.StatusUnauthorized, AktiviteLogListeCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş",
+			Kod:      "UNAUTHORIZED",
+			Loglar:   []AktiviteLogOgesi{},
+		})
+		return
+	}
+
+	filtreler := []string{"al.user_id = $1"}
+	argumanlar := []interface{}{userID}
+	argIndex := 2
+
+	if bilgiler.ServerID > 0 {
+		filtreler = append(filtreler, fmt.Sprintf("al.server_id = $%d", argIndex))
+		argumanlar = append(argumanlar, bilgiler.ServerID)
+		argIndex++
+	}
+
+	if bilgiler.ActionType != "" {
+		filtreler = append(filtreler, fmt.Sprintf("al.action_type = $%d", argIndex))
+		argumanlar = append(argumanlar, bilgiler.ActionType)
+		argIndex++
+	}
+
+	if bilgiler.Status != "" {
+		filtreler = append(filtreler, fmt.Sprintf("al.status = $%d", argIndex))
+		argumanlar = append(argumanlar, bilgiler.Status)
+		argIndex++
+	}
+
+	sorgu := fmt.Sprintf(`
+		SELECT
+			al.id,
+			al.server_id,
+			COALESCE(s.sunucu_takma_ad, ''),
+			al.action_type,
+			al.target_path,
+			al.target_name,
+			al.status,
+			al.error_code,
+			al.metadata_json,
+			al.created_at
+		FROM activity_logs al
+		LEFT JOIN sunucular s ON s.id = al.server_id AND s.user_id = al.user_id
+		WHERE %s
+		ORDER BY al.created_at DESC
+		LIMIT $%d
+	`, strings.Join(filtreler, " AND "), argIndex)
+
+	argumanlar = append(argumanlar, bilgiler.Limit)
+
+	rows, err := db.Query(sorgu, argumanlar...)
+	if err != nil {
+		fmt.Println("Aktivite log listeleme hatası:", err)
+		aktiviteLogListeCevabiYaz(w, http.StatusInternalServerError, AktiviteLogListeCevabi{
+			Basarili: false,
+			Mesaj:    "Aktivite logları getirilemedi",
+			Kod:      "ACTIVITY_LOGS_LIST_FAILED",
+			Loglar:   []AktiviteLogOgesi{},
+		})
+		return
+	}
+	defer rows.Close()
+
+	loglar := []AktiviteLogOgesi{}
+
+	for rows.Next() {
+		var id int
+		var serverID sql.NullInt64
+		var sunucuTakmaAd string
+		var actionType string
+		var targetPath sql.NullString
+		var targetName sql.NullString
+		var status string
+		var errorCode sql.NullString
+		var metadataBytes []byte
+		var createdAt time.Time
+
+		err = rows.Scan(
+			&id,
+			&serverID,
+			&sunucuTakmaAd,
+			&actionType,
+			&targetPath,
+			&targetName,
+			&status,
+			&errorCode,
+			&metadataBytes,
+			&createdAt,
+		)
+
+		if err != nil {
+			fmt.Println("Aktivite log satır okuma hatası:", err)
+			continue
+		}
+
+		metadata := map[string]interface{}{}
+
+		if len(metadataBytes) > 0 {
+			err = json.Unmarshal(metadataBytes, &metadata)
+			if err != nil {
+				fmt.Println("Aktivite log metadata parse hatası:", err)
+				metadata = map[string]interface{}{
+					"metadata_parse_error": true,
+				}
+			}
+		}
+
+		serverIDDegeri := 0
+		if serverID.Valid {
+			serverIDDegeri = int(serverID.Int64)
+		}
+
+		targetPathDegeri := ""
+		if targetPath.Valid {
+			targetPathDegeri = targetPath.String
+		}
+
+		targetNameDegeri := ""
+		if targetName.Valid {
+			targetNameDegeri = targetName.String
+		}
+
+		errorCodeDegeri := ""
+		if errorCode.Valid {
+			errorCodeDegeri = errorCode.String
+		}
+
+		loglar = append(loglar, AktiviteLogOgesi{
+			ID:              id,
+			ServerID:        serverIDDegeri,
+			SunucuTakmaAd:   sunucuTakmaAd,
+			ActionType:      actionType,
+			TargetPath:      targetPathDegeri,
+			TargetName:      targetNameDegeri,
+			Status:          status,
+			ErrorCode:       errorCodeDegeri,
+			Metadata:        metadata,
+			OlusturmaTarihi: createdAt.Format("2006-01-02 15:04"),
+		})
+	}
+
+	if err = rows.Err(); err != nil {
+		fmt.Println("Aktivite log rows hatası:", err)
+		aktiviteLogListeCevabiYaz(w, http.StatusInternalServerError, AktiviteLogListeCevabi{
+			Basarili: false,
+			Mesaj:    "Aktivite logları getirilemedi",
+			Kod:      "ACTIVITY_LOGS_LIST_FAILED",
+			Loglar:   []AktiviteLogOgesi{},
+		})
+		return
+	}
+
+	aktiviteLogListeCevabiYaz(w, http.StatusOK, AktiviteLogListeCevabi{
+		Basarili: true,
+		Mesaj:    "Aktivite logları getirildi",
+		Loglar:   loglar,
 	})
 }
 
