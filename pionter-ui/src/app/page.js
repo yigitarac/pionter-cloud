@@ -7044,6 +7044,24 @@ export default function AnaSayfa() {
 
                     <button
                       type="button"
+                      onClick={shareYonetimModaliniAc}
+                      disabled={yukleniyor || !oturumToken}
+                      className="rounded-lg border border-[#d79921] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#fabd2f] dark:hover:bg-[#3b321d]"
+                    >
+                      {t.manageShareLinks}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={activityModaliniAc}
+                      disabled={yukleniyor || !oturumToken}
+                      className="rounded-lg border border-[#98971a] bg-[#fbf1c7] px-4 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#b8bb26] dark:bg-[#282828] dark:text-[#b8bb26] dark:hover:bg-[#32361a]"
+                    >
+                      {t.activityLogs}
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => {
                         sunucularaDon();
                         setSolPanelAcik(false);
@@ -7225,35 +7243,6 @@ export default function AnaSayfa() {
                       >
                         {t.newFolder}
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={shareYonetimModaliniAc}
-                        disabled={yukleniyor || !oturumToken}
-                        className="shrink-0 rounded-lg border border-[#d79921] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#fabd2f] dark:hover:bg-[#3b321d]"
-                      >
-                        {t.manageShareLinks}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={activityModaliniAc}
-                        disabled={yukleniyor || !oturumToken}
-                        className="shrink-0 rounded-lg border border-[#98971a] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:bg-[#d5c4a1] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#b8bb26] dark:bg-[#282828] dark:text-[#b8bb26] dark:hover:bg-[#32361a]"
-                      >
-                        {t.activityLogs}
-                      </button>
-
-                      {gosterilecekDosyalar.length > 0 &&
-                        !listelenenOgelerinHepsiSeciliMi() && (
-                          <button
-                            type="button"
-                            onClick={listelenenOgeleriSec}
-                            className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                          >
-                            {t.selectListed}
-                          </button>
-                        )}
                     </>
                   )}
                 </div>
@@ -7261,7 +7250,7 @@ export default function AnaSayfa() {
             </div>
 
             <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
-              <div className="flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
+              <div className="min-w-0 flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <div className="group relative inline-flex">
                   <button
                     disabled={yukleniyor || mevcutYol === "/"}
@@ -7381,6 +7370,18 @@ export default function AnaSayfa() {
                   })}
                 </div>
               </div>
+              {seciliOgeAnahtarlari.length === 0 &&
+                gosterilecekDosyalar.length > 0 &&
+                !listelenenOgelerinHepsiSeciliMi() && (
+                  <button
+                    type="button"
+                    onClick={listelenenOgeleriSec}
+                    disabled={yukleniyor}
+                    className="ml-4 shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-black text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                  >
+                    {t.selectListed}
+                  </button>
+                )}
             </div>
 
             <div
