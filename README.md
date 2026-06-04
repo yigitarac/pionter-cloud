@@ -24,7 +24,7 @@ The public product focuses on:
 * activity logs
 * future AI-assisted file and activity workflows
 
-PionterCloud is not intended to be a full server admin panel like cPanel or Plesk.
+PionterCloud is not intended to be a full server administration panel like cPanel or Plesk.
 
 ## Current Status
 
@@ -39,7 +39,7 @@ Current phase status:
 * v0.5B Basic Text Editor + Monaco: completed
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links, New File and Context Menu: completed
-* v0.8 Activity Logs: planned
+* v0.8 Activity Logs and File Activity UI: completed
 * v0.9 Editor Polish: planned
 * v1.0 Public-ready strong release: future goal
 
@@ -54,6 +54,7 @@ PionterCloud lets users:
 * Use SSH private key authentication
 * Define an isolated folder for file operations
 * Browse files and folders
+* Switch between grid and list file views
 * Upload and download files
 * Upload multiple files
 * Create folders
@@ -62,6 +63,7 @@ PionterCloud lets users:
 * Move files and folders
 * Delete files and folders, including non-empty folders
 * Select multiple files and folders
+* Select listed/visible files
 * Bulk move selected files and folders
 * Bulk delete selected files and folders
 * Drag files and folders onto folder cards to move them
@@ -77,8 +79,13 @@ PionterCloud lets users:
 * Preview shared image and text/code files
 * Download shared files from public links
 * Manage and revoke created share links
+* View activity logs
+* View latest file activity labels on file cards and list rows
+* Open file/folder properties
 * Use a custom right-click context menu for file actions
+* Use a custom right-click context menu for folder actions
 * Use a custom right-click context menu for empty-folder actions
+* Use a three-dot menu with actions aligned with the context menu
 * View basic read-only server status
 * Pin frequently used servers
 * Use a collapsible left sidebar for server navigation
@@ -116,6 +123,9 @@ PionterCloud lets users:
 ### File Manager
 
 * List files and folders
+* Grid view
+* List view
+* Single-button grid/list view toggle
 * Open folders
 * Breadcrumb navigation
 * Search/filter files in the current folder
@@ -145,32 +155,37 @@ PionterCloud lets users:
 
   * file size
   * last modified date
+  * latest PionterCloud activity, when available
 
-### Context Menus
+### Context Menus and File Actions
 
 * Custom right-click menu for files
 * Custom right-click menu for folders
 * Custom right-click menu for empty file-area space
+* Three-dot menu for file/folder actions
+* Three-dot menu actions aligned with right-click actions
 * File context menu actions:
 
+  * edit, for supported text/code files
   * preview
   * download
   * rename
   * move
   * share
   * delete
+  * properties
 * Folder context menu actions:
 
   * open
   * rename
   * move
   * delete
+  * properties
 * Empty-area context menu actions:
 
   * upload
   * new file
   * new folder
-* Three-dot file menu remains available for mobile/tablet accessibility
 
 ### File Preview and Editor
 
@@ -183,6 +198,7 @@ PionterCloud lets users:
 * File type icon system
 * Language-specific code file icon colors
 * Monaco-based text/code editor
+* Direct edit action for supported text/code files
 * Safe text/code file saving through SFTP
 * Edit / Save / Cancel Edit flow inside the preview modal
 * Ctrl+S / Cmd+S save shortcut
@@ -218,6 +234,58 @@ PionterCloud lets users:
 * Custom revoke confirmation modal
 * Share list limited to the most recent 100 records
 * Public share pages do not expose server credentials, server IP, isolated folders, or real server paths
+
+### Activity Logs
+
+* Activity log database table
+* Backend activity log helper
+* Activity log list endpoint
+* Activity log UI modal
+* Recent activity list
+* Success/error status display
+* Localized activity action labels
+* File operation activity tracking
+* Share link activity tracking
+* Latest file activity labels on file cards and list rows
+* Latest file activity tooltip with timestamp
+* File/folder properties modal with latest activity details
+
+Tracked activity examples:
+
+* login
+* logout
+* upload
+* download
+* create file
+* create folder
+* rename
+* move
+* delete
+* editor save
+* share link create
+* share link revoke
+
+Latest file activity labels currently focus on meaningful file-changing actions, such as:
+
+* uploaded
+* created
+* edited
+* renamed
+* moved
+* shared
+* share revoked
+
+Passive actions such as preview/download remain available in the activity log modal but are not shown as file-card activity labels by default.
+
+### File and Folder Properties
+
+* Properties modal for files and folders
+* File/folder name
+* User-facing path display
+* Type
+* Size
+* Last modified date
+* Latest PionterCloud activity, when available
 
 ### Server Monitoring
 
@@ -256,13 +324,15 @@ PionterCloud lets users:
 * Upload progress indicator
 * Custom modal dialogs
 * Custom confirmation modals
-* Click outside to close menus and modals
+* Click outside to close menus and modals where supported
+* Escape handling for key modal flows
 * Drag and drop upload
 * Drag and drop move
 * Multi-item drag preview
 * File-type-aware drag preview colors
 * Custom breadcrumb/up-folder tooltips
 * Custom file/folder name tooltips
+* Custom latest-activity tooltips
 * Collapsible left sidebar
 * Server preview inside the sidebar
 * Profile/settings controls inside the sidebar
@@ -292,34 +362,14 @@ Current security decisions:
 * Public share endpoints do not expose saved server credentials.
 * Public share endpoints do not expose server IPs, SSH usernames, isolated folders, or raw internal server paths.
 * Revoked and expired share links stop working.
+* Activity logs are scoped to the authenticated user.
+* Activity log list responses do not expose server credentials.
 
 Important limitation:
 
 The isolated folder protects PionterCloud file operations. It is not a general-purpose server sandbox.
 
 ## Roadmap
-
-### v0.8 Activity Logs
-
-Planned:
-
-* Track important user actions:
-
-  * login/logout
-  * server add/edit/delete
-  * upload
-  * download
-  * create file
-  * create folder
-  * rename
-  * move
-  * delete
-  * editor save
-  * share link create/revoke
-* Activity log database table
-* Activity log UI
-* Per-server and per-file filtering
-* Foundation for future rollback and AI-assisted activity review
 
 ### v0.9 Editor Polish
 

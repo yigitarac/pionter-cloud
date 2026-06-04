@@ -43,7 +43,7 @@ Core product direction:
 * v0.5B Basic Text Editor + Monaco: completed
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links, New File and Context Menu: completed
-* v0.8 Activity Logs: planned
+* v0.8 Activity Logs and File Activity UI: completed
 * v0.9 Editor Polish: planned
 * v1.0 Public-ready strong release: future goal
 
@@ -81,6 +81,9 @@ Current backend responsibilities:
 * Public share info
 * Public share preview
 * Public share download
+* Activity log creation
+* Activity log listing
+* Latest file activity lookup for current folders
 
 ### Frontend
 
@@ -93,11 +96,15 @@ Current frontend responsibilities:
 * Server add/edit/delete/pin UI
 * Sidebar navigation
 * File manager UI
+* Grid file view
+* List file view
+* Grid/list view toggle
 * Upload/download UI
 * New file UI
 * New folder UI
 * File preview UI
 * Monaco-based text/code editor UI
+* Direct edit action for supported text/code files
 * Folder creation UI
 * File creation UI
 * Rename/delete/move modals
@@ -121,7 +128,11 @@ Current frontend responsibilities:
 * Public share landing page
 * Public share page theme/language controls
 * Public share preview UI
+* Activity logs modal
+* Latest file activity labels
+* File/folder properties modal
 * Custom right-click context menus
+* Three-dot action menus aligned with context menu actions
 
 ### Database
 
@@ -133,13 +144,15 @@ Current main tables:
 * `sunucular`
 * `oturumlar`
 * `share_links`
-
-Expected future tables:
-
 * `activity_logs`
-* possibly `email_verifications`
-* possibly `password_resets`
-* possibly `user_security_settings`
+
+Potential future tables:
+
+* `email_verifications`
+* `password_resets`
+* `user_security_settings`
+* `file_versions`
+* `share_retention_jobs`
 
 ## Current Security Decisions
 
@@ -202,6 +215,25 @@ Expected future tables:
 * Revoked and expired links are blocked.
 * Share management currently lists the most recent 100 share records.
 * A future retention policy should clean old expired/revoked records.
+
+### Activity Logs
+
+* Activity logs are stored in `activity_logs`.
+* Activity logs are scoped by `user_id`.
+* Server-specific activity records may include `server_id`.
+* Activity logs include:
+
+  * action type
+  * target path
+  * target name
+  * status
+  * optional error code
+  * metadata JSON
+  * timestamp
+* Latest file activity is fetched in bulk for the current folder.
+* Latest file activity currently uses meaningful file-changing actions only.
+* Activity logs do not store raw share tokens.
+* Activity logs should not expose saved server credentials.
 
 ## Completed Phase Summaries
 
@@ -442,6 +474,7 @@ Backend changes:
 * Added permission-aware delete errors.
 * Added permission-aware upload errors.
 * Added permission-aware folder creation errors.
+* Added permission-aware file creation errors.
 * Added permission-aware rename errors.
 * Added permission-aware move errors.
 * Added JSON error responses for download failures.
@@ -462,6 +495,7 @@ Frontend changes:
 * Updated delete error handling.
 * Updated upload error handling.
 * Updated folder creation error handling.
+* Updated file creation error handling.
 * Updated rename error handling.
 * Updated single move error handling.
 * Updated drag move error handling.
@@ -586,59 +620,96 @@ Known limitations:
 * Public share preview does not support PDF/Office/archive preview yet.
 * Context menu is currently file-manager focused; additional polish may be needed for mobile/tablet behavior.
 
-## Planned Roadmap
+## v0.8 Activity Logs and File Activity UI Summary
 
-## v0.8 Activity Logs
+The v0.8 phase added activity logging, activity viewing, file activity labels, list view, and file/folder properties polish.
 
-Goals:
+Backend changes:
 
-* Track important user actions.
-* Build the foundation for audit, rollback ideas, and future AI-assisted activity review.
+* Added `activity_logs` table.
+* Added activity log action/status constants.
+* Added `aktiviteLogla(...)` helper.
+* Added activity path helper.
+* Added activity list endpoint:
 
-Planned backend work:
+  * `/api/activity/list`
+* Added latest folder activity endpoint:
 
-* Add `activity_logs` table.
-* Log key actions:
+  * `/api/activity/latest-for-folder`
+* Added activity log response helpers.
+* Added successful activity logs for:
 
   * login
   * logout
-  * server add/edit/delete
-  * upload
-  * download
   * create file
   * create folder
-  * preview
-  * save
+  * share create
+  * share revoke
+  * upload
+  * download
+  * editor save
   * rename
   * move
   * delete
-  * share link create/revoke
-* Store:
+* Added latest activity lookup for visible/current folder files.
+* Limited latest activity labels to meaningful file-changing actions.
 
-  * user id
-  * server id
-  * action type
-  * target path
-  * metadata JSON
-  * timestamp
-  * status
-  * error code if failed
+Frontend changes:
 
-Planned frontend work:
+* Added Activity Logs modal.
+* Added Activity Logs button in the server/header action area.
+* Added activity log loading/error/empty states.
+* Added localized activity action labels.
+* Added activity status badges.
+* Added activity log refresh action.
+* Moved Share Links and Activity Logs out of the file toolbar into server-level actions.
+* Reorganized file toolbar to focus on current-folder actions:
 
-* Activity log page or modal.
-* Filter by server.
-* Filter by action type.
-* Filter by date.
-* Search by path.
-* Basic timeline UI.
+  * search
+  * upload
+  * new file
+  * new folder
+* Added Current Path control area.
+* Added grid/list view mode.
+* Added single-button grid/list toggle.
+* Added list view with compact column header.
+* Moved selected-item actions into the Current Path control area.
+* Kept selection state across grid/list switching.
+* Added latest activity labels to file cards and list rows.
+* Added latest activity tooltip with timestamp.
+* Added file/folder properties modal.
+* Added properties action to right-click and three-dot menus.
+* Added direct Edit action for supported text/code files.
+* Aligned three-dot menu actions with right-click context menu actions.
+* Kept passive activity such as preview/download inside the Activity Logs modal instead of showing it on file cards.
 
-Future use:
+Manual validation:
 
-* “What changed recently?”
-* Undo/rollback research
-* AI-assisted activity summaries
-* Safer AI action previews
+* Activity logs are created for successful auth/file/share actions.
+* Activity Logs modal opens and lists recent actions.
+* Activity Logs modal refresh works.
+* File cards show latest meaningful PionterCloud activity when available.
+* File list rows show latest meaningful PionterCloud activity when available.
+* Activity labels do not show fake history for files that existed before logging.
+* Activity tooltip shows detailed timestamp.
+* Preview/download actions do not overwrite latest file activity labels.
+* Grid/List toggle works.
+* Selection remains usable after view switching.
+* File/folder properties modal shows metadata and latest activity.
+* Right-click and three-dot menus are more consistent.
+* Direct Edit opens supported text/code files in Monaco edit mode.
+
+Known limitations:
+
+* Activity logs are mostly success-oriented right now; richer failed-operation logging can be expanded later.
+* Existing files created before activity logging do not receive fake “uploaded/created” activity.
+* Latest activity is based on PionterCloud activity records, not raw SFTP modified time.
+* Activity log filtering UI is still basic.
+* Activity log retention/cleanup policy is not implemented yet.
+* Activity logs are not yet used for rollback/versioning.
+* Activity logs are not yet used by AI features.
+
+## Planned Roadmap
 
 ## v0.9 Editor Polish
 
@@ -714,6 +785,7 @@ Before public release, the project should consider:
 * Backups and recovery strategy
 * Deployment hardening
 * Share link retention and cleanup policy
+* Activity log retention and cleanup policy
 
 ## AI Direction
 
