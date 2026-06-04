@@ -650,6 +650,13 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	if !jsonOku(w, r, &bilgiler) {
 		return
 	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		apiHatasiYaz(w, http.StatusUnauthorized, "UNAUTHORIZED", "Yetkisiz giriş")
+		return
+	}
+
 	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		apiHatasiYaz(w, http.StatusUnauthorized, "UNAUTHORIZED", "Yetkisiz giriş")
@@ -700,10 +707,29 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer acilanDosya.Close()
-	_, err = io.Copy(w, acilanDosya)
+	kopyalananByte, err := io.Copy(w, acilanDosya)
 	if err != nil {
 		fmt.Println("Download stream hatası:", err)
+		return
 	}
+
+	dosyaAdi := path.Base(strings.TrimRight(bilgiler.Yol, "/"))
+	if dosyaAdi == "." || dosyaAdi == "/" {
+		dosyaAdi = ""
+	}
+
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteDownload,
+		aktiviteYoluOlustur(bilgiler.Yol, ""),
+		dosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"bytes": kopyalananByte,
+		},
+	)
 }
 
 func apiHatasiYaz(w http.ResponseWriter, status int, kod string, mesaj string) {
@@ -1195,6 +1221,16 @@ func dosyaKaydet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		dosyaKaydetCevabiYaz(w, http.StatusUnauthorized, DosyaKaydetCevabi{
+			Basarili: false,
+			Mesaj:    "Yetkisiz giriş veya sunucu bulunamadı",
+			Kod:      "UNAUTHORIZED",
+		})
+		return
+	}
+
 	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		dosyaKaydetCevabiYaz(w, http.StatusUnauthorized, DosyaKaydetCevabi{
@@ -1302,6 +1338,20 @@ func dosyaKaydet(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteEditorSave,
+		aktiviteYoluOlustur(bilgiler.Yol, bilgiler.DosyaAdi),
+		bilgiler.DosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"size":      kaydedilenBoyut,
+			"extension": dosyaUzantisiAl(bilgiler.DosyaAdi),
+		},
+	)
 
 	dosyaKaydetCevabiYaz(w, http.StatusOK, DosyaKaydetCevabi{
 		Basarili:    true,
@@ -2295,9 +2345,9 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	}
 	r.ParseMultipartForm(10 << 20)
 
-	token := r.FormValue("token")
-	yol := r.FormValue("yol")
-	serverIDStr := r.FormValue("server_id")
+	token := strings.TrimSpace(r.FormValue("token"))
+	yol := strings.TrimSpace(r.FormValue("yol"))
+	serverIDStr := strings.TrimSpace(r.FormValue("server_id"))
 
 	serverID, err := strconv.Atoi(serverIDStr)
 	if err != nil {
@@ -2318,6 +2368,12 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Geçersiz dosya adı", http.StatusBadRequest)
 		return
 	}
+	userID, err := tokenIleKullaniciDogrula(token)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
+		return
+	}
+
 	kimlik, err := sunucuKimlikSorgulaTokenIle(token, serverID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş", http.StatusUnauthorized)
@@ -2399,6 +2455,20 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	aktiviteLogla(
+		userID,
+		serverID,
+		aktiviteUpload,
+		aktiviteYoluOlustur(yol, baslik.Filename),
+		baslik.Filename,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"parent_path": yol,
+			"size":        baslik.Size,
+		},
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -2406,6 +2476,7 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 		"mesaj":    "Dosya yüklendi",
 	})
 }
+
 func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
 
@@ -2650,8 +2721,13 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
+		return
+	}
 
+	kimlik, err := sunucuKimlikSorgulaTokenIle(bilgiler.Token, bilgiler.ServerID)
 	if err != nil {
 		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
@@ -2708,6 +2784,20 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteDelete,
+		aktiviteYoluOlustur(bilgiler.Yol, bilgiler.DosyaAdi),
+		bilgiler.DosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"parent_path": bilgiler.Yol,
+			"is_folder":   bilgiler.KlasorMu,
+		},
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"mesaj": "Silme başarılı"}`))
@@ -2731,6 +2821,12 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 
 	if bilgiler.EskiAd == bilgiler.YeniAd {
 		http.Error(w, "Yeni ad ile eski ad aynı olamaz", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
 	}
 
@@ -2797,6 +2893,23 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteRename,
+		aktiviteYoluOlustur(bilgiler.Yol, bilgiler.YeniAd),
+		bilgiler.YeniAd,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"parent_path": bilgiler.Yol,
+			"old_name":    bilgiler.EskiAd,
+			"new_name":    bilgiler.YeniAd,
+			"old_path":    aktiviteYoluOlustur(bilgiler.Yol, bilgiler.EskiAd),
+			"new_path":    aktiviteYoluOlustur(bilgiler.Yol, bilgiler.YeniAd),
+		},
+	)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -2823,6 +2936,12 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 
 	if bilgiler.KaynakYol == bilgiler.HedefYol {
 		http.Error(w, "Kaynak ve hedef klasör aynı olamaz", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := tokenIleKullaniciDogrula(bilgiler.Token)
+	if err != nil {
+		http.Error(w, "Yetkisiz giriş veya sunucu bulunamadı", http.StatusUnauthorized)
 		return
 	}
 
@@ -2907,6 +3026,22 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 		apiHatasiYaz(w, http.StatusInternalServerError, "MOVE_FAILED", "Taşıma başarısız")
 		return
 	}
+
+	aktiviteLogla(
+		userID,
+		bilgiler.ServerID,
+		aktiviteMove,
+		aktiviteYoluOlustur(bilgiler.HedefYol, bilgiler.DosyaAdi),
+		bilgiler.DosyaAdi,
+		aktiviteDurumBasarili,
+		"",
+		map[string]interface{}{
+			"source_folder": bilgiler.KaynakYol,
+			"target_folder": bilgiler.HedefYol,
+			"source_path":   aktiviteYoluOlustur(bilgiler.KaynakYol, bilgiler.DosyaAdi),
+			"target_path":   aktiviteYoluOlustur(bilgiler.HedefYol, bilgiler.DosyaAdi),
+		},
+	)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
