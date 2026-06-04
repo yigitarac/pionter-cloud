@@ -51,6 +51,7 @@ export default function AnaSayfa() {
   const [yeniKlasorAdi, setYeniKlasorAdi] = useState("");
   const [acikMenuIndex, setAcikMenuIndex] = useState(null);
   const [aramaMetni, setAramaMetni] = useState("");
+  const [gorunumModu, setGorunumModu] = useState("grid");
   const [toast, setToast] = useState(null);
   const [renameModalAcik, setRenameModalAcik] = useState(false);
   const [serverDeleteModalAcik, setServerDeleteModalAcik] = useState(false);
@@ -2226,6 +2227,36 @@ export default function AnaSayfa() {
             {ikon.etiket}
           </span>
         </div>
+      </div>
+    );
+  };
+
+  const dosyaListeIkonuGoster = (dosya) => {
+    if (dosya.klasorMu) {
+      return (
+        <svg
+          className="h-9 w-9 text-[#458588] dark:text-[#83a598]"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+        </svg>
+      );
+    }
+
+    const ikon = dosyaIkonBilgisiAl(dosya);
+
+    return (
+      <div
+        className={`relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border-2 text-[10px] font-black shadow-sm ${ikon.kagitClass}`}
+      >
+        <div className="absolute right-0 top-0 h-3.5 w-3.5 overflow-hidden">
+          <div className="absolute right-0 top-0 h-0 w-0 border-l-[14px] border-t-[14px] border-l-transparent border-t-[#fbf1c7] dark:border-t-[#282828]" />
+        </div>
+
+        <span className="relative z-10 max-w-[32px] truncate px-0.5">
+          {ikon.etiket || "FILE"}
+        </span>
       </div>
     );
   };
@@ -7182,74 +7213,37 @@ export default function AnaSayfa() {
                 />
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  {seciliOgeAnahtarlari.length > 0 ? (
-                    <>
-                      <span className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-3 text-sm font-bold text-[#3c3836] dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]">
-                        {seciliOgeAnahtarlari.length} {t.selectedItems}
-                      </span>
+                  <button
+                    type="button"
+                    onClick={() => dosyaGirdiRef.current?.click()}
+                    disabled={yukleniyor}
+                    className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
+                  >
+                    {t.upload}
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={topluTasimaModaliniAc}
-                        disabled={yukleniyor}
-                        className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
-                      >
-                        {t.moveSelected}
-                      </button>
+                  <button
+                    type="button"
+                    onClick={() => setDosyaModalAcik(true)}
+                    disabled={yukleniyor}
+                    className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                  >
+                    {t.newFile}
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={topluSilmeModaliniAc}
-                        disabled={yukleniyor}
-                        className="shrink-0 rounded-lg bg-[#cc241d] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#9d0006] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {t.deleteSelected}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={secimleriTemizle}
-                        disabled={yukleniyor}
-                        className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                      >
-                        {t.clearSelection}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => dosyaGirdiRef.current?.click()}
-                        disabled={yukleniyor}
-                        className="shrink-0 rounded-lg bg-[#458588] px-4 py-3 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#83a598] dark:text-[#282828] dark:hover:bg-[#458588]"
-                      >
-                        {t.upload}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setDosyaModalAcik(true)}
-                        disabled={yukleniyor}
-                        className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                      >
-                        {t.newFile}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setKlasorModalAcik(true)}
-                        disabled={yukleniyor}
-                        className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
-                      >
-                        {t.newFolder}
-                      </button>
-                    </>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setKlasorModalAcik(true)}
+                    disabled={yukleniyor}
+                    className="shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-3 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                  >
+                    {t.newFolder}
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-6 pb-2 border-b border-[#d5c4a1] dark:border-[#504945]">
+            <div className="mb-6 flex items-center justify-between gap-3 border-b border-[#d5c4a1] pb-2 dark:border-[#504945]">
               <div className="min-w-0 flex items-center text-sm font-medium text-[#7c6f64] dark:text-[#a89984]">
                 <div className="group relative inline-flex">
                   <button
@@ -7370,18 +7364,118 @@ export default function AnaSayfa() {
                   })}
                 </div>
               </div>
-              {seciliOgeAnahtarlari.length === 0 &&
-                gosterilecekDosyalar.length > 0 &&
-                !listelenenOgelerinHepsiSeciliMi() && (
+              <div className="ml-4 flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-1 shadow-sm dark:border-[#504945] dark:bg-[#282828]">
+                  {seciliOgeAnahtarlari.length > 0 ? (
+                    <>
+                      <span className="rounded-lg bg-[#ebdbb2] px-3.5 py-2 text-xs font-black text-[#3c3836] dark:bg-[#3c3836] dark:text-[#ebdbb2]">
+                        {seciliOgeAnahtarlari.length} {t.selectedItems}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={topluTasimaModaliniAc}
+                        disabled={yukleniyor}
+                        className="rounded-lg px-3.5 py-2 text-xs font-black text-[#458588] transition-colors hover:bg-[#ebdbb2] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#83a598] dark:hover:bg-[#3c3836]"
+                      >
+                        {t.moveSelected}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={topluSilmeModaliniAc}
+                        disabled={yukleniyor}
+                        className="rounded-lg px-3.5 py-2 text-xs font-black text-[#cc241d] transition-colors hover:bg-[#f4d0c8] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#fb4934] dark:hover:bg-[#3b2422]"
+                      >
+                        {t.deleteSelected}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={secimleriTemizle}
+                        disabled={yukleniyor}
+                        className="rounded-lg px-3.5 py-2 text-xs font-black text-[#7c6f64] transition-colors hover:bg-[#ebdbb2] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#a89984] dark:hover:bg-[#3c3836]"
+                      >
+                        {t.clearSelection}
+                      </button>
+
+                      <div className="h-6 w-px bg-[#d5c4a1] dark:bg-[#504945]" />
+                    </>
+                  ) : (
+                    gosterilecekDosyalar.length > 0 &&
+                    !listelenenOgelerinHepsiSeciliMi() && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={listelenenOgeleriSec}
+                          disabled={yukleniyor}
+                          className="inline-flex h-9 items-center rounded-lg px-3.5 text-xs font-black text-[#3c3836] transition-colors hover:bg-[#ebdbb2] hover:text-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#ebdbb2] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
+                        >
+                          {t.selectListed}
+                        </button>
+
+                        <div className="h-6 w-px bg-[#d5c4a1] dark:bg-[#504945]" />
+                      </>
+                    )
+                  )}
+
                   <button
                     type="button"
-                    onClick={listelenenOgeleriSec}
+                    onClick={() =>
+                      setGorunumModu(gorunumModu === "grid" ? "list" : "grid")
+                    }
                     disabled={yukleniyor}
-                    className="ml-4 shrink-0 rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-xs font-black text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                    aria-label={
+                      gorunumModu === "grid"
+                        ? t.switchToListView
+                        : t.switchToGridView
+                    }
+                    className="group relative flex h-9 w-9 items-center justify-center rounded-lg text-[#7c6f64] transition-colors hover:bg-[#ebdbb2] hover:text-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#a89984] dark:hover:bg-[#3c3836] dark:hover:text-[#83a598]"
                   >
-                    {t.selectListed}
+                    {gorunumModu === "grid" ? (
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M8 6h13" />
+                        <path d="M8 12h13" />
+                        <path d="M8 18h13" />
+                        <path d="M3 6h.01" />
+                        <path d="M3 12h.01" />
+                        <path d="M3 18h.01" />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="4" y="4" width="6" height="6" rx="1" />
+                        <rect x="14" y="4" width="6" height="6" rx="1" />
+                        <rect x="4" y="14" width="6" height="6" rx="1" />
+                        <rect x="14" y="14" width="6" height="6" rx="1" />
+                      </svg>
+                    )}
+
+                    <span className={miniTooltipClass}>
+                      {gorunumModu === "grid"
+                        ? t.switchToListView
+                        : t.switchToGridView}
+                    </span>
                   </button>
-                )}
+                </div>
+              </div>
             </div>
 
             <div
@@ -7421,6 +7515,109 @@ export default function AnaSayfa() {
                   className="flex flex-col items-center justify-center py-20 text-[#928374] dark:text-[#a89984]"
                 >
                   <p className="text-sm">{t.noSearchResults}</p>
+                </div>
+              ) : gorunumModu === "list" ? (
+                <div
+                  onContextMenu={bosAlanContextMenuyuAc}
+                  className="space-y-2"
+                >
+                  <div
+                    onContextMenu={bosAlanContextMenuyuAc}
+                    className="hidden items-center gap-3 px-3 pb-1 text-[10px] font-black uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984] sm:flex"
+                  >
+                    <span className="h-5 w-5 shrink-0" />
+                    <span className="h-10 w-10 shrink-0" />
+
+                    <span className="min-w-0 flex-1">{t.nameColumn}</span>
+
+                    <span className="hidden w-28 shrink-0 text-right sm:block">
+                      {t.sizeColumn}
+                    </span>
+
+                    <span className="hidden w-36 shrink-0 text-right lg:block">
+                      {t.modifiedColumn}
+                    </span>
+                  </div>
+
+                  {gosterilecekDosyalar.map((dosya) => {
+                    const dosyaAnahtari = dosyaAnahtariOlustur(dosya);
+                    const surukleniyorMu =
+                      suruklenenOgeAnahtari === dosyaAnahtari;
+                    const dropHedefiMi =
+                      suruklemeHedefiAnahtari === dosyaAnahtari;
+
+                    return (
+                      <div
+                        key={dosyaAnahtari}
+                        draggable={!yukleniyor}
+                        onDragStart={(e) => kartSuruklemeBaslat(e, dosya)}
+                        onDragEnd={kartSuruklemeBitir}
+                        onDragOver={(e) =>
+                          klasorKartininUstundeSurukle(e, dosya)
+                        }
+                        onDragEnter={(e) =>
+                          klasorKartininUstundeSurukle(e, dosya)
+                        }
+                        onDragLeave={(e) => klasorKartindanAyril(e, dosya)}
+                        onDrop={(e) => klasorKartinaBirak(e, dosya)}
+                        onContextMenu={(e) => contextMenuyuAc(e, dosya)}
+                        onClick={() => klasoreGir(dosya)}
+                        className={`group relative flex min-w-0 cursor-pointer items-center gap-3 rounded-xl bg-[#ebdbb2] p-3 transition-all hover:shadow-md dark:bg-[#3c3836] ${
+                          dropHedefiMi
+                            ? "border border-[#98971a] ring-2 ring-[#98971a]/60 dark:border-[#b8bb26] dark:ring-[#b8bb26]/50"
+                            : "border border-[#d5c4a1] hover:border-[#458588] dark:border-[#504945] dark:hover:border-[#83a598]"
+                        } ${surukleniyorMu ? "opacity-60" : ""}`}
+                      >
+                        {dosya.klasorMu && dropHedefiMi && (
+                          <div className="pointer-events-none absolute inset-1 z-20 flex items-center justify-center rounded-lg border border-dashed border-[#98971a] bg-[#fbf1c7]/80 px-3 text-center text-xs font-bold text-[#79740e] backdrop-blur-sm dark:border-[#b8bb26] dark:bg-[#282828]/80 dark:text-[#b8bb26]">
+                            {t.dropHereToMove}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dosyaSeciminiDegistir(dosya);
+                          }}
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs font-bold transition-colors ${
+                            dosyaSeciliMi(dosya)
+                              ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
+                              : "border-[#a89984] bg-transparent text-transparent hover:border-[#458588] dark:border-[#665c54] dark:hover:border-[#83a598]"
+                          }`}
+                          aria-label={
+                            dosyaSeciliMi(dosya) ? t.unselectItem : t.selectItem
+                          }
+                        >
+                          ✓
+                        </button>
+
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                          {dosyaListeIkonuGoster(dosya)}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                            {dosya.ad}
+                          </p>
+
+                          <p className="mt-0.5 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                            {dosya.klasorMu
+                              ? t.folderItem
+                              : dosyaTipEtiketiAl(dosya)}
+                          </p>
+                        </div>
+
+                        <div className="hidden w-28 shrink-0 text-right text-xs font-bold text-[#7c6f64] dark:text-[#a89984] sm:block">
+                          {dosya.klasorMu ? "-" : dosyaBoyutuYaz(dosya.boyut)}
+                        </div>
+
+                        <div className="hidden w-36 shrink-0 text-right text-xs font-bold text-[#7c6f64] dark:text-[#a89984] lg:block">
+                          {dosya.degistirilme}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div
