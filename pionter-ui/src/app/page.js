@@ -2653,30 +2653,34 @@ export default function AnaSayfa() {
   };
 
   const dosyaModaliniKapat = () => {
-    if (yukleniyor) return;
-
     setDosyaModalAcik(false);
     setYeniDosyaAdi("");
   };
 
   const klasorOlustur = () => {
     if (yukleniyor) return;
+
     if (!seciliSunucu) {
       toastGoster(t.selectServerFirst, "error");
       return;
     }
+
     const temizKlasorAdi = yeniKlasorAdi.trim();
 
     if (!temizKlasorAdi) {
       toastGoster(t.folderNameEmpty, "error");
       return;
     }
+
     if (gecersizDosyaVeyaKlasorAdiMi(temizKlasorAdi)) {
       toastGoster(t.invalidFolderName, "error");
       return;
     }
+
+    setKlasorModalAcik(false);
     setYukleniyor(true);
     setYuklemeMesaji(t.creatingFolder);
+
     fetch("http://localhost:8080/api/folders/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2701,7 +2705,6 @@ export default function AnaSayfa() {
         }
 
         setYeniKlasorAdi("");
-        setKlasorModalAcik(false);
         toastGoster(t.folderCreateSuccess, "success");
         secimleriTemizle();
         setYukleniyor(true);
@@ -2712,11 +2715,13 @@ export default function AnaSayfa() {
         if (hata.message === "Oturum geçersiz") {
           return;
         }
+
         const mesaj = apiHataMesajiAl(hata, t.folderCreateFailed);
 
         console.log("Klasör oluşturma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
+        setKlasorModalAcik(true);
         toastGoster(mesaj, "error");
       });
   };
@@ -2741,6 +2746,7 @@ export default function AnaSayfa() {
       return;
     }
 
+    setDosyaModalAcik(false);
     setYukleniyor(true);
     setYuklemeMesaji(t.creatingFile);
 
@@ -2774,7 +2780,6 @@ export default function AnaSayfa() {
           throw new Error(veri.mesaj || t.fileCreateFailed);
         }
 
-        setDosyaModalAcik(false);
         setYeniDosyaAdi("");
         toastGoster(t.fileCreateSuccess, "success");
         klasoruYenile(mevcutYol);
@@ -2789,6 +2794,7 @@ export default function AnaSayfa() {
         console.log("Dosya oluşturma hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
+        setDosyaModalAcik(true);
         toastGoster(mesaj, "error");
       });
   };
@@ -3356,6 +3362,12 @@ export default function AnaSayfa() {
       }
     };
 
+    const sunucuDuzenlemeModaliniKapat = () => {
+      setServerEditModalAcik(false);
+      setDuzenlenecekSunucu(null);
+      sunucuFormunuTemizle();
+    };
+
     window.addEventListener("dragenter", pencereSuruklemeBasladi);
     window.addEventListener("dragover", pencereSuruklemeUstte);
     window.addEventListener("dragleave", pencereSuruklemeAyrildi);
@@ -3440,22 +3452,106 @@ export default function AnaSayfa() {
   }, [girisYapildi, seciliSunucu, oturumToken, dosyalar, mevcutYol]);
 
   useEffect(() => {
-    if (!previewModalAcik) {
-      return;
-    }
+    const escapeIleModalKapat = (e) => {
+      if (e.key !== "Escape") return;
 
-    const escapeIleKapat = (e) => {
-      if (e.key === "Escape") {
+      if (previewOnayModalAcik) {
+        previewOnayModaliniKapat();
+        return;
+      }
+
+      if (shareIptalOnayModalAcik) {
+        shareIptalOnayModaliniKapat();
+        return;
+      }
+
+      if (ozellikModalAcik) {
+        dosyaOzellikleriniKapat();
+        return;
+      }
+
+      if (previewModalAcik) {
         previewModaliniKapat();
+        return;
+      }
+
+      if (activityModalAcik) {
+        activityModaliniKapat();
+        return;
+      }
+
+      if (shareYonetimModalAcik) {
+        shareYonetimModaliniTemizle();
+        return;
+      }
+
+      if (shareModalAcik) {
+        shareModaliniTemizle();
+        return;
+      }
+
+      if (renameModalAcik) {
+        setRenameModalAcik(false);
+        setYenidenAdlandirilacakDosya(null);
+        setYeniAd("");
+        return;
+      }
+
+      if (moveModalAcik) {
+        setMoveModalAcik(false);
+        setTasinacakDosya(null);
+        setHedefKlasorler([]);
+        setHedefKlasorGezintiYolu("/");
+        return;
+      }
+
+      if (deleteModalAcik) {
+        setDeleteModalAcik(false);
+        setSilinecekDosya(null);
+        silmeOnizlemesiniTemizle();
+        return;
+      }
+
+      if (serverDeleteModalAcik) {
+        setServerDeleteModalAcik(false);
+        setSilinecekSunucu(null);
+        return;
+      }
+
+      if (topluSilmeModalAcik) {
+        setTopluSilmeModalAcik(false);
+        return;
+      }
+
+      if (topluTasimaModalAcik) {
+        setTopluTasimaModalAcik(false);
+        setTasinacakDosya(null);
+        setHedefKlasorler([]);
+        setHedefKlasorGezintiYolu("/");
+        return;
+      }
+
+      if (serverEditModalAcik) {
+        sunucuDuzenlemeModaliniKapat();
+        return;
+      }
+
+      if (dosyaModalAcik) {
+        dosyaModaliniKapat();
+        return;
+      }
+
+      if (klasorModalAcik) {
+        klasorModaliniKapat();
       }
     };
 
-    window.addEventListener("keydown", escapeIleKapat);
+    window.addEventListener("keydown", escapeIleModalKapat);
 
     return () => {
-      window.removeEventListener("keydown", escapeIleKapat);
+      window.removeEventListener("keydown", escapeIleModalKapat);
     };
-  }, [previewModalAcik, previewDuzenlemeKirliMi]);
+  });
 
   useEffect(() => {
     if (!previewDuzenlemeKirliMi) return;
@@ -3681,12 +3777,6 @@ export default function AnaSayfa() {
         console.log("Sunucu sabitleme hatası:", hata);
         toastGoster(t.serverPinFailed, "error");
       });
-  };
-
-  const sunucuDuzenlemeModaliniKapat = () => {
-    setServerEditModalAcik(false);
-    setDuzenlenecekSunucu(null);
-    sunucuFormunuTemizle();
   };
 
   const sunucuSilmeModaliniAc = (sunucu) => {
