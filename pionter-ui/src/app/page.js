@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { loader as monacoLoader } from "@monaco-editor/react";
 import { sozluk } from "./sozluk";
 import {
   dosyaBoyutuYaz,
@@ -3654,6 +3655,34 @@ export default function AnaSayfa() {
     };
   }, [contextMenu.acik]);
 
+  useEffect(() => {
+    if (!previewModalAcik || !previewDuzenlemeModu || monacoShikiHazir) {
+      return;
+    }
+
+    let iptalEdildi = false;
+
+    monacoLoader
+      .init()
+      .then((monaco) => pionterMonacoShikiHazirla(monaco))
+      .then(() => {
+        if (!iptalEdildi) {
+          setMonacoShikiHazir(true);
+        }
+      })
+      .catch((hata) => {
+        console.log("Shiki Monaco hazırlama hatası:", hata);
+
+        if (!iptalEdildi) {
+          setMonacoShikiHazir(false);
+        }
+      });
+
+    return () => {
+      iptalEdildi = true;
+    };
+  }, [previewModalAcik, previewDuzenlemeModu, monacoShikiHazir]);
+
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       dosyalariYukle(e.target.files);
@@ -6114,13 +6143,13 @@ export default function AnaSayfa() {
           onClick={previewModaliniKapat}
         >
           <div
-            className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#504945] bg-[#282828] text-[#ebdbb2] shadow-2xl"
+            className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-[#504945] bg-[#282828] px-5 py-4">
+            <div className="flex items-start justify-between gap-4 border-b border-[#d5c4a1] bg-[#ebdbb2] px-5 py-4 dark:border-[#504945] dark:bg-[#282828]">
               <div className="min-w-0">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <p className="text-xs font-black uppercase tracking-wide text-[#a89984]">
+                  <p className="text-xs font-black uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
                     {previewDuzenlemeModu
                       ? dil === "tr"
                         ? "Dosya Editörü"
@@ -6129,35 +6158,35 @@ export default function AnaSayfa() {
                   </p>
 
                   {previewDosyaUzantisiEtiketiAl() && (
-                    <span className="rounded-full border border-[#504945] bg-[#3c3836] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#ebdbb2]">
+                    <span className="rounded-full border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#3c3836] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2]">
                       {previewDosyaUzantisiEtiketiAl()}
                     </span>
                   )}
 
                   {previewDosyaBoyutuMetniAl() && (
-                    <span className="rounded-full border border-[#504945] bg-[#3c3836] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#a89984]">
+                    <span className="rounded-full border border-[#d5c4a1] bg-[#fbf1c7] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#7c6f64] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#a89984]">
                       {previewDosyaBoyutuMetniAl()}
                     </span>
                   )}
 
                   {previewDuzenlemeModu &&
                     (previewDuzenlemeKirliMi ? (
-                      <span className="rounded-full border border-[#d79921] bg-[#3b321d] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#fabd2f]">
+                      <span className="rounded-full border border-[#d79921] bg-[#f3e4bd] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#b57614] dark:bg-[#3b321d] dark:text-[#fabd2f]">
                         {t.unsavedChanges}
                       </span>
                     ) : (
-                      <span className="rounded-full border border-[#98971a] bg-[#32361a] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#b8bb26]">
+                      <span className="rounded-full border border-[#98971a] bg-[#ebdbb2] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#79740e] dark:bg-[#32361a] dark:text-[#b8bb26]">
                         {dil === "tr" ? "Kaydedildi" : "Saved"}
                       </span>
                     ))}
                 </div>
 
-                <h3 className="truncate text-lg font-black text-[#ebdbb2]">
+                <h3 className="truncate text-lg font-black text-[#3c3836] dark:text-[#ebdbb2]">
                   {previewDosyaAdiAl() || "-"}
                 </h3>
 
                 {previewDuzenlemeModu && (
-                  <p className="mt-1 text-xs font-bold text-[#a89984]">
+                  <p className="mt-1 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
                     {t.saveShortcutHint}
                   </p>
                 )}
@@ -6182,7 +6211,7 @@ export default function AnaSayfa() {
                         type="button"
                         onClick={previewDuzenlemeyiIptalEt}
                         disabled={previewKaydediliyor}
-                        className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#d79921] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#d79921] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2]"
                       >
                         {t.cancelEdit}
                       </button>
@@ -6191,7 +6220,7 @@ export default function AnaSayfa() {
                     <button
                       type="button"
                       onClick={previewDuzenlemeyiBaslat}
-                      className="rounded-lg border border-[#458588] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#83a598]"
+                      className="rounded-lg border border-[#458588] bg-[#458588] px-3 py-2 text-sm font-bold text-[#fbf1c7] transition-colors hover:bg-[#076678] dark:border-[#83a598] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                     >
                       {t.editFile}
                     </button>
@@ -6206,7 +6235,7 @@ export default function AnaSayfa() {
                       previewKaydediliyor ||
                       previewDuzenlemeKirliMi
                     }
-                    className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#83a598] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                   >
                     {t.downloadFile}
                   </button>
@@ -6216,7 +6245,7 @@ export default function AnaSayfa() {
                   type="button"
                   onClick={previewModaliniKapat}
                   disabled={previewKaydediliyor}
-                  className="rounded-lg border border-[#504945] bg-[#3c3836] px-3 py-2 text-sm font-bold text-[#ebdbb2] transition-colors hover:border-[#fb4934] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#cc241d] hover:text-[#cc241d] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#fb4934] dark:hover:text-[#fb4934]"
                 >
                   {t.close}
                 </button>
@@ -6227,8 +6256,8 @@ export default function AnaSayfa() {
               {previewYukleniyor ? (
                 <p className="text-sm text-[#a89984]">{t.loadingPreview}</p>
               ) : previewHatasi ? (
-                <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
-                  <p className="text-sm font-bold text-[#fb4934]">
+                <div className="rounded-lg border border-[#d5c4a1] bg-[#f4d0c8] p-4 dark:border-[#665c54] dark:bg-[#3c3836]">
+                  <p className="text-sm font-bold text-[#9d0006] dark:text-[#fb4934]">
                     {previewHatasi}
                   </p>
                 </div>
@@ -6239,14 +6268,14 @@ export default function AnaSayfa() {
                   <img
                     src={`data:${previewVerisi.mime};base64,${previewVerisi.base64}`}
                     alt={previewVerisi.dosya_adi || previewDosya?.ad || ""}
-                    className="max-h-[65vh] max-w-full rounded-lg border border-[#504945] object-contain"
+                    className="max-h-[65vh] max-w-full rounded-lg border border-[#d5c4a1] object-contain dark:border-[#504945]"
                   />
                 </div>
               ) : previewVerisi?.tip === "text" ? (
                 previewDuzenlemeModu ? (
-                  <div className="overflow-hidden rounded-lg border border-[#504945] bg-[#1d2021]">
-                    <div className="border-b border-[#504945] bg-[#282828] px-4 py-2">
-                      <p className="text-xs font-bold text-[#a89984]">
+                  <div className="overflow-hidden rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] dark:border-[#504945] dark:bg-[#1d2021]">
+                    <div className="border-b border-[#d5c4a1] bg-[#ebdbb2] px-4 py-2 dark:border-[#504945] dark:bg-[#282828]">
+                      <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
                         {t.saveShortcutHint}
                       </p>
                     </div>
@@ -6259,68 +6288,63 @@ export default function AnaSayfa() {
                       </div>
                     )}
 
-                    <MonacoEditor
-                      height="65vh"
-                      language={monacoDiliAl(
-                        previewDosya?.ad || previewVerisi?.dosya_adi || "",
-                      )}
-                      theme={
-                        monacoShikiHazir
-                          ? pionterMonacoTemasiAl(karanlikMod)
-                          : karanlikMod
-                            ? "vs-dark"
-                            : "light"
-                      }
-                      value={previewEditIcerik}
-                      onMount={(_, monaco) => {
-                        pionterMonacoShikiHazirla(monaco)
-                          .then(() => {
-                            setMonacoShikiHazir(true);
-                            monaco.editor.setTheme(
-                              pionterMonacoTemasiAl(karanlikMod),
-                            );
-                          })
-                          .catch((hata) => {
-                            console.log("Shiki Monaco tema hatası:", hata);
-                          });
-                      }}
-                      onChange={(deger) => setPreviewEditIcerik(deger ?? "")}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        fontFamily:
-                          "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
-                        lineHeight: 22,
-                        wordWrap: "on",
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                        tabSize: 2,
-                        renderWhitespace: "selection",
-                        smoothScrolling: true,
-                        cursorBlinking: "smooth",
-                        cursorSmoothCaretAnimation: "on",
-                        bracketPairColorization: { enabled: true },
-                        guides: {
-                          indentation: true,
-                          bracketPairs: true,
-                        },
-                      }}
-                    />
+                    {!monacoShikiHazir ? (
+                      <div className="flex h-[65vh] items-center justify-center bg-[#fbf1c7] text-sm font-black text-[#7c6f64] dark:bg-[#1d2021] dark:text-[#a89984]">
+                        {dil === "tr"
+                          ? "Gruvbox editör hazırlanıyor..."
+                          : "Preparing Gruvbox editor..."}
+                      </div>
+                    ) : (
+                      <MonacoEditor
+                        height="65vh"
+                        language={monacoDiliAl(
+                          previewDosya?.ad || previewVerisi?.dosya_adi || "",
+                        )}
+                        theme={pionterMonacoTemasiAl(karanlikMod)}
+                        value={previewEditIcerik}
+                        onMount={(_, monaco) => {
+                          monaco.editor.setTheme(
+                            pionterMonacoTemasiAl(karanlikMod),
+                          );
+                        }}
+                        onChange={(deger) => setPreviewEditIcerik(deger ?? "")}
+                        options={{
+                          minimap: { enabled: false },
+                          fontSize: 14,
+                          fontFamily:
+                            "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
+                          lineHeight: 22,
+                          wordWrap: "on",
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                          tabSize: 2,
+                          renderWhitespace: "selection",
+                          smoothScrolling: true,
+                          cursorBlinking: "smooth",
+                          cursorSmoothCaretAnimation: "on",
+                          bracketPairColorization: { enabled: true },
+                          guides: {
+                            indentation: true,
+                            bracketPairs: true,
+                          },
+                        }}
+                      />
+                    )}
                   </div>
                 ) : (
-                  <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#504945] bg-[#1d2021] p-4 text-sm leading-relaxed text-[#ebdbb2]">
+                  <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-4 text-sm leading-relaxed text-[#3c3836] dark:border-[#504945] dark:bg-[#1d2021] dark:text-[#ebdbb2]">
                     {previewVerisi.icerik || ""}
                   </pre>
                 )
               ) : previewVerisi?.tip === "pdf" ? (
-                <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
-                  <p className="text-sm text-[#ebdbb2]">
+                <div className="rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-4 dark:border-[#665c54] dark:bg-[#3c3836]">
+                  <p className="text-sm text-[#3c3836] dark:text-[#ebdbb2]">
                     {t.pdfPreviewNotAvailable}
                   </p>
                 </div>
               ) : (
-                <div className="rounded-lg border border-[#665c54] bg-[#3c3836] p-4">
-                  <p className="text-sm text-[#ebdbb2]">
+                <div className="rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-4 dark:border-[#665c54] dark:bg-[#3c3836]">
+                  <p className="text-sm text-[#3c3836] dark:text-[#ebdbb2]">
                     {previewVerisi?.mesaj || t.previewNotAvailable}
                   </p>
                 </div>
