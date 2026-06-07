@@ -3656,7 +3656,11 @@ export default function AnaSayfa() {
   }, [contextMenu.acik]);
 
   useEffect(() => {
-    if (!previewModalAcik || !previewDuzenlemeModu || monacoShikiHazir) {
+    if (
+      !previewModalAcik ||
+      previewVerisi?.tip !== "text" ||
+      monacoShikiHazir
+    ) {
       return;
     }
 
@@ -3681,7 +3685,7 @@ export default function AnaSayfa() {
     return () => {
       iptalEdildi = true;
     };
-  }, [previewModalAcik, previewDuzenlemeModu, monacoShikiHazir]);
+  }, [previewModalAcik, previewVerisi?.tip, monacoShikiHazir]);
 
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -6272,70 +6276,89 @@ export default function AnaSayfa() {
                   />
                 </div>
               ) : previewVerisi?.tip === "text" ? (
-                previewDuzenlemeModu ? (
-                  <div className="overflow-hidden rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] dark:border-[#504945] dark:bg-[#1d2021]">
-                    <div className="border-b border-[#d5c4a1] bg-[#ebdbb2] px-4 py-2 dark:border-[#504945] dark:bg-[#282828]">
-                      <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
-                        {t.saveShortcutHint}
+                <div className="overflow-hidden rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] dark:border-[#504945] dark:bg-[#1d2021]">
+                  <div className="border-b border-[#d5c4a1] bg-[#ebdbb2] px-4 py-2 dark:border-[#504945] dark:bg-[#282828]">
+                    <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                      {previewDuzenlemeModu
+                        ? t.saveShortcutHint
+                        : dil === "tr"
+                          ? "Salt okunur Monaco önizleme"
+                          : "Read-only Monaco preview"}
+                    </p>
+                  </div>
+
+                  {previewKaydetHatasi && previewDuzenlemeModu && (
+                    <div className="border-b border-[#d5c4a1] bg-[#f4d0c8] px-4 py-3 dark:border-[#504945] dark:bg-[#3c3836]">
+                      <p className="text-sm font-bold text-[#9d0006] dark:text-[#fb4934]">
+                        {previewKaydetHatasi}
                       </p>
                     </div>
+                  )}
 
-                    {previewKaydetHatasi && (
-                      <div className="border-b border-[#504945] bg-[#3c3836] px-4 py-3">
-                        <p className="text-sm font-bold text-[#fb4934]">
-                          {previewKaydetHatasi}
-                        </p>
-                      </div>
-                    )}
-
-                    {!monacoShikiHazir ? (
-                      <div className="flex h-[65vh] items-center justify-center bg-[#fbf1c7] text-sm font-black text-[#7c6f64] dark:bg-[#1d2021] dark:text-[#a89984]">
-                        {dil === "tr"
-                          ? "Gruvbox editör hazırlanıyor..."
-                          : "Preparing Gruvbox editor..."}
-                      </div>
-                    ) : (
-                      <MonacoEditor
-                        height="65vh"
-                        language={monacoDiliAl(
-                          previewDosya?.ad || previewVerisi?.dosya_adi || "",
-                        )}
-                        theme={pionterMonacoTemasiAl(karanlikMod)}
-                        value={previewEditIcerik}
-                        onMount={(_, monaco) => {
-                          monaco.editor.setTheme(
-                            pionterMonacoTemasiAl(karanlikMod),
-                          );
-                        }}
-                        onChange={(deger) => setPreviewEditIcerik(deger ?? "")}
-                        options={{
-                          minimap: { enabled: false },
-                          fontSize: 14,
-                          fontFamily:
-                            "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
-                          lineHeight: 22,
-                          wordWrap: "on",
-                          scrollBeyondLastLine: false,
-                          automaticLayout: true,
-                          tabSize: 2,
-                          renderWhitespace: "selection",
-                          smoothScrolling: true,
-                          cursorBlinking: "smooth",
-                          cursorSmoothCaretAnimation: "on",
-                          bracketPairColorization: { enabled: true },
-                          guides: {
-                            indentation: true,
-                            bracketPairs: true,
-                          },
-                        }}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <pre className="max-h-[65vh] overflow-auto whitespace-pre-wrap rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] p-4 text-sm leading-relaxed text-[#3c3836] dark:border-[#504945] dark:bg-[#1d2021] dark:text-[#ebdbb2]">
-                    {previewVerisi.icerik || ""}
-                  </pre>
-                )
+                  {!monacoShikiHazir ? (
+                    <div className="flex h-[65vh] items-center justify-center bg-[#fbf1c7] text-sm font-black text-[#7c6f64] dark:bg-[#1d2021] dark:text-[#a89984]">
+                      {dil === "tr"
+                        ? "Gruvbox önizleme hazırlanıyor..."
+                        : "Preparing Gruvbox preview..."}
+                    </div>
+                  ) : (
+                    <MonacoEditor
+                      height="65vh"
+                      language={monacoDiliAl(
+                        previewDosya?.ad || previewVerisi?.dosya_adi || "",
+                      )}
+                      theme={pionterMonacoTemasiAl(karanlikMod)}
+                      value={
+                        previewDuzenlemeModu
+                          ? previewEditIcerik
+                          : previewVerisi.icerik || ""
+                      }
+                      onMount={(_, monaco) => {
+                        monaco.editor.setTheme(
+                          pionterMonacoTemasiAl(karanlikMod),
+                        );
+                      }}
+                      onChange={(deger) => {
+                        if (previewDuzenlemeModu) {
+                          setPreviewEditIcerik(deger ?? "");
+                        }
+                      }}
+                      options={{
+                        readOnly: !previewDuzenlemeModu,
+                        domReadOnly: !previewDuzenlemeModu,
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        fontFamily:
+                          "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
+                        lineHeight: 22,
+                        wordWrap: "on",
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        tabSize: 2,
+                        renderWhitespace: previewDuzenlemeModu
+                          ? "selection"
+                          : "none",
+                        smoothScrolling: true,
+                        cursorBlinking: "smooth",
+                        cursorSmoothCaretAnimation: "on",
+                        bracketPairColorization: { enabled: true },
+                        guides: {
+                          indentation: true,
+                          bracketPairs: true,
+                        },
+                        folding: true,
+                        lineNumbers: "on",
+                        glyphMargin: false,
+                        overviewRulerBorder: false,
+                        hideCursorInOverviewRuler: true,
+                        renderLineHighlight: previewDuzenlemeModu
+                          ? "line"
+                          : "none",
+                        contextmenu: previewDuzenlemeModu,
+                      }}
+                    />
+                  )}
+                </div>
               ) : previewVerisi?.tip === "pdf" ? (
                 <div className="rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-4 dark:border-[#665c54] dark:bg-[#3c3836]">
                   <p className="text-sm text-[#3c3836] dark:text-[#ebdbb2]">
