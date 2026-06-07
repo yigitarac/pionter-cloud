@@ -10,6 +10,10 @@ import {
 } from "./yardimcilar";
 import Toast from "./components/Toast";
 import LoadingState from "./components/LoadingState";
+import {
+  pionterMonacoShikiHazirla,
+  pionterMonacoTemasiAl,
+} from "./shikiMonaco";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -119,6 +123,7 @@ export default function AnaSayfa() {
   const [previewKaydetHatasi, setPreviewKaydetHatasi] = useState("");
   const [previewOnayModalAcik, setPreviewOnayModalAcik] = useState(false);
   const [previewOnayAksiyonu, setPreviewOnayAksiyonu] = useState("");
+  const [monacoShikiHazir, setMonacoShikiHazir] = useState(false);
   const [thumbnailVerileri, setThumbnailVerileri] = useState({});
   const previewCacheRef = useRef({});
   const [suruklenenOgeAnahtari, setSuruklenenOgeAnahtari] = useState("");
@@ -1671,7 +1676,7 @@ export default function AnaSayfa() {
     if (uzanti === ".sql") return "sql";
     if ([".yml", ".yaml"].includes(uzanti)) return "yaml";
     if (uzanti === ".xml") return "xml";
-    if ([".sh", ".bash", ".zsh"].includes(uzanti)) return "shell";
+    if ([".sh", ".bash", ".zsh"].includes(uzanti)) return "shellscript";
     if (uzanti === ".rs") return "rust";
     if (uzanti === ".rb") return "ruby";
     if (uzanti === ".cs") return "csharp";
@@ -6259,8 +6264,26 @@ export default function AnaSayfa() {
                       language={monacoDiliAl(
                         previewDosya?.ad || previewVerisi?.dosya_adi || "",
                       )}
-                      theme={karanlikMod ? "vs-dark" : "light"}
+                      theme={
+                        monacoShikiHazir
+                          ? pionterMonacoTemasiAl(karanlikMod)
+                          : karanlikMod
+                            ? "vs-dark"
+                            : "light"
+                      }
                       value={previewEditIcerik}
+                      onMount={(_, monaco) => {
+                        pionterMonacoShikiHazirla(monaco)
+                          .then(() => {
+                            setMonacoShikiHazir(true);
+                            monaco.editor.setTheme(
+                              pionterMonacoTemasiAl(karanlikMod),
+                            );
+                          })
+                          .catch((hata) => {
+                            console.log("Shiki Monaco tema hatası:", hata);
+                          });
+                      }}
                       onChange={(deger) => setPreviewEditIcerik(deger ?? "")}
                       options={{
                         minimap: { enabled: false },
