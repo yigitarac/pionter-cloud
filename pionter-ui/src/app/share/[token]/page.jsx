@@ -1,7 +1,65 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { loader as monacoLoader } from "@monaco-editor/react";
 import { useParams } from "next/navigation";
+import {
+  pionterMonacoShikiHazirla,
+  pionterMonacoTemasiAl,
+} from "../../shikiMonaco";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => null,
+});
+
+const dosyaUzantisiAl = (dosyaAdi) => {
+  const temizAd = String(dosyaAdi || "")
+    .toLowerCase()
+    .trim();
+
+  if (temizAd === ".env") return ".env";
+  if (temizAd.endsWith(".env.example")) return ".env.example";
+  if (temizAd === "dockerfile") return ".dockerfile";
+  if (temizAd === "makefile") return ".makefile";
+  if (temizAd === "cmakelists.txt") return ".cmakelists";
+
+  const sonNoktaIndex = temizAd.lastIndexOf(".");
+
+  if (sonNoktaIndex === -1) return "";
+
+  return temizAd.slice(sonNoktaIndex);
+};
+
+const monacoDiliAl = (dosyaAdi) => {
+  const uzanti = dosyaUzantisiAl(dosyaAdi || "");
+
+  if (uzanti === ".js" || uzanti === ".jsx") return "javascript";
+  if (uzanti === ".ts" || uzanti === ".tsx") return "typescript";
+  if (uzanti === ".json") return "json";
+  if (uzanti === ".go") return "go";
+  if (uzanti === ".css") return "css";
+  if (uzanti === ".html") return "html";
+  if (uzanti === ".md") return "markdown";
+  if (uzanti === ".py") return "python";
+  if (uzanti === ".java") return "java";
+  if (uzanti === ".php") return "php";
+  if (uzanti === ".sql") return "sql";
+  if ([".yml", ".yaml"].includes(uzanti)) return "yaml";
+  if (uzanti === ".xml") return "xml";
+  if ([".sh", ".bash", ".zsh"].includes(uzanti)) return "shellscript";
+  if (uzanti === ".rs") return "rust";
+  if (uzanti === ".rb") return "ruby";
+  if (uzanti === ".cs") return "csharp";
+  if ([".c", ".h"].includes(uzanti)) return "c";
+  if ([".cpp", ".cc", ".cxx", ".hpp"].includes(uzanti)) return "cpp";
+  if (uzanti === ".dockerfile") return "dockerfile";
+  if (uzanti === ".toml") return "toml";
+  if (uzanti === ".ini" || uzanti === ".conf") return "ini";
+
+  return "plaintext";
+};
 
 export default function SharePage() {
   const params = useParams();
@@ -13,6 +71,7 @@ export default function SharePage() {
   const [previewVerisi, setPreviewVerisi] = useState(null);
   const [previewYukleniyor, setPreviewYukleniyor] = useState(false);
   const [previewHatasi, setPreviewHatasi] = useState("");
+  const [monacoShikiHazir, setMonacoShikiHazir] = useState(false);
 
   const [dil, setDil] = useState(() => {
     if (typeof window === "undefined") return "en";
@@ -182,6 +241,38 @@ export default function SharePage() {
       iptalEdildi = true;
     };
   }, [token, metinler.invalid, metinler.previewUnavailable]);
+
+  useEffect(() => {
+    if (
+      !previewVerisi?.basarili ||
+      previewVerisi?.tip !== "text" ||
+      monacoShikiHazir
+    ) {
+      return;
+    }
+
+    let iptalEdildi = false;
+
+    monacoLoader
+      .init()
+      .then((monaco) => pionterMonacoShikiHazirla(monaco))
+      .then(() => {
+        if (!iptalEdildi) {
+          setMonacoShikiHazir(true);
+        }
+      })
+      .catch((err) => {
+        console.log("Shared Monaco preview theme error:", err);
+
+        if (!iptalEdildi) {
+          setMonacoShikiHazir(false);
+        }
+      });
+
+    return () => {
+      iptalEdildi = true;
+    };
+  }, [previewVerisi?.basarili, previewVerisi?.tip, monacoShikiHazir]);
 
   const downloadUrl = token
     ? `http://localhost:8080/api/share/download/${encodeURIComponent(token)}`
@@ -428,15 +519,70 @@ export default function SharePage() {
                     !previewHatasi &&
                     previewVerisi?.basarili &&
                     previewVerisi.tip === "text" && (
-                      <pre
-                        className={`max-h-[45vh] overflow-auto rounded-xl border p-4 text-xs leading-relaxed ${
+                      <div
+                        className={`overflow-hidden rounded-xl border ${
                           karanlikMod
-                            ? "border-[#504945] bg-[#1d2021] text-[#ebdbb2]"
-                            : "border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836]"
+                            ? "border-[#504945] bg-[#1d2021]"
+                            : "border-[#d5c4a1] bg-[#fbf1c7]"
                         }`}
                       >
-                        {previewVerisi.icerik}
-                      </pre>
+                        {!monacoShikiHazir ? (
+                          <div
+                            className={`flex h-[45vh] items-center justify-center text-sm font-black ${
+                              karanlikMod
+                                ? "bg-[#1d2021] text-[#a89984]"
+                                : "bg-[#fbf1c7] text-[#7c6f64]"
+                            }`}
+                          >
+                            {dil === "tr"
+                              ? "Gruvbox önizleme hazırlanıyor..."
+                              : "Preparing Gruvbox preview..."}
+                          </div>
+                        ) : (
+                          <MonacoEditor
+                            height="45vh"
+                            language={monacoDiliAl(
+                              previewVerisi?.dosya_adi ||
+                                paylasimBilgisi?.dosya_adi ||
+                                "",
+                            )}
+                            theme={pionterMonacoTemasiAl(karanlikMod)}
+                            value={previewVerisi.icerik || ""}
+                            onMount={(_, monaco) => {
+                              monaco.editor.setTheme(
+                                pionterMonacoTemasiAl(karanlikMod),
+                              );
+                            }}
+                            options={{
+                              readOnly: true,
+                              domReadOnly: true,
+                              minimap: { enabled: false },
+                              fontSize: 13,
+                              fontFamily:
+                                "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
+                              lineHeight: 21,
+                              wordWrap: "on",
+                              scrollBeyondLastLine: false,
+                              automaticLayout: true,
+                              tabSize: 2,
+                              renderWhitespace: "none",
+                              smoothScrolling: true,
+                              bracketPairColorization: { enabled: true },
+                              guides: {
+                                indentation: true,
+                                bracketPairs: true,
+                              },
+                              folding: true,
+                              lineNumbers: "on",
+                              glyphMargin: false,
+                              overviewRulerBorder: false,
+                              hideCursorInOverviewRuler: true,
+                              renderLineHighlight: "none",
+                              contextmenu: false,
+                            }}
+                          />
+                        )}
+                      </div>
                     )}
                 </div>
               )}
