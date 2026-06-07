@@ -281,6 +281,25 @@ export default function SharePage() {
   const etkinYukleniyor = token ? yukleniyor : false;
   const etkinHata = token ? hata : metinler.invalid;
 
+  const paylasimMonacoYuksekligiAl = () => {
+    const icerik = previewVerisi?.icerik || "";
+    const satirSayisi = Math.max(icerik.split("\n").length, 1);
+
+    const satirYuksekligi = 21;
+    const editorIcBosluk = 44;
+    const minimumYukseklik = 180;
+    const maksimumYukseklik = 520;
+
+    const hesaplananYukseklik = satirSayisi * satirYuksekligi + editorIcBosluk;
+
+    const sinirliYukseklik = Math.min(
+      Math.max(hesaplananYukseklik, minimumYukseklik),
+      maksimumYukseklik,
+    );
+
+    return `${sinirliYukseklik}px`;
+  };
+
   return (
     <main
       className={`min-h-screen px-4 py-10 transition-colors ${
@@ -528,7 +547,8 @@ export default function SharePage() {
                       >
                         {!monacoShikiHazir ? (
                           <div
-                            className={`flex h-[45vh] items-center justify-center text-sm font-black ${
+                            style={{ height: paylasimMonacoYuksekligiAl() }}
+                            className={`flex items-center justify-center text-sm font-black ${
                               karanlikMod
                                 ? "bg-[#1d2021] text-[#a89984]"
                                 : "bg-[#fbf1c7] text-[#7c6f64]"
@@ -540,7 +560,7 @@ export default function SharePage() {
                           </div>
                         ) : (
                           <MonacoEditor
-                            height="45vh"
+                            height={paylasimMonacoYuksekligiAl()}
                             language={monacoDiliAl(
                               previewVerisi?.dosya_adi ||
                                 paylasimBilgisi?.dosya_adi ||
