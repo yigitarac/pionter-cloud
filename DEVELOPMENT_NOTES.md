@@ -44,7 +44,7 @@ Core product direction:
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs and File Activity UI: completed
-* v0.9 Editor Polish: planned
+* v0.9 Editor Polish: in progress
 * v1.0 Public-ready strong release: future goal
 
 ## Current Architecture
@@ -133,6 +133,11 @@ Current frontend responsibilities:
 * File/folder properties modal
 * Custom right-click context menus
 * Three-dot action menus aligned with context menu actions
+* Shiki-powered Monaco syntax highlighting
+* Gruvbox Dark/Light Monaco themes
+* Read-only Monaco preview for supported text/code files
+* Shared text/code file preview with read-only Monaco
+* Auto-sized shared Monaco preview height
 
 ### Database
 
@@ -450,6 +455,7 @@ Frontend changes:
 Known limitations:
 
 * Monaco standalone highlighting is not the same as language-server semantic highlighting.
+* Shiki improves syntax highlighting and theme consistency, but it still does not provide full language-server semantics.
 * Advanced IntelliSense is not implemented.
 * Language servers are deferred.
 * Custom PionterCloud Gruvbox Monaco themes are planned for a future editor polish phase.
@@ -713,31 +719,58 @@ Known limitations:
 
 ## v0.9 Editor Polish
 
+Status: in progress.
+
 Goals:
 
 * Improve Monaco editor look and feel.
-* Keep editor lightweight.
+* Improve text/code preview quality.
+* Keep editor features lightweight and lazy-loaded.
+* Avoid turning PionterCloud into a heavy IDE.
 
-Planned work:
+Completed so far:
 
-* PionterCloud Gruvbox Dark Monaco theme
-* PionterCloud Gruvbox Light Monaco theme
-* Better language-specific token colors
-* Better editor toolbar
-* Better editor loading state
-* Better large-file UX
-* Optional editor settings
-* More consistent file/editor color system
+* Added Shiki-powered Monaco highlighting.
+* Added Gruvbox Dark Monaco theme.
+* Added Gruvbox Light Monaco theme.
+* Replaced plain text/code preview with read-only Monaco preview.
+* Kept edit mode as Monaco editable mode.
+* Added read-only Monaco preview to public shared text/code files.
+* Added auto-sized shared Monaco preview height.
+* Improved editor smooth scrolling.
+* Improved cursor animation.
+* Added bracket pair colorization.
+* Added indentation and bracket pair guides.
+* Improved editor font stack.
+* Improved preview/editor light mode visual consistency.
+
+Current behavior:
+
+* Normal text/code preview uses Monaco in read-only mode.
+* Editing supported text/code files uses Monaco in editable mode.
+* Shared text/code files use Monaco in read-only mode.
+* Shared Monaco preview height grows with content up to a safe maximum.
+* Long shared previews scroll inside the Monaco area.
+* Image previews still use normal image rendering.
+* Unsupported files still use fallback/download behavior.
+
+Still planned:
+
+* More polished editor toolbar.
+* Better editor loading state.
+* Better large-file UX.
+* Optional editor settings.
+* Better language-specific tuning where Monaco/Shiki supports it.
+* More consistent editor and preview spacing.
+* Keep advanced editor features lightweight and lazy-loaded.
 
 Deferred:
 
-* Heavy language servers
-* Full IDE behavior
-* Advanced IntelliSense
-* Semantic highlighting
-* Project-wide code analysis
-
-These should only be added if they can be lazy-loaded or made optional.
+* Heavy language servers.
+* Full IDE behavior.
+* Advanced IntelliSense.
+* Semantic project-wide analysis.
+* Project-wide code navigation.
 
 ## Future Features
 

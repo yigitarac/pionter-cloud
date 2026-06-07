@@ -40,7 +40,7 @@ Current phase status:
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs and File Activity UI: completed
-* v0.9 Editor Polish: planned
+* v0.9 Editor Polish: in progress
 * v1.0 Public-ready strong release: future goal
 
 ## What PionterCloud Does
@@ -201,6 +201,13 @@ PionterCloud lets users:
 * Direct edit action for supported text/code files
 * Safe text/code file saving through SFTP
 * Edit / Save / Cancel Edit flow inside the preview modal
+* Shiki-powered Monaco syntax highlighting
+* Gruvbox Dark Monaco theme
+* Gruvbox Light Monaco theme
+* Read-only Monaco preview for supported text/code files
+* Editable Monaco mode for supported text/code files
+* Shared text/code file previews use read-only Monaco
+* Shared Monaco previews auto-size based on content height
 * Ctrl+S / Cmd+S save shortcut
 * Custom unsaved-changes confirmation modal for in-app close/cancel actions
 * Browser before-unload warning for unsaved editor changes
@@ -234,6 +241,9 @@ PionterCloud lets users:
 * Custom revoke confirmation modal
 * Share list limited to the most recent 100 records
 * Public share pages do not expose server credentials, server IP, isolated folders, or real server paths
+* Shared text/code files use read-only Monaco preview
+* Shared text/code previews use the same Gruvbox theme system as the main editor
+* Shared Monaco preview height auto-sizes for short files and scrolls for longer files
 
 ### Activity Logs
 
@@ -373,15 +383,27 @@ The isolated folder protects PionterCloud file operations. It is not a general-p
 
 ### v0.9 Editor Polish
 
-Planned:
+In progress.
 
-* PionterCloud Gruvbox Dark Monaco theme
-* PionterCloud Gruvbox Light Monaco theme
-* Better language-specific syntax colors
+Completed so far:
+
+* Shiki-powered Monaco syntax highlighting
+* Gruvbox Dark Monaco theme
+* Gruvbox Light Monaco theme
+* Read-only Monaco preview for supported text/code files
+* Editable Monaco mode for supported text/code files
+* Shared text/code file previews with read-only Monaco
+* Auto-sized shared Monaco preview height
+* Improved editor smooth scrolling, cursor animation, bracket guides, and font stack
+* Better preview/editor light mode visual consistency
+
+Still planned:
+
 * More polished editor toolbar
 * Better editor loading state
 * Better large-file handling
 * Optional editor settings
+* Better language-specific tuning where Monaco/Shiki allows it
 * Keep advanced editor features lightweight and lazy-loaded
 
 ### Future Features
