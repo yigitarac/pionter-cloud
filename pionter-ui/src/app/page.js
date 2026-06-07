@@ -1684,6 +1684,31 @@ export default function AnaSayfa() {
     return "plaintext";
   };
 
+  const previewDosyaAdiAl = () => {
+    return previewDosya?.ad || previewVerisi?.dosya_adi || "";
+  };
+
+  const previewDosyaUzantisiEtiketiAl = () => {
+    const dosyaAdi = previewDosyaAdiAl();
+    const uzanti = dosyaUzantisiAl(dosyaAdi);
+
+    if (!uzanti) {
+      return "";
+    }
+
+    return uzanti.replace(".", "").toUpperCase();
+  };
+
+  const previewDosyaBoyutuMetniAl = () => {
+    const boyut = previewVerisi?.boyut;
+
+    if (boyut === undefined || boyut === null) {
+      return "";
+    }
+
+    return dosyaBoyutuYaz(boyut);
+  };
+
   const previewDuzenlenebilirMi = () => {
     const dosyaAdi = previewDosya?.ad || previewVerisi?.dosya_adi || "";
 
@@ -6087,22 +6112,50 @@ export default function AnaSayfa() {
             className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#504945] bg-[#282828] text-[#ebdbb2] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-[#504945] px-5 py-4">
+            <div className="flex items-start justify-between gap-4 border-b border-[#504945] bg-[#282828] px-5 py-4">
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#a89984]">
-                  {t.filePreview}
-                </p>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-black uppercase tracking-wide text-[#a89984]">
+                    {previewDuzenlemeModu
+                      ? dil === "tr"
+                        ? "Dosya Editörü"
+                        : "File Editor"
+                      : t.filePreview}
+                  </p>
 
-                <h3 className="mt-1 truncate text-lg font-black">
-                  {previewDosya?.ad || previewVerisi?.dosya_adi || "-"}
+                  {previewDosyaUzantisiEtiketiAl() && (
+                    <span className="rounded-full border border-[#504945] bg-[#3c3836] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#ebdbb2]">
+                      {previewDosyaUzantisiEtiketiAl()}
+                    </span>
+                  )}
+
+                  {previewDosyaBoyutuMetniAl() && (
+                    <span className="rounded-full border border-[#504945] bg-[#3c3836] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#a89984]">
+                      {previewDosyaBoyutuMetniAl()}
+                    </span>
+                  )}
+
+                  {previewDuzenlemeModu &&
+                    (previewDuzenlemeKirliMi ? (
+                      <span className="rounded-full border border-[#d79921] bg-[#3b321d] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#fabd2f]">
+                        {t.unsavedChanges}
+                      </span>
+                    ) : (
+                      <span className="rounded-full border border-[#98971a] bg-[#32361a] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#b8bb26]">
+                        {dil === "tr" ? "Kaydedildi" : "Saved"}
+                      </span>
+                    ))}
+                </div>
+
+                <h3 className="truncate text-lg font-black text-[#ebdbb2]">
+                  {previewDosyaAdiAl() || "-"}
                 </h3>
 
-                {previewVerisi?.boyut !== undefined &&
-                  previewVerisi?.boyut !== null && (
-                    <p className="mt-1 text-xs text-[#a89984]">
-                      {dosyaBoyutuYaz(previewVerisi.boyut)}
-                    </p>
-                  )}
+                {previewDuzenlemeModu && (
+                  <p className="mt-1 text-xs font-bold text-[#a89984]">
+                    {t.saveShortcutHint}
+                  </p>
+                )}
               </div>
 
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -6187,16 +6240,10 @@ export default function AnaSayfa() {
               ) : previewVerisi?.tip === "text" ? (
                 previewDuzenlemeModu ? (
                   <div className="overflow-hidden rounded-lg border border-[#504945] bg-[#1d2021]">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#504945] bg-[#282828] px-4 py-2">
+                    <div className="border-b border-[#504945] bg-[#282828] px-4 py-2">
                       <p className="text-xs font-bold text-[#a89984]">
                         {t.saveShortcutHint}
                       </p>
-
-                      {previewDuzenlemeKirliMi && (
-                        <span className="rounded-full border border-[#d79921] bg-[#3b321d] px-2 py-1 text-xs font-black text-[#fabd2f]">
-                          {t.unsavedChanges}
-                        </span>
-                      )}
                     </div>
 
                     {previewKaydetHatasi && (
@@ -6218,11 +6265,22 @@ export default function AnaSayfa() {
                       options={{
                         minimap: { enabled: false },
                         fontSize: 14,
+                        fontFamily:
+                          "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
+                        lineHeight: 22,
                         wordWrap: "on",
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
                         tabSize: 2,
                         renderWhitespace: "selection",
+                        smoothScrolling: true,
+                        cursorBlinking: "smooth",
+                        cursorSmoothCaretAnimation: "on",
+                        bracketPairColorization: { enabled: true },
+                        guides: {
+                          indentation: true,
+                          bracketPairs: true,
+                        },
                       }}
                     />
                   </div>
