@@ -72,6 +72,7 @@ const (
 
 var rateLimitMutex sync.Mutex
 var rateLimitKayitlari = map[string][]time.Time{}
+var sonRateLimitTemizligi time.Time
 
 func istemciIPAl(r *http.Request) string {
 	if forwardedFor := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwardedFor != "" {
@@ -98,12 +99,40 @@ func istemciIPAl(r *http.Request) string {
 	return r.RemoteAddr
 }
 
+func eskiRateLimitKayitlariniTemizle(simdi time.Time) {
+	if simdi.Sub(sonRateLimitTemizligi) < 10*time.Minute {
+		return
+	}
+
+	sonRateLimitTemizligi = simdi
+	genelAltSinir := simdi.Add(-1 * time.Hour)
+
+	for anahtar, kayitlar := range rateLimitKayitlari {
+		guncelKayitlar := kayitlar[:0]
+
+		for _, zaman := range kayitlar {
+			if zaman.After(genelAltSinir) {
+				guncelKayitlar = append(guncelKayitlar, zaman)
+			}
+		}
+
+		if len(guncelKayitlar) == 0 {
+			delete(rateLimitKayitlari, anahtar)
+			continue
+		}
+
+		rateLimitKayitlari[anahtar] = guncelKayitlar
+	}
+}
+
 func rateLimitIzinVerildi(anahtar string, maksimumIstek int, pencere time.Duration) bool {
 	simdi := time.Now()
 	altSinir := simdi.Add(-pencere)
 
 	rateLimitMutex.Lock()
 	defer rateLimitMutex.Unlock()
+
+	eskiRateLimitKayitlariniTemizle(simdi)
 
 	eskiKayitlar := rateLimitKayitlari[anahtar]
 	guncelKayitlar := eskiKayitlar[:0]
