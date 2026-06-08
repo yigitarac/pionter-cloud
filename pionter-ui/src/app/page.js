@@ -29,6 +29,47 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 const METIN_PREVIEW_UYARI_LIMITI_BYTE = 700 * 1024;
+const EDITOR_AYARLARI_STORAGE_KEY = "piontercloud-editor-settings-v1";
+
+const EDITOR_VARSAYILAN_AYARLARI = {
+  fontBoyutu: 14,
+  wordWrap: true,
+  minimap: false,
+};
+
+const editorAyarlariniOku = () => {
+  if (typeof window === "undefined") {
+    return EDITOR_VARSAYILAN_AYARLARI;
+  }
+
+  try {
+    const kayitliAyarlar = window.localStorage.getItem(
+      EDITOR_AYARLARI_STORAGE_KEY,
+    );
+
+    if (!kayitliAyarlar) {
+      return EDITOR_VARSAYILAN_AYARLARI;
+    }
+
+    const ayarlar = JSON.parse(kayitliAyarlar);
+
+    return {
+      fontBoyutu: [12, 14, 16].includes(ayarlar.fontBoyutu)
+        ? ayarlar.fontBoyutu
+        : EDITOR_VARSAYILAN_AYARLARI.fontBoyutu,
+      wordWrap:
+        typeof ayarlar.wordWrap === "boolean"
+          ? ayarlar.wordWrap
+          : EDITOR_VARSAYILAN_AYARLARI.wordWrap,
+      minimap:
+        typeof ayarlar.minimap === "boolean"
+          ? ayarlar.minimap
+          : EDITOR_VARSAYILAN_AYARLARI.minimap,
+    };
+  } catch {
+    return EDITOR_VARSAYILAN_AYARLARI;
+  }
+};
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -148,9 +189,15 @@ export default function AnaSayfa() {
     dosya: null,
   });
   const [editorAyarMenusuAcik, setEditorAyarMenusuAcik] = useState(false);
-  const [editorFontBoyutu, setEditorFontBoyutu] = useState(14);
-  const [editorWordWrapAcik, setEditorWordWrapAcik] = useState(true);
-  const [editorMinimapAcik, setEditorMinimapAcik] = useState(false);
+  const [editorFontBoyutu, setEditorFontBoyutu] = useState(
+    () => editorAyarlariniOku().fontBoyutu,
+  );
+  const [editorWordWrapAcik, setEditorWordWrapAcik] = useState(
+    () => editorAyarlariniOku().wordWrap,
+  );
+  const [editorMinimapAcik, setEditorMinimapAcik] = useState(
+    () => editorAyarlariniOku().minimap,
+  );
 
   const t = sozluk[dil];
   const previewDuzenlemeKirliMi =
@@ -3785,6 +3832,19 @@ export default function AnaSayfa() {
     };
   }, [previewModalAcik, previewVerisi?.tip, monacoShikiHazir]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(
+      EDITOR_AYARLARI_STORAGE_KEY,
+      JSON.stringify({
+        fontBoyutu: editorFontBoyutu,
+        wordWrap: editorWordWrapAcik,
+        minimap: editorMinimapAcik,
+      }),
+    );
+  }, [editorFontBoyutu, editorWordWrapAcik, editorMinimapAcik]);
+
   const butonlaSecildi = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       dosyalariYukle(e.target.files);
@@ -6306,14 +6366,33 @@ export default function AnaSayfa() {
                               e.stopPropagation();
                               setEditorAyarMenusuAcik((acik) => !acik);
                             }}
-                            className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-black text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                             aria-label={
                               dil === "tr"
                                 ? "Editör ayarları"
                                 : "Editor settings"
                             }
                           >
-                            Aa
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.607 2.296.07 2.572-1.065z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"
+                              />
+                            </svg>
                           </button>
 
                           {editorAyarMenusuAcik && (
@@ -6330,8 +6409,8 @@ export default function AnaSayfa() {
 
                                 <p className="mt-1 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
                                   {dil === "tr"
-                                    ? "Bu ayarlar şimdilik sadece açık oturumda geçerli."
-                                    : "These settings are session-only for now."}
+                                    ? "Bu ayarlar bu tarayıcıda otomatik kaydedilir."
+                                    : "These settings are saved in this browser."}
                                 </p>
                               </div>
 
