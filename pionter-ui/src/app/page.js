@@ -18,7 +18,7 @@ import {
 } from "./shikiMonaco";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || apiUrl("");
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 const apiUrl = (path) => {
   const temizPath = path.startsWith("/") ? path : `/${path}`;

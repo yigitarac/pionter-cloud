@@ -71,6 +71,11 @@ func main() {
 		panic("DATABASE_URL bulunamadı. .env dosyasını kontrol et.")
 	}
 
+	appPublicURL := strings.TrimSpace(os.Getenv("APP_PUBLIC_URL"))
+	if appPublicURL == "" {
+		panic("APP_PUBLIC_URL bulunamadı. .env dosyasını kontrol et.")
+	}
+
 	db, err = sql.Open("pgx", databaseURL)
 	if err != nil {
 		panic(err)
@@ -203,7 +208,12 @@ func main() {
 	http.HandleFunc("/api/share/preview/", paylasimPreviewGetir)
 	http.HandleFunc("/api/share/download/", paylasimDosyasiIndir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
-	http.ListenAndServe(":8080", nil)
+	port := strings.TrimSpace(os.Getenv("PORT"))
+	if port == "" {
+		port = "8080"
+	}
+
+	http.ListenAndServe(":"+port, nil)
 }
 
 type BaglantiBilgileri struct {
@@ -1045,7 +1055,7 @@ func publicPaylasimURLAl(token string) string {
 	publicURL := strings.TrimRight(strings.TrimSpace(os.Getenv("APP_PUBLIC_URL")), "/")
 
 	if publicURL == "" {
-		publicURL = "http://localhost:3000"
+		panic("APP_PUBLIC_URL bulunamadı. .env dosyasını kontrol et.")
 	}
 
 	return publicURL + "/share/" + token
