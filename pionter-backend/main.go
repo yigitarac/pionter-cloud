@@ -179,6 +179,133 @@ func rateLimitliHandler(aksiyon string, maksimumIstek int, pencere time.Duration
 	}
 }
 
+func corsIzinliOriginMu(origin string) bool {
+	temizOrigin := strings.TrimRight(strings.TrimSpace(origin), "/")
+	if temizOrigin == "" {
+		return false
+	}
+
+	izinliOriginler := strings.TrimSpace(os.Getenv("CORS_ALLOWED_ORIGINS"))
+	if izinliOriginler == "" {
+		izinliOriginler = strings.TrimSpace(os.Getenv("APP_PUBLIC_URL"))
+	}
+
+	for _, izinliOrigin := range strings.Split(izinliOriginler, ",") {
+		temizIzinliOrigin := strings.TrimRight(strings.TrimSpace(izinliOrigin), "/")
+
+		if temizIzinliOrigin != "" && temizIzinliOrigin == temizOrigin {
+			return true
+		}
+	}
+
+	return false
+}
+
+func guvenlikHeaderlariEkle(w http.ResponseWriter) {
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+	w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+}
+
+func corsVeGuvenlikMiddleware(sonraki http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		guvenlikHeaderlariEkle(w)
+
+		origin := strings.TrimSpace(r.Header.Get("Origin"))
+
+		if corsIzinliOriginMu(origin) {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Max-Age", "600")
+		}
+
+		if r.Method == http.MethodOptions {
+			if origin != "" && !corsIzinliOriginMu(origin) {
+				http.Error(w, "CORS origin not allowed", http.StatusForbidden)
+				return
+			}
+
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		sonraki.ServeHTTP(w, r)
+	})
+}
+
+func envGunSayisiAl(anahtar string, varsayilanDeger int) int {
+	deger := strings.TrimSpace(os.Getenv(anahtar))
+	if deger == "" {
+		return varsayilanDeger
+	}
+
+	gun, err := strconv.Atoi(deger)
+	if err != nil || gun < 0 {
+		return varsayilanDeger
+	}
+
+	return gun
+}
+
+func retentionTemizliginiCalistir() {
+	if db == nil {
+		return
+	}
+
+	shareRetentionGun := envGunSayisiAl("SHARE_LINK_RETENTION_DAYS", 90)
+	activityRetentionGun := envGunSayisiAl("ACTIVITY_LOG_RETENTION_DAYS", 180)
+
+	if shareRetentionGun > 0 {
+		sonuc, err := db.Exec(`
+			DELETE FROM share_links
+			WHERE
+				(
+					iptal_edildi = TRUE
+					OR (
+						son_gecerlilik_tarihi IS NOT NULL
+						AND son_gecerlilik_tarihi < NOW()
+					)
+				)
+				AND olusturma_tarihi < NOW() - ($1::int * INTERVAL '1 day')
+		`, shareRetentionGun)
+
+		if err != nil {
+			fmt.Println("Share link retention cleanup hatası:", err)
+		} else if silinen, err := sonuc.RowsAffected(); err == nil && silinen > 0 {
+			fmt.Println("Temizlenen share link kaydı:", silinen)
+		}
+	}
+
+	if activityRetentionGun > 0 {
+		sonuc, err := db.Exec(`
+			DELETE FROM activity_logs
+			WHERE created_at < NOW() - ($1::int * INTERVAL '1 day')
+		`, activityRetentionGun)
+
+		if err != nil {
+			fmt.Println("Activity log retention cleanup hatası:", err)
+		} else if silinen, err := sonuc.RowsAffected(); err == nil && silinen > 0 {
+			fmt.Println("Temizlenen activity log kaydı:", silinen)
+		}
+	}
+}
+
+func retentionTemizliginiBaslat() {
+	retentionTemizliginiCalistir()
+
+	go func() {
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			retentionTemizliginiCalistir()
+		}
+	}()
+}
+
 func main() {
 	var err error
 	godotenv.Load()
@@ -325,12 +452,14 @@ func main() {
 	http.HandleFunc("/api/share/preview/", paylasimPreviewGetir)
 	http.HandleFunc("/api/share/download/", paylasimDosyasiIndir)
 	fmt.Println("Sunucu 8080 portunda çalışmaya başladı!")
+	retentionTemizliginiBaslat()
+
 	port := strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
 		port = "8080"
 	}
 
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+port, corsVeGuvenlikMiddleware(http.DefaultServeMux))
 }
 
 type BaglantiBilgileri struct {

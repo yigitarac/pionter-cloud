@@ -243,6 +243,12 @@ export default function AnaSayfa() {
       return t.permissionDenied;
     }
 
+    if (hata?.kod === "RATE_LIMITED") {
+      return dil === "tr"
+        ? "Çok fazla deneme yaptın. Biraz bekleyip tekrar dene."
+        : "Too many attempts. Please wait and try again.";
+    }
+
     return hata?.message || varsayilanMesaj;
   };
 
@@ -976,20 +982,27 @@ export default function AnaSayfa() {
       }),
     })
       .then((cevap) => {
+        if (!cevap.ok) {
+          return apiCevapHatasiOlustur(cevap, t.regFail).then((hata) => {
+            throw hata;
+          });
+        }
+
+        return cevap.json().catch(() => ({}));
+      })
+      .then(() => {
         setYukleniyor(false);
         setYuklemeMesaji("");
-        if (cevap.ok) {
-          toastGoster(t.regSuccess, "success");
-          setIsLogin(true);
-        } else {
-          toastGoster(t.regFail, "error");
-        }
+        toastGoster(t.regSuccess, "success");
+        setIsLogin(true);
       })
       .catch((hata) => {
+        const mesaj = apiHataMesajiAl(hata, t.regFail);
+
         console.log("Kayıt Hatası:", hata);
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(t.regFail, "error");
+        toastGoster(mesaj, "error");
       });
   };
 
@@ -1103,7 +1116,12 @@ export default function AnaSayfa() {
     })
       .then((cevap) => {
         if (!cevap.ok) {
-          throw new Error("Giriş başarısız");
+          return apiCevapHatasiOlustur(
+            cevap,
+            dil === "tr" ? "Giriş başarısız." : "Login failed.",
+          ).then((hata) => {
+            throw hata;
+          });
         }
 
         return cevap.json();
@@ -1115,14 +1133,16 @@ export default function AnaSayfa() {
         sunuculariGetir(veri.token);
       })
       .catch((hata) => {
+        const mesaj = apiHataMesajiAl(
+          hata,
+          dil === "tr" ? "Giriş başarısız." : "Login failed.",
+        );
+
         console.log("Login hatası:", hata);
         setOturumToken("");
         setYukleniyor(false);
         setYuklemeMesaji("");
-        toastGoster(
-          dil === "tr" ? "Giriş başarısız." : "Login failed.",
-          "error",
-        );
+        toastGoster(mesaj, "error");
       });
   };
 
