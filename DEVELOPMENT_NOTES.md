@@ -239,6 +239,24 @@ Commit rules:
 * Expired sessions are cleaned up during login.
 * The frontend handles `401 Unauthorized` responses by clearing local session state.
 
+### Auth Rate Limiting
+
+Current behavior:
+
+* `/api/login` uses basic in-memory IP-based rate limiting.
+* `/api/register` uses basic in-memory IP-based rate limiting.
+* Login limit is currently 20 requests per IP per 10 minutes.
+* Register limit is currently 5 requests per IP per 30 minutes.
+* Rate limit records are stored in backend memory.
+* Old rate limit records are cleaned periodically.
+* Rate limit responses return HTTP `429 Too Many Requests` with code `RATE_LIMITED`.
+
+Limitations:
+
+* This is a simple local/backend-memory implementation.
+* Counters reset when the backend restarts.
+* In production with multiple backend instances, this should eventually move to Redis, reverse proxy rules, or another shared rate-limit layer.
+
 ### Server Credentials
 
 * Server passwords and SSH private keys are encrypted before storage.

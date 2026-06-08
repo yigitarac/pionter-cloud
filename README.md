@@ -104,6 +104,8 @@ PionterCloud lets users:
 * Logout support
 * Token expiration
 * Frontend session cleanup on expired or invalid token
+* Basic in-memory IP-based rate limiting is applied to login and registration endpoints.
+* Auth rate limit records are cleaned periodically in memory.
 
 ### Server Management
 
