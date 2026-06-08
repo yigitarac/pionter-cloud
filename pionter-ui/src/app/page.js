@@ -130,6 +130,8 @@ export default function AnaSayfa() {
   const [previewOnayModalAcik, setPreviewOnayModalAcik] = useState(false);
   const [previewOnayAksiyonu, setPreviewOnayAksiyonu] = useState("");
   const [monacoShikiHazir, setMonacoShikiHazir] = useState(false);
+  const [previewZorlaEditAcilacak, setPreviewZorlaEditAcilacak] =
+    useState(false);
   const [thumbnailVerileri, setThumbnailVerileri] = useState({});
   const previewCacheRef = useRef({});
   const [suruklenenOgeAnahtari, setSuruklenenOgeAnahtari] = useState("");
@@ -242,6 +244,7 @@ export default function AnaSayfa() {
     setPreviewKaydetHatasi("");
     setPreviewOnayModalAcik(false);
     setPreviewOnayAksiyonu("");
+    setPreviewZorlaEditAcilacak(false);
   };
 
   const silmeOnizlemesiniTemizle = () => {
@@ -634,6 +637,11 @@ export default function AnaSayfa() {
     contextMenuyuKapat();
 
     dosyaPreviewGetir(dosya).then((veri) => {
+      if (veri?.tip === "large_text") {
+        setPreviewZorlaEditAcilacak(true);
+        return;
+      }
+
       if (!veri?.basarili || veri.tip !== "text") return;
 
       const icerik = veri.icerik || "";
@@ -642,6 +650,7 @@ export default function AnaSayfa() {
       setPreviewOrijinalIcerik(icerik);
       setPreviewKaydetHatasi("");
       setPreviewDuzenlemeModu(true);
+      setPreviewZorlaEditAcilacak(false);
     });
   };
 
@@ -1460,6 +1469,7 @@ export default function AnaSayfa() {
         setPreviewEditIcerik("");
         setPreviewOrijinalIcerik("");
         setPreviewKaydetHatasi("");
+        setPreviewZorlaEditAcilacak(false);
         setPreviewModalAcik(true);
       }
 
@@ -6478,13 +6488,38 @@ export default function AnaSayfa() {
                   <div className="mt-5 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        dosyaPreviewGetir(previewDosya, false, true)
-                      }
+                      onClick={() => {
+                        if (!previewDosya) return;
+
+                        dosyaPreviewGetir(previewDosya, false, true).then(
+                          (veri) => {
+                            if (!previewZorlaEditAcilacak) return;
+
+                            if (!veri?.basarili || veri.tip !== "text") {
+                              setPreviewZorlaEditAcilacak(false);
+                              return;
+                            }
+
+                            const icerik = veri.icerik || "";
+
+                            setPreviewEditIcerik(icerik);
+                            setPreviewOrijinalIcerik(icerik);
+                            setPreviewKaydetHatasi("");
+                            setPreviewDuzenlemeModu(true);
+                            setPreviewZorlaEditAcilacak(false);
+                          },
+                        );
+                      }}
                       disabled={!previewDosya || previewYukleniyor}
                       className="rounded-lg bg-[#d79921] px-4 py-2 text-sm font-black text-[#282828] transition-colors hover:bg-[#b57614] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#fabd2f] dark:hover:bg-[#d79921]"
                     >
-                      {dil === "tr" ? "Yine de önizle" : "Preview anyway"}
+                      {previewZorlaEditAcilacak
+                        ? dil === "tr"
+                          ? "Yine de düzenle"
+                          : "Edit anyway"
+                        : dil === "tr"
+                          ? "Yine de önizle"
+                          : "Preview anyway"}
                     </button>
 
                     {previewDosya && (
