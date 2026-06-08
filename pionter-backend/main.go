@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/ssh"
+	"net"
 )
 
 // GLOBAL DEĞİŞKENLER
@@ -61,6 +62,93 @@ const (
 	aktiviteServerUpdate = "server_update"
 	aktiviteServerDelete = "server_delete"
 )
+
+const (
+	loginRateLimitMaksimumIstek    = 20
+	registerRateLimitMaksimumIstek = 5
+	loginRateLimitPencere          = 10 * time.Minute
+	registerRateLimitPencere       = 30 * time.Minute
+)
+
+var rateLimitMutex sync.Mutex
+var rateLimitKayitlari = map[string][]time.Time{}
+
+func istemciIPAl(r *http.Request) string {
+	if forwardedFor := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwardedFor != "" {
+		parcalar := strings.Split(forwardedFor, ",")
+
+		if len(parcalar) > 0 {
+			ip := strings.TrimSpace(parcalar[0])
+
+			if ip != "" {
+				return ip
+			}
+		}
+	}
+
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return realIP
+	}
+
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil && host != "" {
+		return host
+	}
+
+	return r.RemoteAddr
+}
+
+func rateLimitIzinVerildi(anahtar string, maksimumIstek int, pencere time.Duration) bool {
+	simdi := time.Now()
+	altSinir := simdi.Add(-pencere)
+
+	rateLimitMutex.Lock()
+	defer rateLimitMutex.Unlock()
+
+	eskiKayitlar := rateLimitKayitlari[anahtar]
+	guncelKayitlar := eskiKayitlar[:0]
+
+	for _, zaman := range eskiKayitlar {
+		if zaman.After(altSinir) {
+			guncelKayitlar = append(guncelKayitlar, zaman)
+		}
+	}
+
+	if len(guncelKayitlar) >= maksimumIstek {
+		rateLimitKayitlari[anahtar] = guncelKayitlar
+		return false
+	}
+
+	guncelKayitlar = append(guncelKayitlar, simdi)
+	rateLimitKayitlari[anahtar] = guncelKayitlar
+
+	return true
+}
+
+func rateLimitCevabiYaz(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusTooManyRequests)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"basarili": false,
+		"mesaj":    "Too many requests. Please try again later.",
+		"kod":      "RATE_LIMITED",
+	})
+}
+
+func rateLimitliHandler(aksiyon string, maksimumIstek int, pencere time.Duration, sonraki http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip := istemciIPAl(r)
+		anahtar := aksiyon + ":" + ip
+
+		if !rateLimitIzinVerildi(anahtar, maksimumIstek, pencere) {
+			rateLimitCevabiYaz(w)
+			return
+		}
+
+		sonraki(w, r)
+	}
+}
 
 func main() {
 	var err error
@@ -184,8 +272,8 @@ func main() {
 	http.HandleFunc("/api/file/preview", dosyaPreviewGetir)
 	http.HandleFunc("/api/file/save", dosyaKaydet)
 	http.HandleFunc("/api/upload", dosyaYukle)
-	http.HandleFunc("/api/register", kullaniciKaydet)
-	http.HandleFunc("/api/login", kullaniciGirisYap)
+	http.HandleFunc("/api/register", rateLimitliHandler("register", registerRateLimitMaksimumIstek, registerRateLimitPencere, kullaniciKaydet))
+	http.HandleFunc("/api/login", rateLimitliHandler("login", loginRateLimitMaksimumIstek, loginRateLimitPencere, kullaniciGirisYap))
 	http.HandleFunc("/api/logout", kullaniciCikisYap)
 	http.HandleFunc("/api/servers", sunucuKaydet)
 	http.HandleFunc("/api/servers/list", sunuculariListele)
