@@ -45,6 +45,7 @@ Core product direction:
 * v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs and File Activity UI: completed
 * v0.9 Editor Polish: completed
+* v1.0 Public hardening checkpoint: completed
 * v1.0 Public-ready strong release: future goal
 
 ## Current Architecture
@@ -953,6 +954,45 @@ Potential future features:
 * Admin dashboard
 * Abuse prevention tools
 * Share retention cleanup for old expired/revoked records
+
+## v1.0 Public Hardening Checkpoint Summary
+
+This checkpoint focused on reducing obvious public-deployment risks without adding large new product features.
+
+Completed:
+
+* Frontend hardcoded backend URLs were moved to `NEXT_PUBLIC_API_BASE_URL`.
+* Frontend `.env.example` was added.
+* Backend HTTP port was moved to `PORT`.
+* `APP_PUBLIC_URL` is now required for share link generation.
+* Backend and frontend environment configuration was documented.
+* Login and registration now use basic in-memory IP-based rate limiting.
+* Old rate limit records are cleaned periodically in memory.
+* Frontend login/register error handling now supports friendly `RATE_LIMITED` messages.
+* Backend CORS handling was added through `CORS_ALLOWED_ORIGINS`.
+* Basic security headers were added through backend middleware.
+* Expired/revoked share link cleanup was added.
+* Old activity log cleanup was added.
+* Retention settings were added to backend environment configuration.
+* Secrets/gitignore audit was completed.
+* Real `.env` and `.env.local` files are not tracked by git.
+* `.env.example` files are tracked.
+* Public share leakage audit was completed.
+* Public share frontend does not display obvious sensitive server/credential fields.
+* Public share handlers use `token_hash` for database lookup only; this is not considered a response leak.
+
+Current remaining limitations before a serious public production launch:
+
+* Rate limiting is in-memory and resets when the backend restarts.
+* Multi-instance production rate limiting should use Redis, a reverse proxy, or platform-level protection.
+* Retention cleanup runs inside the backend process.
+* Multi-instance production cleanup should eventually move to a scheduled job or worker.
+* Email verification is not implemented yet.
+* Password reset is not implemented yet.
+* 2FA/passkeys are not implemented yet.
+* Production backup/restore strategy is not implemented yet.
+* Full deployment hardening is still pending.
+* A real security review is still required before trusting unknown public users at scale.
 
 ## Public SaaS Security Backlog
 

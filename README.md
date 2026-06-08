@@ -41,6 +41,7 @@ Current phase status:
 * v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs and File Activity UI: completed
 * v0.9 Editor Polish: completed
+* v1.0 Public hardening checkpoint: completed
 * v1.0 Public-ready strong release: future goal
 
 ## What PionterCloud Does
