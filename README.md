@@ -40,7 +40,7 @@ Current phase status:
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs and File Activity UI: completed
-* v0.9 Editor Polish: in progress
+* v0.9 Editor Polish: completed
 * v1.0 Public-ready strong release: future goal
 
 ## What PionterCloud Does
@@ -174,6 +174,7 @@ PionterCloud lets users:
   * share
   * delete
   * properties
+
 * Folder context menu actions:
 
   * open
@@ -181,6 +182,7 @@ PionterCloud lets users:
   * move
   * delete
   * properties
+
 * Empty-area context menu actions:
 
   * upload
@@ -206,6 +208,9 @@ PionterCloud lets users:
 * Direct edit action for supported text/code files
 * Safe text/code file saving through SFTP
 * Edit / Save / Cancel Edit flow inside the preview modal
+* Preview mode toolbar shows Edit / Settings / Download / Close
+* Edit mode toolbar shows Save / Cancel Edit / Settings / Close
+* Download is hidden while editing to keep the toolbar clean
 * Shiki-powered Monaco syntax highlighting
 * Gruvbox Dark Monaco theme
 * Gruvbox Light Monaco theme
@@ -220,10 +225,9 @@ PionterCloud lets users:
 * Configurable editor font size
 * Configurable word wrap
 * Configurable Monaco minimap
-* Browser before-unload warning for unsaved editor changes
-* Download is disabled while an edited file has unsaved changes
 * Editor settings include a reset-to-defaults action
 * Editor settings menu supports clean outside-click and Escape closing behavior
+* Browser before-unload warning for unsaved editor changes
 
 ### Share Links
 
@@ -235,6 +239,7 @@ PionterCloud lets users:
   * 1 week
   * 1 month
   * 1 year
+
 * Unlimited share links
 * Secure random share tokens
 * Stored token hashes instead of storing raw tokens
@@ -395,7 +400,7 @@ The isolated folder protects PionterCloud file operations. It is not a general-p
 
 ### v0.9 Editor Polish
 
-In progress.
+Completed.
 
 Completed so far:
 
@@ -419,11 +424,12 @@ Completed so far:
 * Editor settings button in the preview/editor toolbar
 * Editor settings reset-to-defaults action
 * Polished editor settings menu close behavior
+* Simplified preview/editor toolbar behavior
 
-Still planned:
+Deferred / future refinements:
 
-* More polished editor toolbar
-* Better editor loading state
+* Further editor toolbar refinements if needed
+* Further editor loading state refinements if needed
 * Further large-file UX refinements
 * More advanced editor settings later if needed
 * Better language-specific tuning where Monaco/Shiki allows it
@@ -468,6 +474,7 @@ Planned AI principles:
   * find large files
   * explain a code file
   * summarize activity logs
+
 * Higher-risk AI actions should be deferred until logs, permissions, previews, confirmations, and rollback systems are stronger.
 
 ## Tech Stack

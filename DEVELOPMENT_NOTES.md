@@ -44,7 +44,7 @@ Core product direction:
 * v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
 * v0.7 Share Links, New File and Context Menu: completed
 * v0.8 Activity Logs and File Activity UI: completed
-* v0.9 Editor Polish: in progress
+* v0.9 Editor Polish: completed
 * v1.0 Public-ready strong release: future goal
 
 ## Current Architecture
@@ -142,6 +142,8 @@ Current frontend responsibilities:
 * Configurable editor font size
 * Configurable word wrap
 * Configurable Monaco minimap
+* Reset-to-defaults action for editor settings
+* Polished editor settings menu close behavior
 
 ### Database
 
@@ -239,6 +241,7 @@ Potential future tables:
   * optional error code
   * metadata JSON
   * timestamp
+
 * Latest file activity is fetched in bulk for the current folder.
 * Latest file activity currently uses meaningful file-changing actions only.
 * Activity logs do not store raw share tokens.
@@ -535,6 +538,7 @@ Backend changes:
   * 1 month
   * 1 year
   * unlimited
+
 * Added share file path generation.
 * Added public share URL generation through `APP_PUBLIC_URL`.
 * Added `/api/share/create`.
@@ -553,6 +557,7 @@ Backend changes:
 * Added empty file creation endpoint:
 
   * `/api/files/create`
+
 * Added conflict detection for new file creation.
 * Added permission-aware new file creation errors.
 
@@ -566,6 +571,7 @@ Frontend changes:
 * Added public share landing page:
 
   * `/share/[token]`
+
 * Added public share file metadata display.
 * Added public share download button.
 * Added public share image preview.
@@ -578,6 +584,7 @@ Frontend changes:
   * active
   * expired
   * revoked
+
 * Added revoke share link action.
 * Replaced browser revoke confirmation with custom Gruvbox-style modal.
 * Added user-friendly `Home/...` path display for share records.
@@ -592,6 +599,7 @@ Frontend changes:
   * upload
   * new file
   * new folder
+
 * Polished context-menu hover spacing.
 * Fixed empty-area context-menu hitbox.
 * Kept three-dot menu available for mobile/tablet accessibility.
@@ -643,9 +651,11 @@ Backend changes:
 * Added activity list endpoint:
 
   * `/api/activity/list`
+
 * Added latest folder activity endpoint:
 
   * `/api/activity/latest-for-folder`
+
 * Added activity log response helpers.
 * Added successful activity logs for:
 
@@ -661,6 +671,7 @@ Backend changes:
   * rename
   * move
   * delete
+
 * Added latest activity lookup for visible/current folder files.
 * Limited latest activity labels to meaningful file-changing actions.
 
@@ -679,6 +690,7 @@ Frontend changes:
   * upload
   * new file
   * new folder
+
 * Added Current Path control area.
 * Added grid/list view mode.
 * Added single-button grid/list toggle.
@@ -723,7 +735,7 @@ Known limitations:
 
 ## v0.9 Editor Polish
 
-Status: in progress.
+Status: completed.
 
 Goals:
 
@@ -750,6 +762,7 @@ Completed so far:
 * Added auto-sized normal read-only Monaco preview height.
 * Added polished Monaco loading state.
 * Added large text/code preview warning before loading Monaco.
+* Added correct preview/edit intent behavior after large-file warning.
 * Increased text preview hard limit to 5 MB.
 * Kept text save hard limit at 5 MB.
 * Added browser-local editor settings.
@@ -759,6 +772,7 @@ Completed so far:
 * Replaced the temporary Aa editor settings button with a settings icon.
 * Added reset-to-defaults action for browser-local editor settings.
 * Polished editor settings menu closing behavior.
+* Simplified preview/editor toolbar behavior.
 
 Current behavior:
 
@@ -772,6 +786,8 @@ Current behavior:
 * Normal read-only Monaco preview height grows with content up to a safe maximum.
 * Large text/code files show a warning before Monaco preview.
 * Users can still force preview up to the backend hard limit.
+* If large-file warning was opened from Preview, the force action opens read-only preview.
+* If large-file warning was opened from Edit, the force action opens editable mode.
 * Text preview and text save currently use a 5 MB backend hard limit.
 * Editor settings are saved in browser localStorage.
 * Editor settings currently apply to the current browser, not the user account.
@@ -780,18 +796,21 @@ Current behavior:
 * Editor settings can be reset to default values.
 * Escape closes the editor settings menu before closing the preview/editor modal.
 * Clicking inside the preview/editor modal but outside the settings menu closes only the settings menu.
+* Preview mode toolbar shows Edit / Settings / Download / Close.
+* Edit mode toolbar shows Save / Cancel Edit / Settings / Close.
+* Download is hidden in edit mode to keep the toolbar clean.
 
-Still planned:
+Deferred / future refinements:
 
-* More polished editor toolbar.
-* Better editor loading state.
+* Further editor toolbar refinements if needed.
+* Further editor loading state refinements if needed.
 * Further large-file UX refinements.
 * More advanced editor settings later if needed.
 * Better language-specific tuning where Monaco/Shiki supports it.
 * More consistent editor and preview spacing.
 * Keep advanced editor features lightweight and lazy-loaded.
 
-Deferred:
+Deferred advanced editor scope:
 
 * Heavy language servers.
 * Full IDE behavior.
