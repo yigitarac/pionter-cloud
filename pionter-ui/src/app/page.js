@@ -1719,6 +1719,47 @@ export default function AnaSayfa() {
     return dosyaBoyutuYaz(boyut);
   };
 
+  const previewMonacoYuksekligiAl = () => {
+    if (previewDuzenlemeModu) {
+      return "65vh";
+    }
+
+    const icerik = previewVerisi?.icerik || "";
+
+    const tahminiSatirSayisi = Math.max(
+      icerik.split("\n").reduce((toplam, satir) => {
+        const gorselSatirSayisi = Math.max(Math.ceil(satir.length / 110), 1);
+
+        return toplam + gorselSatirSayisi;
+      }, 0),
+      1,
+    );
+
+    const satirYuksekligi = 22;
+    const editorIcBosluk = 46;
+    const minimumYukseklik = 180;
+
+    const pencereyeGoreMaksimum =
+      typeof window === "undefined"
+        ? 520
+        : Math.round(window.innerHeight * 0.65);
+
+    const maksimumYukseklik = Math.min(
+      Math.max(pencereyeGoreMaksimum, 360),
+      620,
+    );
+
+    const hesaplananYukseklik =
+      tahminiSatirSayisi * satirYuksekligi + editorIcBosluk;
+
+    const sinirliYukseklik = Math.min(
+      Math.max(hesaplananYukseklik, minimumYukseklik),
+      maksimumYukseklik,
+    );
+
+    return `${sinirliYukseklik}px`;
+  };
+
   const previewDuzenlenebilirMi = () => {
     const dosyaAdi = previewDosya?.ad || previewVerisi?.dosya_adi || "";
 
@@ -6302,7 +6343,7 @@ export default function AnaSayfa() {
                   {!monacoShikiHazir ? (
                     <EditorLoadingState
                       karanlikMod={karanlikMod}
-                      height="65vh"
+                      height={previewMonacoYuksekligiAl()}
                       mesaj={
                         previewDuzenlemeModu
                           ? dil === "tr"
@@ -6320,7 +6361,7 @@ export default function AnaSayfa() {
                     />
                   ) : (
                     <MonacoEditor
-                      height="65vh"
+                      height={previewMonacoYuksekligiAl()}
                       language={monacoDiliAl(
                         previewDosya?.ad || previewVerisi?.dosya_adi || "",
                       )}
