@@ -36,9 +36,9 @@ var sunucuStatsCache = map[string]SunucuStatsCacheKaydi{}
 var sunucuStatsCacheMutex sync.Mutex
 var sunucuStatsCacheSuresi = 20 * time.Second
 
-const textPreviewLimit = 1 * 1024 * 1024
+const textPreviewLimit = 5 * 1024 * 1024
 const imagePreviewLimit = 5 * 1024 * 1024
-const textSaveLimit = 1 * 1024 * 1024
+const textSaveLimit = 5 * 1024 * 1024
 
 const (
 	aktiviteDurumBasarili = "success"

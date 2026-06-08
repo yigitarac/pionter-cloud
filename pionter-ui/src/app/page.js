@@ -28,6 +28,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
     />
   ),
 });
+const METIN_PREVIEW_UYARI_LIMITI_BYTE = 700 * 1024;
 
 export default function AnaSayfa() {
   const [dosyalar, setDosyalar] = useState([]);
@@ -1420,7 +1421,7 @@ export default function AnaSayfa() {
     return `${sunucu.id}:${yol}:${dosya.ad}`;
   };
 
-  const dosyaPreviewGetir = (dosya, sessiz = false) => {
+  const dosyaPreviewGetir = (dosya, sessiz = false, zorlaPreview = false) => {
     if (!previewAcilabilirMi(dosya)) {
       if (!sessiz) {
         setPreviewDosya(dosya);
@@ -1436,6 +1437,33 @@ export default function AnaSayfa() {
       }
 
       return Promise.resolve(null);
+    }
+
+    if (!zorlaPreview && textPreviewUyariLimitiniAsiyorMu(dosya)) {
+      const buyukPreviewVerisi = {
+        basarili: false,
+        tip: "large_text",
+        dosya_adi: dosya?.ad || "",
+        boyut: dosya?.boyut || 0,
+        mesaj:
+          dil === "tr"
+            ? "Bu dosya büyük olduğu için otomatik önizleme sınırlandı."
+            : "Automatic preview is limited for this large file.",
+      };
+
+      if (!sessiz) {
+        setPreviewDosya(dosya);
+        setPreviewVerisi(buyukPreviewVerisi);
+        setPreviewYukleniyor(false);
+        setPreviewHatasi("");
+        setPreviewDuzenlemeModu(false);
+        setPreviewEditIcerik("");
+        setPreviewOrijinalIcerik("");
+        setPreviewKaydetHatasi("");
+        setPreviewModalAcik(true);
+      }
+
+      return Promise.resolve(buyukPreviewVerisi);
     }
 
     if (!seciliSunucu) {
@@ -1637,6 +1665,14 @@ export default function AnaSayfa() {
       ".makefile",
       ".cmakelists",
     ].includes(dosyaUzantisiAl(dosyaAdi));
+  };
+
+  const textPreviewUyariLimitiniAsiyorMu = (dosya) => {
+    if (!dosya || dosya.klasorMu) return false;
+    if (!textPreviewDosyasiMi(dosya.ad)) return false;
+    if (typeof dosya.boyut !== "number") return false;
+
+    return dosya.boyut > METIN_PREVIEW_UYARI_LIMITI_BYTE;
   };
 
   const pdfDosyasiMi = (dosyaAdi) => {
@@ -6416,6 +6452,62 @@ export default function AnaSayfa() {
                       }}
                     />
                   )}
+                </div>
+              ) : previewVerisi?.tip === "large_text" ? (
+                <div className="rounded-xl border border-[#d79921] bg-[#f3e4bd] p-5 dark:border-[#fabd2f] dark:bg-[#3b321d]">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase tracking-wide text-[#b57614] dark:text-[#fabd2f]">
+                        {dil === "tr" ? "Büyük dosya" : "Large file"}
+                      </p>
+
+                      <h4 className="mt-1 text-base font-black text-[#3c3836] dark:text-[#ebdbb2]">
+                        {dil === "tr"
+                          ? "Otomatik önizleme sınırlandı"
+                          : "Automatic preview was limited"}
+                      </h4>
+
+                      <p className="mt-2 text-sm font-bold leading-relaxed text-[#7c6f64] dark:text-[#a89984]">
+                        {dil === "tr"
+                          ? "Bu dosya Monaco önizlemesi için büyük olabilir. Performansı korumak için önce uyarı gösteriyoruz. İstersen yine de önizlemeyi deneyebilir veya dosyayı indirebilirsin."
+                          : "This file may be large for Monaco preview. To protect performance, PionterCloud shows this warning first. You can still try previewing it or download the file."}
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 rounded-full border border-[#d79921] bg-[#fbf1c7] px-3 py-1 text-xs font-black text-[#b57614] dark:border-[#fabd2f] dark:bg-[#282828] dark:text-[#fabd2f]">
+                      {previewDosyaBoyutuMetniAl() || "-"}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        dosyaPreviewGetir(previewDosya, false, true)
+                      }
+                      disabled={!previewDosya || previewYukleniyor}
+                      className="rounded-lg bg-[#d79921] px-4 py-2 text-sm font-black text-[#282828] transition-colors hover:bg-[#b57614] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#fabd2f] dark:hover:bg-[#d79921]"
+                    >
+                      {dil === "tr" ? "Yine de önizle" : "Preview anyway"}
+                    </button>
+
+                    {previewDosya && (
+                      <button
+                        type="button"
+                        onClick={() => dosyayiIndir(previewDosya)}
+                        disabled={yukleniyor}
+                        className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-4 py-2 text-sm font-black text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                      >
+                        {t.downloadFile}
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                    {dil === "tr"
+                      ? `Uyarı eşiği: ${dosyaBoyutuYaz(METIN_PREVIEW_UYARI_LIMITI_BYTE)}`
+                      : `Warning threshold: ${dosyaBoyutuYaz(METIN_PREVIEW_UYARI_LIMITI_BYTE)}`}
+                  </p>
                 </div>
               ) : previewVerisi?.tip === "pdf" ? (
                 <div className="rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] p-4 dark:border-[#665c54] dark:bg-[#3c3836]">
