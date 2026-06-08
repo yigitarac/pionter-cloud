@@ -366,6 +366,47 @@ Passive actions such as preview/download remain available in the activity log mo
 * Dark/light mode
 * Turkish/English language switch
 
+## Environment Variables
+
+PionterCloud uses separate environment files for the backend and the frontend.
+
+Backend environment file:
+
+* Local file: `pionter-backend/.env`
+* Example file: `pionter-backend/.env.example`
+
+Backend variables:
+
+* `DATABASE_URL`
+  * PostgreSQL connection string.
+* `APP_PUBLIC_URL`
+  * Public frontend URL used by the backend when generating share links.
+  * Local development example: `http://localhost:3000`
+  * Production example: `https://piontercloud.com`
+* `PORT`
+  * Backend HTTP port.
+  * Local development example: `8080`
+
+Frontend environment file:
+
+* Local file: `pionter-ui/.env.local`
+* Example file: `pionter-ui/.env.example`
+
+Frontend variables:
+
+* `NEXT_PUBLIC_API_BASE_URL`
+  * Backend API base URL used by the browser.
+  * Local development example: `http://localhost:8080`
+  * Production example: `https://api.piontercloud.com`
+
+Important notes:
+
+* Real `.env` and `.env.local` files must not be committed.
+* `.env.example` files should be committed.
+* `APP_PUBLIC_URL` points from backend to frontend.
+* `NEXT_PUBLIC_API_BASE_URL` points from frontend to backend.
+* If `APP_PUBLIC_URL` is missing, the backend should fail instead of generating invalid localhost share links.
+
 ## Security Model
 
 PionterCloud is a public BYOS application, so security is a core concern.

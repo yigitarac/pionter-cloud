@@ -165,6 +165,65 @@ Potential future tables:
 * `file_versions`
 * `share_retention_jobs`
 
+## Environment Configuration
+
+PionterCloud has two separate runtime environments: backend and frontend.
+
+Backend config lives under `pionter-backend`.
+
+Backend local file:
+
+* `pionter-backend/.env`
+
+Backend example file:
+
+* `pionter-backend/.env.example`
+
+Backend variables:
+
+* `DATABASE_URL`
+  * Required.
+  * Used by the Go backend to connect to PostgreSQL.
+* `APP_PUBLIC_URL`
+  * Required.
+  * Used by the Go backend to generate public share URLs.
+  * Should point to the frontend/public app URL.
+  * Local value: `http://localhost:3000`
+  * Production value example: `https://piontercloud.com`
+* `PORT`
+  * Optional for local development.
+  * Defaults to `8080` when not set.
+  * Used by the Go backend HTTP server.
+
+Frontend config lives under `pionter-ui`.
+
+Frontend local file:
+
+* `pionter-ui/.env.local`
+
+Frontend example file:
+
+* `pionter-ui/.env.example`
+
+Frontend variables:
+
+* `NEXT_PUBLIC_API_BASE_URL`
+  * Used by the Next.js frontend when calling backend API endpoints.
+  * Local value: `http://localhost:8080`
+  * Production value example: `https://api.piontercloud.com`
+
+Config direction:
+
+* Backend `APP_PUBLIC_URL` means: backend to frontend.
+* Frontend `NEXT_PUBLIC_API_BASE_URL` means: frontend to backend.
+
+Commit rules:
+
+* Commit `.env.example` files.
+* Do not commit real `.env` files.
+* Do not commit `.env.local` files.
+* Keep secrets out of git.
+
 ## Current Security Decisions
 
 ### Authentication
