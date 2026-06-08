@@ -360,7 +360,7 @@ Backend changes:
 * Base64 image response support
 * Preview limits:
 
-  * text: 1 MB
+  * text: 5 MB
   * image: 5 MB
 
 Frontend changes:
@@ -743,6 +743,11 @@ Completed so far:
 * Added indentation and bracket pair guides.
 * Improved editor font stack.
 * Improved preview/editor light mode visual consistency.
+* Added auto-sized normal read-only Monaco preview height.
+* Added polished Monaco loading state.
+* Added large text/code preview warning before loading Monaco.
+* Increased text preview hard limit to 5 MB.
+* Kept text save hard limit at 5 MB.
 
 Current behavior:
 
@@ -753,6 +758,10 @@ Current behavior:
 * Long shared previews scroll inside the Monaco area.
 * Image previews still use normal image rendering.
 * Unsupported files still use fallback/download behavior.
+* Normal read-only Monaco preview height grows with content up to a safe maximum.
+* Large text/code files show a warning before Monaco preview.
+* Users can still force preview up to the backend hard limit.
+* Text preview and text save currently use a 5 MB backend hard limit.
 
 Still planned:
 

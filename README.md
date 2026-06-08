@@ -195,6 +195,11 @@ PionterCloud lets users:
 * File preview modal
 * Preview cache
 * Preview size limits
+* Text/code preview hard limit: 5 MB
+* Text/code save hard limit: 5 MB
+* Large text/code files show a warning before Monaco preview
+* Users can still choose to preview large text/code files up to the backend hard limit
+* Normal read-only Monaco previews auto-size based on content height
 * File type icon system
 * Language-specific code file icon colors
 * Monaco-based text/code editor
@@ -396,12 +401,16 @@ Completed so far:
 * Auto-sized shared Monaco preview height
 * Improved editor smooth scrolling, cursor animation, bracket guides, and font stack
 * Better preview/editor light mode visual consistency
+* Auto-sized normal read-only Monaco preview height
+* Polished Monaco loading state
+* Large text/code preview warning before loading Monaco
+* 5 MB backend hard limit for text preview and text save
 
 Still planned:
 
 * More polished editor toolbar
 * Better editor loading state
-* Better large-file handling
+* Further large-file UX refinements
 * Optional editor settings
 * Better language-specific tuning where Monaco/Shiki allows it
 * Keep advanced editor features lightweight and lazy-loaded
