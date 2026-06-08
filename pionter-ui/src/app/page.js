@@ -17,6 +17,15 @@ import {
   pionterMonacoTemasiAl,
 } from "./shikiMonaco";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || apiUrl("");
+
+const apiUrl = (path) => {
+  const temizPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${API_BASE_URL}${temizPath}`;
+};
+
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
@@ -491,7 +500,7 @@ export default function AnaSayfa() {
       return;
     }
 
-    fetch("http://localhost:8080/api/activity/latest-for-folder", {
+    fetch(apiUrl("/api/activity/latest-for-folder"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -545,7 +554,7 @@ export default function AnaSayfa() {
     setActivityLoglariYukleniyor(true);
     setActivityLoglariHatasi("");
 
-    fetch("http://localhost:8080/api/activity/list", {
+    fetch(apiUrl("/api/activity/list"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -807,7 +816,7 @@ export default function AnaSayfa() {
     setShareLinkleriYukleniyor(true);
     setShareLinkleriHatasi("");
 
-    fetch("http://localhost:8080/api/share/list", {
+    fetch(apiUrl("/api/share/list"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -885,7 +894,7 @@ export default function AnaSayfa() {
 
     setShareIptalEdiliyorID(shareID);
 
-    fetch("http://localhost:8080/api/share/revoke", {
+    fetch(apiUrl("/api/share/revoke"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -957,7 +966,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.registeringAccount);
 
-    fetch("http://localhost:8080/api/register", {
+    fetch(apiUrl("/api/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -998,7 +1007,7 @@ export default function AnaSayfa() {
       server_id: sunucu.id,
     };
 
-    fetch("http://localhost:8080/api/files", {
+    fetch(apiUrl("/api/files"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(gonderilecekVeri),
@@ -1084,7 +1093,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.loggingIn);
 
-    fetch("http://localhost:8080/api/login", {
+    fetch(apiUrl("/api/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1322,7 +1331,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.loggingOut);
 
-    fetch("http://localhost:8080/api/logout", {
+    fetch(apiUrl("/api/logout"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1420,7 +1429,7 @@ export default function AnaSayfa() {
 
     setSunucuStatsHatasi("");
 
-    fetch("http://localhost:8080/api/server/stats", {
+    fetch(apiUrl("/api/server/stats"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1578,7 +1587,7 @@ export default function AnaSayfa() {
       setPreviewModalAcik(true);
     }
 
-    return fetch("http://localhost:8080/api/file/preview", {
+    return fetch(apiUrl("/api/file/preview"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1860,12 +1869,6 @@ export default function AnaSayfa() {
     return `${sinirliYukseklik}px`;
   };
 
-  const editorAyarlariniVarsayilanaDondur = () => {
-    setEditorFontBoyutu(EDITOR_VARSAYILAN_AYARLARI.fontBoyutu);
-    setEditorWordWrapAcik(EDITOR_VARSAYILAN_AYARLARI.wordWrap);
-    setEditorMinimapAcik(EDITOR_VARSAYILAN_AYARLARI.minimap);
-  };
-
   const previewDuzenlenebilirMi = () => {
     const dosyaAdi = previewDosya?.ad || previewVerisi?.dosya_adi || "";
 
@@ -1953,7 +1956,7 @@ export default function AnaSayfa() {
     setPreviewKaydediliyor(true);
     setPreviewKaydetHatasi("");
 
-    fetch("http://localhost:8080/api/file/save", {
+    fetch(apiUrl("/api/file/save"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2644,7 +2647,7 @@ export default function AnaSayfa() {
     setYuklemeMesaji(t.downloadingFile);
     let dosyaYolu =
       mevcutYol === "/" ? "/" + dosya.ad : mevcutYol + "/" + dosya.ad;
-    fetch("http://localhost:8080/api/download", {
+    fetch(apiUrl("/api/download"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2723,7 +2726,7 @@ export default function AnaSayfa() {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
-      xhr.open("POST", "http://localhost:8080/api/upload");
+      xhr.open("POST", apiUrl("/api/upload"));
 
       xhr.upload.onprogress = (event) => {
         if (!event.lengthComputable) return;
@@ -2863,7 +2866,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.creatingFolder);
 
-    fetch("http://localhost:8080/api/folders/create", {
+    fetch(apiUrl("/api/folders/create"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2932,7 +2935,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.creatingFile);
 
-    fetch("http://localhost:8080/api/files/create", {
+    fetch(apiUrl("/api/files/create"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3001,7 +3004,7 @@ export default function AnaSayfa() {
     setSilmeOnizlemeYukleniyor(true);
     setSilmeOnizlemeHatasi("");
 
-    fetch("http://localhost:8080/api/files", {
+    fetch(apiUrl("/api/files"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3071,7 +3074,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.deletingItem);
 
-    fetch("http://localhost:8080/api/delete", {
+    fetch(apiUrl("/api/delete"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3151,7 +3154,7 @@ export default function AnaSayfa() {
     setYuklemeMesaji(t.renamingItem);
     setRenameModalAcik(false);
 
-    fetch("http://localhost:8080/api/rename", {
+    fetch(apiUrl("/api/rename"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3209,7 +3212,7 @@ export default function AnaSayfa() {
 
     setHedefKlasorlerYukleniyor(true);
 
-    fetch("http://localhost:8080/api/files", {
+    fetch(apiUrl("/api/files"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3334,7 +3337,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.movingItem);
 
-    fetch("http://localhost:8080/api/move", {
+    fetch(apiUrl("/api/move"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3396,7 +3399,7 @@ export default function AnaSayfa() {
     setShareHatasi("");
     setShareLinki("");
 
-    fetch("http://localhost:8080/api/share/create", {
+    fetch(apiUrl("/api/share/create"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3637,11 +3640,6 @@ export default function AnaSayfa() {
     const escapeIleModalKapat = (e) => {
       if (e.key !== "Escape") return;
 
-      if (editorAyarMenusuAcik) {
-        setEditorAyarMenusuAcik(false);
-        return;
-      }
-
       if (previewOnayModalAcik) {
         previewOnayModaliniKapat();
         return;
@@ -3873,7 +3871,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.loadingServers);
 
-    fetch("http://localhost:8080/api/servers/list", {
+    fetch(apiUrl("/api/servers/list"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3969,7 +3967,7 @@ export default function AnaSayfa() {
 
     const yeniSabitliDurumu = !sunucu.sabitli;
 
-    fetch("http://localhost:8080/api/servers/pin", {
+    fetch(apiUrl("/api/servers/pin"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -4040,7 +4038,7 @@ export default function AnaSayfa() {
           `${t.deletingSelectedItems} (${i + 1}/${seciliOgeler.length})`,
         );
 
-        const cevap = await fetch("http://localhost:8080/api/delete", {
+        const cevap = await fetch(apiUrl("/api/delete"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -4086,7 +4084,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.deletingServer);
 
-    fetch("http://localhost:8080/api/servers/delete", {
+    fetch(apiUrl("/api/servers/delete"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -4166,7 +4164,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.savingServer);
 
-    fetch("http://localhost:8080/api/servers", {
+    fetch(apiUrl("/api/servers"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -4247,7 +4245,7 @@ export default function AnaSayfa() {
     setYukleniyor(true);
     setYuklemeMesaji(t.updatingServer);
 
-    fetch("http://localhost:8080/api/servers/update", {
+    fetch(apiUrl("/api/servers/update"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -4667,7 +4665,7 @@ export default function AnaSayfa() {
       for (let i = 0; i < tasinacakOgeler.length; i++) {
         const oge = tasinacakOgeler[i];
 
-        const cevap = await fetch("http://localhost:8080/api/move", {
+        const cevap = await fetch(apiUrl("/api/move"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -5021,7 +5019,7 @@ export default function AnaSayfa() {
           `${t.movingSelectedItems} (${i + 1}/${seciliOgeler.length})`,
         );
 
-        const cevap = await fetch("http://localhost:8080/api/move", {
+        const cevap = await fetch(apiUrl("/api/move"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -6317,10 +6315,7 @@ export default function AnaSayfa() {
         >
           <div
             className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditorAyarMenusuAcik(false);
-            }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4 border-b border-[#d5c4a1] bg-[#ebdbb2] px-5 py-4 dark:border-[#504945] dark:bg-[#282828]">
               <div className="min-w-0">
@@ -6513,15 +6508,6 @@ export default function AnaSayfa() {
                                     {editorMinimapAcik ? "ON" : "OFF"}
                                   </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={editorAyarlariniVarsayilanaDondur}
-                                  className="w-full rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-black text-[#7c6f64] transition-colors hover:border-[#d79921] hover:text-[#b57614] dark:border-[#504945] dark:bg-[#282828] dark:text-[#a89984] dark:hover:border-[#fabd2f] dark:hover:text-[#fabd2f]"
-                                >
-                                  {dil === "tr"
-                                    ? "Varsayılana dön"
-                                    : "Reset defaults"}
-                                </button>
                               </div>
                             </div>
                           )}

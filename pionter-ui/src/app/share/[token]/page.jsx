@@ -62,6 +62,15 @@ const monacoDiliAl = (dosyaAdi) => {
   return "plaintext";
 };
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || apiUrl("");
+
+const apiUrl = (path) => {
+  const temizPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${API_BASE_URL}${temizPath}`;
+};
+
 export default function SharePage() {
   const params = useParams();
   const token = params?.token || "";
@@ -159,7 +168,7 @@ export default function SharePage() {
 
     let iptalEdildi = false;
 
-    fetch(`http://localhost:8080/api/share/info/${encodeURIComponent(token)}`)
+    fetch(apiUrl(`/api/share/info/${encodeURIComponent(token)}`))
       .then((cevap) => {
         return cevap.json().then((veri) => {
           if (!cevap.ok || !veri.basarili) {
@@ -180,7 +189,7 @@ export default function SharePage() {
         setPreviewYukleniyor(true);
 
         fetch(
-          `http://localhost:8080/api/share/preview/${encodeURIComponent(token)}`,
+          apiUrl(`/api/share/preview/${encodeURIComponent(token)}`),
         )
           .then((previewCevap) => {
             return previewCevap.json().then((previewVeri) => {
@@ -276,7 +285,7 @@ export default function SharePage() {
   }, [previewVerisi?.basarili, previewVerisi?.tip, monacoShikiHazir]);
 
   const downloadUrl = token
-    ? `http://localhost:8080/api/share/download/${encodeURIComponent(token)}`
+    ? apiUrl(`/api/share/download/${encodeURIComponent(token)}`)
     : "";
 
   const etkinYukleniyor = token ? yukleniyor : false;
