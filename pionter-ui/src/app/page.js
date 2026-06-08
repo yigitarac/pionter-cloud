@@ -3637,6 +3637,11 @@ export default function AnaSayfa() {
     const escapeIleModalKapat = (e) => {
       if (e.key !== "Escape") return;
 
+      if (editorAyarMenusuAcik) {
+        setEditorAyarMenusuAcik(false);
+        return;
+      }
+
       if (previewOnayModalAcik) {
         previewOnayModaliniKapat();
         return;
@@ -6312,7 +6317,10 @@ export default function AnaSayfa() {
         >
           <div
             className="max-h-[85vh] w-full max-w-4xl overflow-hidden rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditorAyarMenusuAcik(false);
+            }}
           >
             <div className="flex items-start justify-between gap-4 border-b border-[#d5c4a1] bg-[#ebdbb2] px-5 py-4 dark:border-[#504945] dark:bg-[#282828]">
               <div className="min-w-0">
