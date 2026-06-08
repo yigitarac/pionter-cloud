@@ -11,6 +11,7 @@ import {
 } from "./yardimcilar";
 import Toast from "./components/Toast";
 import LoadingState from "./components/LoadingState";
+import EditorLoadingState from "./components/EditorLoadingState";
 import {
   pionterMonacoShikiHazirla,
   pionterMonacoTemasiAl,
@@ -19,9 +20,12 @@ import {
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[65vh] items-center justify-center rounded-lg border border-[#504945] bg-[#1d2021] text-sm font-bold text-[#a89984]">
-      Loading editor...
-    </div>
+    <EditorLoadingState
+      karanlikMod={true}
+      height="65vh"
+      mesaj="Loading editor..."
+      detay="Preparing Monaco..."
+    />
   ),
 });
 
@@ -6296,11 +6300,24 @@ export default function AnaSayfa() {
                   )}
 
                   {!monacoShikiHazir ? (
-                    <div className="flex h-[65vh] items-center justify-center bg-[#fbf1c7] text-sm font-black text-[#7c6f64] dark:bg-[#1d2021] dark:text-[#a89984]">
-                      {dil === "tr"
-                        ? "Gruvbox önizleme hazırlanıyor..."
-                        : "Preparing Gruvbox preview..."}
-                    </div>
+                    <EditorLoadingState
+                      karanlikMod={karanlikMod}
+                      height="65vh"
+                      mesaj={
+                        previewDuzenlemeModu
+                          ? dil === "tr"
+                            ? "Gruvbox editör hazırlanıyor..."
+                            : "Preparing Gruvbox editor..."
+                          : dil === "tr"
+                            ? "Gruvbox önizleme hazırlanıyor..."
+                            : "Preparing Gruvbox preview..."
+                      }
+                      detay={
+                        dil === "tr"
+                          ? "Shiki sözdizimi renklendirmesi yükleniyor."
+                          : "Loading Shiki syntax highlighting."
+                      }
+                    />
                   ) : (
                     <MonacoEditor
                       height="65vh"

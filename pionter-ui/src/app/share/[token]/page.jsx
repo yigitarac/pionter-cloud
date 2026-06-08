@@ -8,6 +8,7 @@ import {
   pionterMonacoShikiHazirla,
   pionterMonacoTemasiAl,
 } from "../../shikiMonaco";
+import EditorLoadingState from "../../components/EditorLoadingState";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -546,18 +547,20 @@ export default function SharePage() {
                         }`}
                       >
                         {!monacoShikiHazir ? (
-                          <div
-                            style={{ height: paylasimMonacoYuksekligiAl() }}
-                            className={`flex items-center justify-center text-sm font-black ${
-                              karanlikMod
-                                ? "bg-[#1d2021] text-[#a89984]"
-                                : "bg-[#fbf1c7] text-[#7c6f64]"
-                            }`}
-                          >
-                            {dil === "tr"
-                              ? "Gruvbox önizleme hazırlanıyor..."
-                              : "Preparing Gruvbox preview..."}
-                          </div>
+                          <EditorLoadingState
+                            karanlikMod={karanlikMod}
+                            height={paylasimMonacoYuksekligiAl()}
+                            mesaj={
+                              dil === "tr"
+                                ? "Gruvbox önizleme hazırlanıyor..."
+                                : "Preparing Gruvbox preview..."
+                            }
+                            detay={
+                              dil === "tr"
+                                ? "Paylaşılan dosya için Shiki renklendirmesi yükleniyor."
+                                : "Loading Shiki highlighting for the shared file."
+                            }
+                          />
                         ) : (
                           <MonacoEditor
                             height={paylasimMonacoYuksekligiAl()}
