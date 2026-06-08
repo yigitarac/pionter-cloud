@@ -757,6 +757,8 @@ Completed so far:
 * Added configurable word wrap.
 * Added configurable Monaco minimap.
 * Replaced the temporary Aa editor settings button with a settings icon.
+* Added reset-to-defaults action for browser-local editor settings.
+* Polished editor settings menu closing behavior.
 
 Current behavior:
 
@@ -775,6 +777,9 @@ Current behavior:
 * Editor settings currently apply to the current browser, not the user account.
 * Supported editor settings are font size, word wrap, and minimap.
 * The same editor settings apply to read-only preview and editable mode.
+* Editor settings can be reset to default values.
+* Escape closes the editor settings menu before closing the preview/editor modal.
+* Clicking inside the preview/editor modal but outside the settings menu closes only the settings menu.
 
 Still planned:
 

@@ -222,6 +222,8 @@ PionterCloud lets users:
 * Configurable Monaco minimap
 * Browser before-unload warning for unsaved editor changes
 * Download is disabled while an edited file has unsaved changes
+* Editor settings include a reset-to-defaults action
+* Editor settings menu supports clean outside-click and Escape closing behavior
 
 ### Share Links
 
@@ -415,6 +417,8 @@ Completed so far:
 * Configurable word wrap
 * Configurable Monaco minimap
 * Editor settings button in the preview/editor toolbar
+* Editor settings reset-to-defaults action
+* Polished editor settings menu close behavior
 
 Still planned:
 
