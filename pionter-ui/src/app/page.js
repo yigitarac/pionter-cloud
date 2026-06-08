@@ -6311,15 +6311,11 @@ export default function AnaSayfa() {
                     </button>
                   ))}
 
-                {previewDosya && (
+                {previewDosya && !previewDuzenlemeModu && (
                   <button
                     type="button"
                     onClick={() => dosyayiIndir(previewDosya)}
-                    disabled={
-                      yukleniyor ||
-                      previewKaydediliyor ||
-                      previewDuzenlemeKirliMi
-                    }
+                    disabled={yukleniyor || previewKaydediliyor}
                     className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-bold text-[#3c3836] transition-colors hover:border-[#458588] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
                   >
                     {t.downloadFile}
