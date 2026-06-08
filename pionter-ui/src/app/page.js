@@ -1860,6 +1860,12 @@ export default function AnaSayfa() {
     return `${sinirliYukseklik}px`;
   };
 
+  const editorAyarlariniVarsayilanaDondur = () => {
+    setEditorFontBoyutu(EDITOR_VARSAYILAN_AYARLARI.fontBoyutu);
+    setEditorWordWrapAcik(EDITOR_VARSAYILAN_AYARLARI.wordWrap);
+    setEditorMinimapAcik(EDITOR_VARSAYILAN_AYARLARI.minimap);
+  };
+
   const previewDuzenlenebilirMi = () => {
     const dosyaAdi = previewDosya?.ad || previewVerisi?.dosya_adi || "";
 
@@ -6499,6 +6505,15 @@ export default function AnaSayfa() {
                                     {editorMinimapAcik ? "ON" : "OFF"}
                                   </button>
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={editorAyarlariniVarsayilanaDondur}
+                                  className="w-full rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-black text-[#7c6f64] transition-colors hover:border-[#d79921] hover:text-[#b57614] dark:border-[#504945] dark:bg-[#282828] dark:text-[#a89984] dark:hover:border-[#fabd2f] dark:hover:text-[#fabd2f]"
+                                >
+                                  {dil === "tr"
+                                    ? "Varsayılana dön"
+                                    : "Reset defaults"}
+                                </button>
                               </div>
                             </div>
                           )}
