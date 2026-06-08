@@ -215,6 +215,11 @@ PionterCloud lets users:
 * Shared Monaco previews auto-size based on content height
 * Ctrl+S / Cmd+S save shortcut
 * Custom unsaved-changes confirmation modal for in-app close/cancel actions
+* Optional editor settings for text/code preview and edit mode
+* Editor settings are saved locally in the browser
+* Configurable editor font size
+* Configurable word wrap
+* Configurable Monaco minimap
 * Browser before-unload warning for unsaved editor changes
 * Download is disabled while an edited file has unsaved changes
 
@@ -405,13 +410,18 @@ Completed so far:
 * Polished Monaco loading state
 * Large text/code preview warning before loading Monaco
 * 5 MB backend hard limit for text preview and text save
+* Optional browser-local editor settings
+* Configurable editor font size
+* Configurable word wrap
+* Configurable Monaco minimap
+* Editor settings button in the preview/editor toolbar
 
 Still planned:
 
 * More polished editor toolbar
 * Better editor loading state
 * Further large-file UX refinements
-* Optional editor settings
+* More advanced editor settings later if needed
 * Better language-specific tuning where Monaco/Shiki allows it
 * Keep advanced editor features lightweight and lazy-loaded
 

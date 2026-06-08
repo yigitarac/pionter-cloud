@@ -138,6 +138,10 @@ Current frontend responsibilities:
 * Read-only Monaco preview for supported text/code files
 * Shared text/code file preview with read-only Monaco
 * Auto-sized shared Monaco preview height
+* Browser-local editor settings
+* Configurable editor font size
+* Configurable word wrap
+* Configurable Monaco minimap
 
 ### Database
 
@@ -748,6 +752,11 @@ Completed so far:
 * Added large text/code preview warning before loading Monaco.
 * Increased text preview hard limit to 5 MB.
 * Kept text save hard limit at 5 MB.
+* Added browser-local editor settings.
+* Added configurable editor font size.
+* Added configurable word wrap.
+* Added configurable Monaco minimap.
+* Replaced the temporary Aa editor settings button with a settings icon.
 
 Current behavior:
 
@@ -762,13 +771,17 @@ Current behavior:
 * Large text/code files show a warning before Monaco preview.
 * Users can still force preview up to the backend hard limit.
 * Text preview and text save currently use a 5 MB backend hard limit.
+* Editor settings are saved in browser localStorage.
+* Editor settings currently apply to the current browser, not the user account.
+* Supported editor settings are font size, word wrap, and minimap.
+* The same editor settings apply to read-only preview and editable mode.
 
 Still planned:
 
 * More polished editor toolbar.
 * Better editor loading state.
-* Better large-file UX.
-* Optional editor settings.
+* Further large-file UX refinements.
+* More advanced editor settings later if needed.
 * Better language-specific tuning where Monaco/Shiki supports it.
 * More consistent editor and preview spacing.
 * Keep advanced editor features lightweight and lazy-loaded.
