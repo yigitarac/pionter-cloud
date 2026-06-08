@@ -147,6 +147,10 @@ export default function AnaSayfa() {
     y: 0,
     dosya: null,
   });
+  const [editorAyarMenusuAcik, setEditorAyarMenusuAcik] = useState(false);
+  const [editorFontBoyutu, setEditorFontBoyutu] = useState(14);
+  const [editorWordWrapAcik, setEditorWordWrapAcik] = useState(true);
+  const [editorMinimapAcik, setEditorMinimapAcik] = useState(false);
 
   const t = sozluk[dil];
   const previewDuzenlemeKirliMi =
@@ -245,6 +249,7 @@ export default function AnaSayfa() {
     setPreviewOnayModalAcik(false);
     setPreviewOnayAksiyonu("");
     setPreviewZorlaEditAcilacak(false);
+    setEditorAyarMenusuAcik(false);
   };
 
   const silmeOnizlemesiniTemizle = () => {
@@ -1774,14 +1779,16 @@ export default function AnaSayfa() {
 
     const tahminiSatirSayisi = Math.max(
       icerik.split("\n").reduce((toplam, satir) => {
-        const gorselSatirSayisi = Math.max(Math.ceil(satir.length / 110), 1);
+        const gorselSatirSayisi = editorWordWrapAcik
+          ? Math.max(Math.ceil(satir.length / 110), 1)
+          : 1;
 
         return toplam + gorselSatirSayisi;
       }, 0),
       1,
     );
 
-    const satirYuksekligi = 22;
+    const satirYuksekligi = editorFontBoyutu + 8;
     const editorIcBosluk = 46;
     const minimumYukseklik = 180;
 
@@ -6291,6 +6298,133 @@ export default function AnaSayfa() {
                 {previewDuzenlenebilirMi() &&
                   (previewDuzenlemeModu ? (
                     <>
+                      {previewVerisi?.tip === "text" && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditorAyarMenusuAcik((acik) => !acik);
+                            }}
+                            className="rounded-lg border border-[#d5c4a1] bg-[#fbf1c7] px-3 py-2 text-sm font-black text-[#3c3836] transition-colors hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                            aria-label={
+                              dil === "tr"
+                                ? "Editör ayarları"
+                                : "Editor settings"
+                            }
+                          >
+                            Aa
+                          </button>
+
+                          {editorAyarMenusuAcik && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-0 top-11 z-[80] w-72 rounded-xl border border-[#d5c4a1] bg-[#fbf1c7] p-4 text-[#3c3836] shadow-2xl dark:border-[#504945] dark:bg-[#282828] dark:text-[#ebdbb2]"
+                            >
+                              <div className="mb-4">
+                                <p className="text-xs font-black uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                                  {dil === "tr"
+                                    ? "Editör ayarları"
+                                    : "Editor settings"}
+                                </p>
+
+                                <p className="mt-1 text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                                  {dil === "tr"
+                                    ? "Bu ayarlar şimdilik sadece açık oturumda geçerli."
+                                    : "These settings are session-only for now."}
+                                </p>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <p className="mb-2 text-xs font-black uppercase tracking-wide text-[#7c6f64] dark:text-[#a89984]">
+                                    {dil === "tr" ? "Font boyutu" : "Font size"}
+                                  </p>
+
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {[12, 14, 16].map((boyut) => {
+                                      const secili = editorFontBoyutu === boyut;
+
+                                      return (
+                                        <button
+                                          key={boyut}
+                                          type="button"
+                                          onClick={() =>
+                                            setEditorFontBoyutu(boyut)
+                                          }
+                                          className={`rounded-lg border px-3 py-2 text-xs font-black transition-colors ${
+                                            secili
+                                              ? "border-[#458588] bg-[#458588] text-[#fbf1c7] dark:border-[#83a598] dark:bg-[#83a598] dark:text-[#282828]"
+                                              : "border-[#d5c4a1] bg-[#ebdbb2] text-[#3c3836] hover:border-[#458588] dark:border-[#504945] dark:bg-[#3c3836] dark:text-[#ebdbb2] dark:hover:border-[#83a598]"
+                                          }`}
+                                        >
+                                          {boyut}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-3 py-2 dark:border-[#504945] dark:bg-[#3c3836]">
+                                  <div>
+                                    <p className="text-sm font-black">
+                                      {dil === "tr" ? "Word wrap" : "Word wrap"}
+                                    </p>
+
+                                    <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                                      {dil === "tr"
+                                        ? "Uzun satırları kır."
+                                        : "Wrap long lines."}
+                                    </p>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setEditorWordWrapAcik((acik) => !acik)
+                                    }
+                                    className={`rounded-full px-3 py-1 text-xs font-black transition-colors ${
+                                      editorWordWrapAcik
+                                        ? "bg-[#98971a] text-[#fbf1c7] dark:bg-[#b8bb26] dark:text-[#282828]"
+                                        : "bg-[#d5c4a1] text-[#7c6f64] dark:bg-[#504945] dark:text-[#a89984]"
+                                    }`}
+                                  >
+                                    {editorWordWrapAcik ? "ON" : "OFF"}
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-3 rounded-lg border border-[#d5c4a1] bg-[#ebdbb2] px-3 py-2 dark:border-[#504945] dark:bg-[#3c3836]">
+                                  <div>
+                                    <p className="text-sm font-black">
+                                      {dil === "tr" ? "Minimap" : "Minimap"}
+                                    </p>
+
+                                    <p className="text-xs font-bold text-[#7c6f64] dark:text-[#a89984]">
+                                      {dil === "tr"
+                                        ? "Sağdaki küçük kod haritası."
+                                        : "Small code map on the right."}
+                                    </p>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setEditorMinimapAcik((acik) => !acik)
+                                    }
+                                    className={`rounded-full px-3 py-1 text-xs font-black transition-colors ${
+                                      editorMinimapAcik
+                                        ? "bg-[#98971a] text-[#fbf1c7] dark:bg-[#b8bb26] dark:text-[#282828]"
+                                        : "bg-[#d5c4a1] text-[#7c6f64] dark:bg-[#504945] dark:text-[#a89984]"
+                                    }`}
+                                  >
+                                    {editorMinimapAcik ? "ON" : "OFF"}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={previewDosyasiniKaydet}
@@ -6426,12 +6560,12 @@ export default function AnaSayfa() {
                       options={{
                         readOnly: !previewDuzenlemeModu,
                         domReadOnly: !previewDuzenlemeModu,
-                        minimap: { enabled: false },
-                        fontSize: 14,
+                        minimap: { enabled: editorMinimapAcik },
+                        fontSize: editorFontBoyutu,
                         fontFamily:
                           "JetBrains Mono, Fira Code, Menlo, Monaco, Consolas, monospace",
-                        lineHeight: 22,
-                        wordWrap: "on",
+                        lineHeight: editorFontBoyutu + 8,
+                        wordWrap: editorWordWrapAcik ? "on" : "off",
                         scrollBeyondLastLine: false,
                         automaticLayout: true,
                         tabSize: 2,
