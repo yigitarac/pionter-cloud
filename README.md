@@ -388,6 +388,16 @@ Backend variables:
 * `PORT`
   * Backend HTTP port.
   * Local development example: `8080`
+* `CORS_ALLOWED_ORIGINS`
+  * Comma-separated list of frontend origins allowed to call the backend.
+  * Local development example: `http://localhost:3000`
+* `SHARE_LINK_RETENTION_DAYS`
+  * Number of days to keep expired/revoked share link records.
+  * Default example: `90`
+* `ACTIVITY_LOG_RETENTION_DAYS`
+  * Number of days to keep activity log records.
+  * Default example: `180`
+
 
 Frontend environment file:
 
@@ -434,6 +444,11 @@ Current security decisions:
 * Revoked and expired share links stop working.
 * Activity logs are scoped to the authenticated user.
 * Activity log list responses do not expose server credentials.
+* Basic CORS origin control is supported through `CORS_ALLOWED_ORIGINS`.
+* Basic security headers are added by the backend middleware.
+* Expired/revoked share link records are cleaned after the configured retention period.
+* Old activity log records are cleaned after the configured retention period.
+
 
 Important limitation:
 

@@ -808,6 +808,41 @@ Known limitations:
 * Activity logs are not yet used for rollback/versioning.
 * Activity logs are not yet used by AI features.
 
+### CORS, Security Headers and Retention
+
+Current CORS/security behavior:
+
+* Backend responses pass through `corsVeGuvenlikMiddleware`.
+* Allowed CORS origins are read from `CORS_ALLOWED_ORIGINS`.
+* If `CORS_ALLOWED_ORIGINS` is empty, `APP_PUBLIC_URL` is used as the fallback allowed origin.
+* OPTIONS preflight requests are handled by the backend middleware.
+* Unknown origins receive no CORS allow header.
+* Unknown preflight origins receive HTTP `403 Forbidden`.
+* Basic security headers are added:
+
+  * `X-Content-Type-Options: nosniff`
+  * `X-Frame-Options: DENY`
+  * `Referrer-Policy: strict-origin-when-cross-origin`
+  * `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+
+Current retention behavior:
+
+* Retention cleanup runs once when the backend starts.
+* Retention cleanup then runs every 24 hours in the background.
+* Expired or revoked share links are deleted after `SHARE_LINK_RETENTION_DAYS`.
+* Active unlimited share links are not deleted by expiration cleanup.
+* Activity logs older than `ACTIVITY_LOG_RETENTION_DAYS` are deleted.
+* If retention env values are missing or invalid, defaults are used:
+
+  * share links: 90 days
+  * activity logs: 180 days
+
+Limitations:
+
+* Retention cleanup is backend-process based.
+* In multi-instance production deployments, cleanup should eventually move to a scheduled job, worker, or database-level maintenance task.
+* CORS is application-level; production deployments may also need reverse proxy / platform-level origin and header rules.
+
 ## Planned Roadmap
 
 ## v0.9 Editor Polish
