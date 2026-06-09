@@ -1172,3 +1172,24 @@ Priorities:
 * quality over speed
 
 PionterCloud should grow carefully. Every powerful feature should be evaluated by how much it increases risk in a public BYOS SaaS environment.
+
+## Critical Environment Notes
+
+`CREDENTIAL_ENCRYPTION_KEY` is a critical local/production secret.
+
+Important rules:
+
+* Do not overwrite the `.env` file blindly.
+* Do not remove `CREDENTIAL_ENCRYPTION_KEY`.
+* Do not commit real `.env` files.
+* Keep `CREDENTIAL_ENCRYPTION_KEY` backed up somewhere safe outside git.
+* Existing saved server passwords and SSH private keys are encrypted with this key.
+* If this key is lost, existing saved server credentials cannot be decrypted.
+* In that case, the user must re-enter server passwords or SSH private keys through the server edit flow.
+
+Local required backend environment variables:
+
+```env
+DATABASE_URL=postgres://admin:supergizli@localhost:5432/piontercloud
+CREDENTIAL_ENCRYPTION_KEY=base64-encoded-32-byte-key
+APP_PUBLIC_URL=http://localhost:3000
