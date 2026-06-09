@@ -994,6 +994,124 @@ Current remaining limitations before a serious public production launch:
 * Full deployment hardening is still pending.
 * A real security review is still required before trusting unknown public users at scale.
 
+## v1.0 Hardening Final Test Checklist
+
+Before considering the public hardening checkpoint closed, run this checklist.
+
+### Code and Git
+
+* `git status` should be clean before starting a new task.
+* Real environment files must not be tracked:
+
+  * `pionter-backend/.env`
+  * `pionter-ui/.env.local`
+
+* Example environment files should be tracked:
+
+  * `pionter-backend/.env.example`
+  * `pionter-ui/.env.example`
+
+### Backend Startup
+
+* Backend starts with valid local `.env`.
+* Backend fails clearly if `DATABASE_URL` is missing.
+* Backend fails clearly if `APP_PUBLIC_URL` is missing.
+* Backend reads `PORT` from env, defaulting to `8080`.
+
+### Frontend Startup
+
+* Frontend starts normally.
+* Frontend uses `NEXT_PUBLIC_API_BASE_URL` for backend API calls.
+* Frontend still works locally with fallback `http://localhost:8080`.
+
+### Auth
+
+* Registration works normally.
+* Login works normally.
+* Logout works normally.
+* Login/register rate limiting returns `RATE_LIMITED` after too many attempts.
+* Frontend shows a friendly rate-limit message.
+
+### Server Management
+
+* Server list loads.
+* Server add works.
+* Server edit works.
+* Server delete works.
+* Server pin/unpin works.
+* Saved credentials are not returned to the frontend.
+
+### File Manager
+
+* Folder listing works.
+* Upload works.
+* Download works.
+* New folder works.
+* New file works.
+* Rename works.
+* Move works.
+* Delete works.
+* Bulk move works.
+* Bulk delete works.
+* Drag move works.
+* Breadcrumb move works.
+* Permission errors show friendly messages.
+
+### Preview and Editor
+
+* Image preview works.
+* Text/code preview works.
+* Large text/code warning works.
+* Edit mode works.
+* Save works.
+* Unsaved-change modal works.
+* Editor settings work.
+* Shared Monaco preview still works.
+
+### Share Links
+
+* Share link creation works.
+* Expiring share links work.
+* Unlimited share links work.
+* Public share info loads.
+* Public share preview loads for supported files.
+* Public share download works.
+* Revoked share links stop working.
+* Expired share links stop working.
+* Public share page does not display server credentials, server IP, SSH user, isolated folder, or token hash.
+
+### Activity Logs
+
+* Activity Logs modal opens.
+* Activity log list loads.
+* Recent file activity labels appear when expected.
+* Activity log retention cleanup does not break startup.
+
+### CORS and Security Headers
+
+* Local frontend origin is allowed.
+* Unknown preflight origins are rejected.
+* Backend responses include basic security headers.
+* CORS allowed origins are controlled through `CORS_ALLOWED_ORIGINS`.
+
+### Retention
+
+* Expired/revoked share link cleanup is configured through `SHARE_LINK_RETENTION_DAYS`.
+* Activity log cleanup is configured through `ACTIVITY_LOG_RETENTION_DAYS`.
+* Active unlimited share links are not removed by expiration cleanup.
+
+### Known Not-Yet-Production Items
+
+These are still future work and should not be forgotten:
+
+* Email verification
+* Password reset
+* 2FA/passkeys
+* Production-grade distributed rate limiting
+* Production backup/restore strategy
+* Dedicated scheduled cleanup worker for multi-instance deployments
+* Full external security review
+
 ## Public SaaS Security Backlog
 
 Before public release, the project should consider:
