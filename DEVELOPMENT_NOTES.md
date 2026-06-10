@@ -1,1195 +1,478 @@
-# Development Notes
+# PionterCloud Development Notes
 
-This file tracks the technical status, security decisions, technical debt, roadmap, and product direction for PionterCloud.
+This document describes the current state, development rules, and testing checklist for PionterCloud.
 
-PionterCloud is a learning-focused full-stack project, but the goal is to keep the codebase honest, maintainable, and security-aware as it grows toward a public BYOS SaaS product.
+## Current Project State
 
-## Product Definition
+PionterCloud is a bring-your-own-server cloud file manager built with Go, PostgreSQL, Next.js, and React.
 
-PionterCloud is a public bring-your-own-server cloud file manager and lightweight server dashboard.
+The application currently includes:
 
-The product is:
-
-```txt
-File manager first, lightweight server dashboard second.
-```
-
-The product is not:
-
-```txt
-A full cPanel/Plesk replacement.
-A full server administration panel.
-```
-
-Core product direction:
-
-* Public BYOS file manager
-* Safe file operations
+* Authentication
+* Server management
+* Encrypted server credentials
+* File manager
+* File upload/download
 * File preview
-* Text/code editing
-* Lightweight read-only server visibility
-* Sharing
+* Text/code editor
+* Share links
 * Activity logs
-* Future optional AI assistance
+* Turkish/English language support
+* Dark/light mode
 
-## Current High-Level Status
+The project is being prepared for MVP launch.
 
-* v0.1 Local/Portfolio MVP: completed
-* v0.2 Security Gate: completed
-* v0.3 Core File Manager Polish: completed
-* v0.4 Server Monitoring: completed
-* v0.5A File Preview: completed
-* v0.5A.5 Core File Operations Reliability: completed
-* v0.5B Basic Text Editor + Monaco: completed
-* v0.6.5 Stability, Permission Errors and Public SaaS Hardening: completed
-* v0.7 Share Links, New File and Context Menu: completed
-* v0.8 Activity Logs and File Activity UI: completed
-* v0.9 Editor Polish: completed
-* v1.0 Public hardening checkpoint: completed
-* v1.0 Public-ready strong release: future goal
+## Main Development Goal
 
-## Current Architecture
+The current goal is to finish the product with the existing feature set and prepare it for deployment.
 
-### Backend
+Priority order:
 
-The backend is written in Go.
+1. Keep the current app stable.
+2. Polish existing user flows.
+3. Improve documentation.
+4. Run full smoke tests.
+5. Prepare deployment settings.
+6. Launch the MVP.
 
-Current backend responsibilities:
+## Backend Notes
+
+Backend location:
+
+```txt
+pionter-backend/main.go
+```
+
+Backend responsibilities:
 
 * User registration
 * User login
-* Password hashing
-* Token/session management
-* Server management
-* Server credential encryption and decryption
-* SSH/SFTP connection validation
-* File listing
+* Session handling
+* Server CRUD operations
+* Server connection testing
+* SSH/SFTP based file operations
 * File upload
 * File download
 * File preview
-* Safe text/code file save
+* File save/edit
 * Folder creation
-* Empty file creation
-* Delete, including recursive folder delete
+* File creation
 * Rename
 * Move
-* Server stats collection
-* In-memory server stats cache
-* Permission-aware file operation error handling
+* Delete
 * Share link creation
 * Share link listing
-* Share link revocation
+* Share link revoke
 * Public share info
 * Public share preview
 * Public share download
-* Activity log creation
-* Activity log listing
-* Latest file activity lookup for current folders
+* Activity logging
+* Retention cleanup
 
-### Frontend
+Backend environment file:
 
-The frontend is written with Next.js, React, and Tailwind CSS.
+```txt
+pionter-backend/.env
+```
 
-Current frontend responsibilities:
+Backend example environment file:
+
+```txt
+pionter-backend/.env.example
+```
+
+## Frontend Notes
+
+Frontend location:
+
+```txt
+pionter-ui/src/app/page.js
+```
+
+Frontend responsibilities:
 
 * Login/register UI
-* Server list UI
-* Server add/edit/delete/pin UI
-* Sidebar navigation
+* Server dashboard
+* Server add/edit flow
 * File manager UI
-* Grid file view
-* List file view
-* Grid/list view toggle
-* Upload/download UI
-* New file UI
-* New folder UI
-* File preview UI
-* Monaco-based text/code editor UI
-* Direct edit action for supported text/code files
-* Folder creation UI
-* File creation UI
-* Rename/delete/move modals
-* Bulk move and bulk delete modals
-* Multi-select toolbar
-* Drag/drop move for single and selected multiple items
-* Breadcrumb drop targets for moving files/folders upward
-* Targeted upload by dropping local files onto folder cards or breadcrumb folders
-* Toast notifications
-* Loading states
-* Dark/light mode
-* Turkish/English language switch
-* Server monitoring UI
-* Edit / Save / Cancel Edit flow for supported text/code files
-* Ctrl+S / Cmd+S save shortcut
-* Custom unsaved-change confirmation modal
-* Shared frontend API error parsing
-* User-friendly permission error messages
-* Share link modal
-* Share link management modal
-* Public share landing page
-* Public share page theme/language controls
-* Public share preview UI
-* Activity logs modal
-* Latest file activity labels
-* File/folder properties modal
-* Custom right-click context menus
-* Three-dot action menus aligned with context menu actions
-* Shiki-powered Monaco syntax highlighting
-* Gruvbox Dark/Light Monaco themes
-* Read-only Monaco preview for supported text/code files
-* Shared text/code file preview with read-only Monaco
-* Auto-sized shared Monaco preview height
-* Browser-local editor settings
-* Configurable editor font size
-* Configurable word wrap
-* Configurable Monaco minimap
-* Reset-to-defaults action for editor settings
-* Polished editor settings menu close behavior
-
-### Database
-
-PostgreSQL is used.
-
-Current main tables:
-
-* `kullanicilar`
-* `sunucular`
-* `oturumlar`
-* `share_links`
-* `activity_logs`
-
-Potential future tables:
-
-* `email_verifications`
-* `password_resets`
-* `user_security_settings`
-* `file_versions`
-* `share_retention_jobs`
-
-## Environment Configuration
-
-PionterCloud has two separate runtime environments: backend and frontend.
-
-Backend config lives under `pionter-backend`.
-
-Backend local file:
-
-* `pionter-backend/.env`
-
-Backend example file:
-
-* `pionter-backend/.env.example`
-
-Backend variables:
-
-* `DATABASE_URL`
-  * Required.
-  * Used by the Go backend to connect to PostgreSQL.
-* `APP_PUBLIC_URL`
-  * Required.
-  * Used by the Go backend to generate public share URLs.
-  * Should point to the frontend/public app URL.
-  * Local value: `http://localhost:3000`
-  * Production value example: `https://piontercloud.com`
-* `PORT`
-  * Optional for local development.
-  * Defaults to `8080` when not set.
-  * Used by the Go backend HTTP server.
-
-Frontend config lives under `pionter-ui`.
-
-Frontend local file:
+* Grid/list view
+* Upload UI
+* Drag and drop handling
+* Context menu actions
+* Multi-select actions
+* Preview modal
+* Editor modal
+* Share modal
+* Share management
+* Activity log UI
+* Theme switch
+* Language switch
 
-* `pionter-ui/.env.local`
+Dictionary file:
 
-Frontend example file:
-
-* `pionter-ui/.env.example`
+```txt
+pionter-ui/src/app/sozluk.js
+```
 
-Frontend variables:
+Public share page location:
 
-* `NEXT_PUBLIC_API_BASE_URL`
-  * Used by the Next.js frontend when calling backend API endpoints.
-  * Local value: `http://localhost:8080`
-  * Production value example: `https://api.piontercloud.com`
+```txt
+pionter-ui/src/app/share/
+```
 
-Config direction:
-
-* Backend `APP_PUBLIC_URL` means: backend to frontend.
-* Frontend `NEXT_PUBLIC_API_BASE_URL` means: frontend to backend.
-
-Commit rules:
-
-* Commit `.env.example` files.
-* Do not commit real `.env` files.
-* Do not commit `.env.local` files.
-* Keep secrets out of git.
-
-## Current Security Decisions
-
-### Authentication
-
-* New Pionter account passwords are stored with bcrypt.
-* Older plain-text development passwords are migrated to bcrypt after successful login.
-* Login returns a session token.
-* Session tokens are stored in the `oturumlar` table.
-* Protected backend endpoints require token-based authentication.
-* Logout deletes the active session token from the database.
-* Session tokens have an expiration timestamp.
-* Expired tokens are rejected by the backend.
-* Expired sessions are cleaned up during login.
-* The frontend handles `401 Unauthorized` responses by clearing local session state.
-
-### Auth Rate Limiting
-
-Current behavior:
-
-* `/api/login` uses basic in-memory IP-based rate limiting.
-* `/api/register` uses basic in-memory IP-based rate limiting.
-* Login limit is currently 20 requests per IP per 10 minutes.
-* Register limit is currently 5 requests per IP per 30 minutes.
-* Rate limit records are stored in backend memory.
-* Old rate limit records are cleaned periodically.
-* Rate limit responses return HTTP `429 Too Many Requests` with code `RATE_LIMITED`.
-
-Limitations:
-
-* This is a simple local/backend-memory implementation.
-* Counters reset when the backend restarts.
-* In production with multiple backend instances, this should eventually move to Redis, reverse proxy rules, or another shared rate-limit layer.
-
-### Server Credentials
-
-* Server passwords and SSH private keys are encrypted before storage.
-* Existing plain-text development credentials are lazily migrated to encrypted values when the server is used.
-* Saved server credentials are not returned to the frontend.
-* SSH/SFTP connection test runs before saving or updating a server.
-
-### Isolated Folder
-
-* File manager operations are restricted to the configured isolated folder.
-* Backend path construction uses safe path joining and validation.
-* File/folder names are validated against dangerous path fragments.
-* The isolated folder protects PionterCloud file operations.
-* The isolated folder is not a general-purpose server sandbox.
-
-### File Operations
-
-* File listing uses SFTP.
-* Upload uses SFTP.
-* Download uses SFTP.
-* Preview uses SFTP.
-* Editor save uses SFTP.
-* Empty file creation uses SFTP.
-* Recursive delete is supported but remains behind isolated-folder path checks.
-* Move operations block moving folders into themselves.
-* Text preview and text save operations have size limits.
-* Unsupported file types are blocked from editing.
-* Permission denied errors are detected and returned with clearer error codes.
-* The frontend maps permission denied errors to localized user-facing messages.
-
-### Share Links
-
-* Share links are file-only for now.
-* Folder sharing is intentionally deferred.
-* Share links support expiring and unlimited durations.
-* Share tokens are generated with secure random bytes.
-* Raw share tokens are shown only at creation time.
-* Raw share tokens are not stored in the database.
-* Share token hashes are stored in the database.
-* Public share info exposes only safe metadata.
-* Public share preview supports image and text/code files.
-* Public share download streams the original file without re-encoding or quality loss.
-* Public endpoints do not expose server credentials, server IPs, SSH users, isolated folders, or raw internal paths.
-* Revoked and expired links are blocked.
-* Share management currently lists the most recent 100 share records.
-* A future retention policy should clean old expired/revoked records.
-
-### Activity Logs
-
-* Activity logs are stored in `activity_logs`.
-* Activity logs are scoped by `user_id`.
-* Server-specific activity records may include `server_id`.
-* Activity logs include:
-
-  * action type
-  * target path
-  * target name
-  * status
-  * optional error code
-  * metadata JSON
-  * timestamp
-
-* Latest file activity is fetched in bulk for the current folder.
-* Latest file activity currently uses meaningful file-changing actions only.
-* Activity logs do not store raw share tokens.
-* Activity logs should not expose saved server credentials.
-
-## Completed Phase Summaries
-
-## v0.1 Local/Portfolio MVP Summary
-
-The v0.1 phase focused on making the core product usable locally.
-
-Completed:
-
-* User registration and login
-* Multiple server support
-* Server add/list/edit/delete
-* Server pin/unpin
-* SSH/SFTP file listing
-* Upload files
-* Download files
-* Create folders
-* Delete files and empty folders
-* Rename files and folders
-* Move files and folders
-* Nested target folder picker for move
-* Breadcrumb navigation
-* Search/filter files in current folder
-* Folders-first alphabetical listing
-* File metadata display
-* Toast notification system
-* Custom modals
-* Dark/light mode
-* Turkish/English language switch
-* Initial README and development notes
-
-## v0.2 Security Gate Summary
-
-The v0.2 phase focused on improving authentication, session handling, and credential storage.
-
-Completed:
-
-* bcrypt password hashing
-* Plain-text development password migration
-* Dedicated `/api/login` endpoint
-* Session token generation
-* Server-side session token storage
-* Protected endpoint token authentication
-* Logout endpoint
-* Token expiration
-* Frontend session cleanup on invalid token
-* Server credential encryption
-* Lazy migration for old plain-text server credentials
-* Saved credentials hidden from frontend responses
-
-## v0.3 Core File Manager Polish Summary
-
-The v0.3 phase focused on making the file manager feel more like a real product interface.
-
-Completed:
-
-* Collapsible left sidebar
-* Server preview inside sidebar
-* Profile/settings controls inside sidebar
-* Improved empty states
-* Multi-select toolbar
-* Select listed/visible behavior
-* Clear selection behavior
-* Bulk delete
-* Bulk move
-* Shared move modal behavior
-* Selected-item previews in bulk move/delete modals
-* Improved drag-and-drop upload behavior
-* Improved upload/folder/selection UX
-
-Known non-blocking warnings after v0.3:
-
-* `postcss.config.mjs` anonymous default export warning
-* React Hook dependency warning for the drag/drop upload effect in `page.js`
-
-## v0.4 Server Monitoring Summary
-
-The v0.4 phase added basic read-only server monitoring.
-
-Completed:
-
-* `/api/server/stats` endpoint
-* SSH-based server stats collection
-* CPU usage calculation
-* RAM usage
-* Disk usage
-* Load average parsing
-* Uptime output
-* Monitoring card in selected server panel
-* CPU/RAM/Disk progress bars
-* SSH OK status badge
-* Last updated timestamp
-* Manual refresh
-* Silent auto refresh
-* In-memory backend stats cache
-
-Limitations:
-
-* Linux-focused
-* SSH-based
-* Backend cache is in-memory
-* Historical charts are not implemented
-* Alerting is not implemented
-
-## v0.5A File Preview Summary
-
-The v0.5A phase added safe file previews and improved file type recognition.
-
-Backend changes:
-
-* `/api/file/preview`
-* Preview request/response structs
-* File extension detection
-* Supported text/code file whitelist
-* Image file whitelist
-* Preview type detection
-* Text preview reader through SFTP
-* Image preview reader through SFTP
-* Base64 image response support
-* Preview limits:
-
-  * text: 5 MB
-  * image: 5 MB
-
-Frontend changes:
-
-* Preview state
-* Preview cache
-* File preview modal
-* Text/code preview
-* Image preview
-* Image thumbnails
-* File type icon system v2
-* Language-specific code icon colors
-* Mini file icons in bulk modals
-
-Known limitations:
-
-* PDF preview currently shows fallback/download behavior.
-* Office files have icons but no real preview.
-* Large text/image files are blocked by preview limits.
-* Image thumbnail loading is limited for safety.
-
-## v0.5A.5 Core File Operations Reliability Summary
-
-The v0.5A.5 phase improved core file operation reliability and UX.
-
-Backend changes:
-
-* Recursive folder deletion
-* Recursive SFTP delete helper
-* Symlink-aware delete behavior through `Lstat`
-* Stronger file/folder name validation
-
-Frontend changes:
-
-* Folder-content preview in delete modal
-* Drag/drop move from file cards to folder cards
-* Drag/drop move from file cards to breadcrumb folders
-* Multi-item drag move
-* Targeted upload to folder cards
-* Targeted upload to breadcrumb folders
-* Drag/drop visual states
-* Drag hover flicker fixes
-* Stale drag state fixes
-* Stacked drag preview cards
-* File-type-aware drag preview colors
-* Loading-state navigation lock
-* Custom breadcrumb/up-folder tooltips
-
-Known limitations:
-
-* Multi-item drag move currently sends one `/api/move` request per item.
-* Partial failure handling can be improved after stable backend error codes.
-* Move conflict feedback is still generic.
-
-## v0.5B Basic Text Editor + Monaco Summary
-
-The v0.5B phase added safe lightweight text/code editing.
-
-Backend changes:
-
-* `/api/file/save`
-* Save request/response structs
-* Save response helper
-* `textSaveLimit`
-* SFTP-based text file save helper
-* Truncate-and-write save behavior
-* Existing-file-only save behavior
-* Unsupported file type rejection
-* Folder save rejection
-* Oversized content rejection
-* Token authentication and isolated-folder path validation
-
-Frontend changes:
-
-* Monaco Editor dynamic import
-* Editor state in preview modal
-* Read-only preview mode
-* Edit mode
-* Save action
-* Cancel Edit action
-* Dirty-state tracking
-* Ctrl+S / Cmd+S save shortcut
-* Confirmation before closing with unsaved changes
-* Browser before-unload warning
-* Editor information bar
-* Unsaved-change badge
-* Download disabled while unsaved changes exist
-* Preview cache update after save
-* File list refresh after save
-* Monaco language detection by extension
-
-Known limitations:
-
-* Monaco standalone highlighting is not the same as language-server semantic highlighting.
-* Shiki improves syntax highlighting and theme consistency, but it still does not provide full language-server semantics.
-* Advanced IntelliSense is not implemented.
-* Language servers are deferred.
-* Custom PionterCloud Gruvbox Monaco themes are planned for a future editor polish phase.
-
-## v0.6.5 Stability, Permission Errors and Public SaaS Hardening Summary
-
-The v0.6.5 phase focused on making file operation failures clearer and more user-friendly before adding larger public-product features.
-
-Backend changes:
-
-* Added shared API error response struct.
-* Added shared JSON API error helper.
-* Added file-list JSON error helper.
-* Added permission denied detection helper.
-* Added localized base permission-denied backend message.
-* Added `kod` support to file listing responses.
-* Added permission-aware folder preparation errors.
-* Added permission-aware folder read errors.
-* Added permission-aware text preview errors.
-* Added permission-aware image preview errors.
-* Added permission-aware editor save errors.
-* Added permission-aware delete errors.
-* Added permission-aware upload errors.
-* Added permission-aware folder creation errors.
-* Added permission-aware file creation errors.
-* Added permission-aware rename errors.
-* Added permission-aware move errors.
-* Added JSON error responses for download failures.
-* Added permission-aware download open errors.
-* Added clearer backend error codes for common SSH/SFTP operation failures.
-
-Frontend changes:
-
-* Added shared API response error parser.
-* Added shared API error message mapper.
-* Added preview-specific error message mapper.
-* Added Turkish and English permission denied messages.
-* Added Turkish and English files-load-failed messages.
-* Added Turkish and English download-failed messages.
-* Updated folder listing error handling.
-* Updated preview error handling.
-* Updated editor save error handling.
-* Updated delete error handling.
-* Updated upload error handling.
-* Updated folder creation error handling.
-* Updated file creation error handling.
-* Updated rename error handling.
-* Updated single move error handling.
-* Updated drag move error handling.
-* Updated bulk move error handling.
-* Updated download error handling.
-
-Known limitations:
-
-* Error handling is better, but not fully standardized across every backend endpoint yet.
-* Some non-permission SSH/SFTP errors still use generic messages.
-* Public SaaS features still need email verification, rate limiting, password reset, and stronger abuse-prevention planning.
-
-## v0.7 Share Links, New File and Context Menu Summary
-
-The v0.7 phase added file sharing and several high-impact file-manager UX features.
-
-Backend changes:
-
-* Added `share_links` table.
-* Added secure share token generation.
-* Added SHA-256 share token hashing.
-* Added share duration calculation:
-
-  * 1 hour
-  * 1 day
-  * 1 week
-  * 1 month
-  * 1 year
-  * unlimited
-
-* Added share file path generation.
-* Added public share URL generation through `APP_PUBLIC_URL`.
-* Added `/api/share/create`.
-* Added `/api/share/info/{token}`.
-* Added `/api/share/preview/{token}`.
-* Added `/api/share/download/{token}`.
-* Added `/api/share/list`.
-* Added `/api/share/revoke`.
-* Added token-format validation helpers.
-* Added tokenless server credential lookup for public share access based on validated share records.
-* Added public share metadata response.
-* Added public share preview response for image and text/code files.
-* Added public share download streaming.
-* Added active/expired/revoked share status calculation.
-* Added share list limiting to the most recent 100 records.
-* Added empty file creation endpoint:
-
-  * `/api/files/create`
-
-* Added conflict detection for new file creation.
-* Added permission-aware new file creation errors.
-
-Frontend changes:
-
-* Added file share action.
-* Added share modal.
-* Replaced share duration dropdown with card/chip selector.
-* Added share link creation UI.
-* Added share link copy behavior.
-* Added public share landing page:
-
-  * `/share/[token]`
-
-* Added public share file metadata display.
-* Added public share download button.
-* Added public share image preview.
-* Added public share text/code preview.
-* Added public share page Turkish/English toggle.
-* Added public share page dark/light toggle with icons.
-* Added share links management modal.
-* Added share link status badges:
-
-  * active
-  * expired
-  * revoked
-
-* Added revoke share link action.
-* Replaced browser revoke confirmation with custom Gruvbox-style modal.
-* Added user-friendly `Home/...` path display for share records.
-* Added new file modal.
-* Added new file toolbar button.
-* Added file creation validation.
-* Added custom right-click context menu for files.
-* Added custom right-click context menu for folders.
-* Added custom right-click context menu for empty file-area space.
-* Added empty-area context actions:
-
-  * upload
-  * new file
-  * new folder
-
-* Polished context-menu hover spacing.
-* Fixed empty-area context-menu hitbox.
-* Kept three-dot menu available for mobile/tablet accessibility.
-* Replaced in-app editor unsaved-change browser confirm with custom modal.
-* Improved file/folder custom tooltip behavior.
-
-Manual validation:
-
-* Share links can be created.
-* Expiring share links work.
-* Unlimited share links work.
-* Public share landing page opens instead of direct download.
-* Public share info does not expose credentials or server details.
-* Public share preview works for supported image and text/code files.
-* Public share download works and preserves original file contents.
-* Share links can be listed.
-* Active, expired, and revoked statuses display correctly.
-* Share links can be revoked.
-* Revoked public links stop working.
-* New file creation works.
-* Duplicate file names are rejected.
-* Permission errors are displayed for file creation when needed.
-* File/folder item context menu works.
-* Empty-area context menu works.
-* Existing three-dot menu still works.
-* Browser native context menu is replaced in supported file-manager areas.
-* In-app unsaved-change confirmation uses custom UI.
-
-Known limitations:
-
-* Share link records are retained in the database for now.
-* Old raw share URLs cannot be regenerated from the management list because raw tokens are intentionally not stored.
-* Share retention cleanup is not implemented yet.
-* Folder sharing is not implemented yet.
-* Folder upload with directory structure preservation is not implemented yet.
-* Public share preview does not support PDF/Office/archive preview yet.
-* Context menu is currently file-manager focused; additional polish may be needed for mobile/tablet behavior.
-
-## v0.8 Activity Logs and File Activity UI Summary
-
-The v0.8 phase added activity logging, activity viewing, file activity labels, list view, and file/folder properties polish.
-
-Backend changes:
-
-* Added `activity_logs` table.
-* Added activity log action/status constants.
-* Added `aktiviteLogla(...)` helper.
-* Added activity path helper.
-* Added activity list endpoint:
-
-  * `/api/activity/list`
-
-* Added latest folder activity endpoint:
-
-  * `/api/activity/latest-for-folder`
-
-* Added activity log response helpers.
-* Added successful activity logs for:
-
-  * login
-  * logout
-  * create file
-  * create folder
-  * share create
-  * share revoke
-  * upload
-  * download
-  * editor save
-  * rename
-  * move
-  * delete
-
-* Added latest activity lookup for visible/current folder files.
-* Limited latest activity labels to meaningful file-changing actions.
-
-Frontend changes:
-
-* Added Activity Logs modal.
-* Added Activity Logs button in the server/header action area.
-* Added activity log loading/error/empty states.
-* Added localized activity action labels.
-* Added activity status badges.
-* Added activity log refresh action.
-* Moved Share Links and Activity Logs out of the file toolbar into server-level actions.
-* Reorganized file toolbar to focus on current-folder actions:
-
-  * search
-  * upload
-  * new file
-  * new folder
-
-* Added Current Path control area.
-* Added grid/list view mode.
-* Added single-button grid/list toggle.
-* Added list view with compact column header.
-* Moved selected-item actions into the Current Path control area.
-* Kept selection state across grid/list switching.
-* Added latest activity labels to file cards and list rows.
-* Added latest activity tooltip with timestamp.
-* Added file/folder properties modal.
-* Added properties action to right-click and three-dot menus.
-* Added direct Edit action for supported text/code files.
-* Aligned three-dot menu actions with right-click context menu actions.
-* Kept passive activity such as preview/download inside the Activity Logs modal instead of showing it on file cards.
-
-Manual validation:
-
-* Activity logs are created for successful auth/file/share actions.
-* Activity Logs modal opens and lists recent actions.
-* Activity Logs modal refresh works.
-* File cards show latest meaningful PionterCloud activity when available.
-* File list rows show latest meaningful PionterCloud activity when available.
-* Activity labels do not show fake history for files that existed before logging.
-* Activity tooltip shows detailed timestamp.
-* Preview/download actions do not overwrite latest file activity labels.
-* Grid/List toggle works.
-* Selection remains usable after view switching.
-* File/folder properties modal shows metadata and latest activity.
-* Right-click and three-dot menus are more consistent.
-* Direct Edit opens supported text/code files in Monaco edit mode.
-
-Known limitations:
-
-* Activity logs are mostly success-oriented right now; richer failed-operation logging can be expanded later.
-* Existing files created before activity logging do not receive fake “uploaded/created” activity.
-* Latest activity is based on PionterCloud activity records, not raw SFTP modified time.
-* Activity log filtering UI is still basic.
-* Activity log retention/cleanup policy is not implemented yet.
-* Activity logs are not yet used for rollback/versioning.
-* Activity logs are not yet used by AI features.
-
-### CORS, Security Headers and Retention
-
-Current CORS/security behavior:
-
-* Backend responses pass through `corsVeGuvenlikMiddleware`.
-* Allowed CORS origins are read from `CORS_ALLOWED_ORIGINS`.
-* If `CORS_ALLOWED_ORIGINS` is empty, `APP_PUBLIC_URL` is used as the fallback allowed origin.
-* OPTIONS preflight requests are handled by the backend middleware.
-* Unknown origins receive no CORS allow header.
-* Unknown preflight origins receive HTTP `403 Forbidden`.
-* Basic security headers are added:
-
-  * `X-Content-Type-Options: nosniff`
-  * `X-Frame-Options: DENY`
-  * `Referrer-Policy: strict-origin-when-cross-origin`
-  * `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-
-Current retention behavior:
-
-* Retention cleanup runs once when the backend starts.
-* Retention cleanup then runs every 24 hours in the background.
-* Expired or revoked share links are deleted after `SHARE_LINK_RETENTION_DAYS`.
-* Active unlimited share links are not deleted by expiration cleanup.
-* Activity logs older than `ACTIVITY_LOG_RETENTION_DAYS` are deleted.
-* If retention env values are missing or invalid, defaults are used:
-
-  * share links: 90 days
-  * activity logs: 180 days
-
-Limitations:
-
-* Retention cleanup is backend-process based.
-* In multi-instance production deployments, cleanup should eventually move to a scheduled job, worker, or database-level maintenance task.
-* CORS is application-level; production deployments may also need reverse proxy / platform-level origin and header rules.
-
-## Planned Roadmap
-
-## v0.9 Editor Polish
-
-Status: completed.
-
-Goals:
-
-* Improve Monaco editor look and feel.
-* Improve text/code preview quality.
-* Keep editor features lightweight and lazy-loaded.
-* Avoid turning PionterCloud into a heavy IDE.
-
-Completed so far:
-
-* Added Shiki-powered Monaco highlighting.
-* Added Gruvbox Dark Monaco theme.
-* Added Gruvbox Light Monaco theme.
-* Replaced plain text/code preview with read-only Monaco preview.
-* Kept edit mode as Monaco editable mode.
-* Added read-only Monaco preview to public shared text/code files.
-* Added auto-sized shared Monaco preview height.
-* Improved editor smooth scrolling.
-* Improved cursor animation.
-* Added bracket pair colorization.
-* Added indentation and bracket pair guides.
-* Improved editor font stack.
-* Improved preview/editor light mode visual consistency.
-* Added auto-sized normal read-only Monaco preview height.
-* Added polished Monaco loading state.
-* Added large text/code preview warning before loading Monaco.
-* Added correct preview/edit intent behavior after large-file warning.
-* Increased text preview hard limit to 5 MB.
-* Kept text save hard limit at 5 MB.
-* Added browser-local editor settings.
-* Added configurable editor font size.
-* Added configurable word wrap.
-* Added configurable Monaco minimap.
-* Replaced the temporary Aa editor settings button with a settings icon.
-* Added reset-to-defaults action for browser-local editor settings.
-* Polished editor settings menu closing behavior.
-* Simplified preview/editor toolbar behavior.
-
-Current behavior:
-
-* Normal text/code preview uses Monaco in read-only mode.
-* Editing supported text/code files uses Monaco in editable mode.
-* Shared text/code files use Monaco in read-only mode.
-* Shared Monaco preview height grows with content up to a safe maximum.
-* Long shared previews scroll inside the Monaco area.
-* Image previews still use normal image rendering.
-* Unsupported files still use fallback/download behavior.
-* Normal read-only Monaco preview height grows with content up to a safe maximum.
-* Large text/code files show a warning before Monaco preview.
-* Users can still force preview up to the backend hard limit.
-* If large-file warning was opened from Preview, the force action opens read-only preview.
-* If large-file warning was opened from Edit, the force action opens editable mode.
-* Text preview and text save currently use a 5 MB backend hard limit.
-* Editor settings are saved in browser localStorage.
-* Editor settings currently apply to the current browser, not the user account.
-* Supported editor settings are font size, word wrap, and minimap.
-* The same editor settings apply to read-only preview and editable mode.
-* Editor settings can be reset to default values.
-* Escape closes the editor settings menu before closing the preview/editor modal.
-* Clicking inside the preview/editor modal but outside the settings menu closes only the settings menu.
-* Preview mode toolbar shows Edit / Settings / Download / Close.
-* Edit mode toolbar shows Save / Cancel Edit / Settings / Close.
-* Download is hidden in edit mode to keep the toolbar clean.
-
-Deferred / future refinements:
-
-* Further editor toolbar refinements if needed.
-* Further editor loading state refinements if needed.
-* Further large-file UX refinements.
-* More advanced editor settings later if needed.
-* Better language-specific tuning where Monaco/Shiki supports it.
-* More consistent editor and preview spacing.
-* Keep advanced editor features lightweight and lazy-loaded.
-
-Deferred advanced editor scope:
-
-* Heavy language servers.
-* Full IDE behavior.
-* Advanced IntelliSense.
-* Semantic project-wide analysis.
-* Project-wide code navigation.
-
-## Future Features
-
-Potential future features:
-
-* Google Docs-like collaborative editing
-* Server-to-server file transfer
-* Folder upload with preserved directory structure
-* Folder sharing through generated archives or safe bundles
-* File versioning
-* File rollback
-* AI-assisted file search
-* AI-assisted code/file explanation
-* AI-assisted activity log review
-* AI-assisted safe file operations
-* User-provided AI API keys
-* More advanced monitoring
-* Email verification
-* Password reset
-* 2FA/passkey support
-* Rate limiting
-* Admin dashboard
-* Abuse prevention tools
-* Share retention cleanup for old expired/revoked records
-
-## v1.0 Public Hardening Checkpoint Summary
-
-This checkpoint focused on reducing obvious public-deployment risks without adding large new product features.
-
-Completed:
-
-* Frontend hardcoded backend URLs were moved to `NEXT_PUBLIC_API_BASE_URL`.
-* Frontend `.env.example` was added.
-* Backend HTTP port was moved to `PORT`.
-* `APP_PUBLIC_URL` is now required for share link generation.
-* Backend and frontend environment configuration was documented.
-* Login and registration now use basic in-memory IP-based rate limiting.
-* Old rate limit records are cleaned periodically in memory.
-* Frontend login/register error handling now supports friendly `RATE_LIMITED` messages.
-* Backend CORS handling was added through `CORS_ALLOWED_ORIGINS`.
-* Basic security headers were added through backend middleware.
-* Expired/revoked share link cleanup was added.
-* Old activity log cleanup was added.
-* Retention settings were added to backend environment configuration.
-* Secrets/gitignore audit was completed.
-* Real `.env` and `.env.local` files are not tracked by git.
-* `.env.example` files are tracked.
-* Public share leakage audit was completed.
-* Public share frontend does not display obvious sensitive server/credential fields.
-* Public share handlers use `token_hash` for database lookup only; this is not considered a response leak.
-
-Current remaining limitations before a serious public production launch:
-
-* Rate limiting is in-memory and resets when the backend restarts.
-* Multi-instance production rate limiting should use Redis, a reverse proxy, or platform-level protection.
-* Retention cleanup runs inside the backend process.
-* Multi-instance production cleanup should eventually move to a scheduled job or worker.
-* Email verification is not implemented yet.
-* Password reset is not implemented yet.
-* 2FA/passkeys are not implemented yet.
-* Production backup/restore strategy is not implemented yet.
-* Full deployment hardening is still pending.
-* A real security review is still required before trusting unknown public users at scale.
-
-## v1.0 Hardening Final Test Checklist
-
-Before considering the public hardening checkpoint closed, run this checklist.
-
-### Code and Git
-
-* `git status` should be clean before starting a new task.
-* Real environment files must not be tracked:
-
-  * `pionter-backend/.env`
-  * `pionter-ui/.env.local`
-
-* Example environment files should be tracked:
-
-  * `pionter-backend/.env.example`
-  * `pionter-ui/.env.example`
-
-### Backend Startup
-
-* Backend starts with valid local `.env`.
-* Backend fails clearly if `DATABASE_URL` is missing.
-* Backend fails clearly if `APP_PUBLIC_URL` is missing.
-* Backend reads `PORT` from env, defaulting to `8080`.
-
-### Frontend Startup
-
-* Frontend starts normally.
-* Frontend uses `NEXT_PUBLIC_API_BASE_URL` for backend API calls.
-* Frontend still works locally with fallback `http://localhost:8080`.
+Frontend environment file:
+
+```txt
+pionter-ui/.env.local
+```
+
+Frontend example environment file:
+
+```txt
+pionter-ui/.env.example
+```
+
+## Database Notes
+
+Database:
+
+```txt
+PostgreSQL
+```
+
+Local development database container:
+
+```txt
+pionter-db
+```
+
+Default local database values:
+
+```env
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=supergizli
+POSTGRES_DB=piontercloud
+```
+
+Default local database URL:
+
+```env
+DATABASE_URL=postgres://admin:supergizli@localhost:5432/piontercloud
+```
+
+## Critical Environment Notes
+
+`CREDENTIAL_ENCRYPTION_KEY` is critical.
+
+Rules:
+
+* Do not remove it.
+* Do not overwrite it.
+* Do not commit the real value.
+* Do not paste the real value into documentation, chat, screenshots, or issues.
+* Keep a backup outside git.
+
+Why it matters:
+
+* Saved server passwords are encrypted with this key.
+* Saved SSH private keys are encrypted with this key.
+* If this key is lost, existing saved server credentials cannot be decrypted.
+* Users must re-enter server credentials if the key is lost.
+
+Protected files:
+
+```txt
+pionter-backend/.env
+pionter-ui/.env.local
+```
+
+These files must not be blindly overwritten.
+
+## Development Rules
+
+### 1. Keep Changes Small
+
+Prefer small commits.
+
+Good examples:
+
+```txt
+Polish server onboarding copy
+Update backend env example
+Fix share page empty state
+Improve activity log labels
+```
+
+Avoid mixing unrelated changes in the same commit.
+
+### 2. Check Status Before Changes
+
+Before making changes:
+
+```bash
+git status
+git log --oneline -1
+```
+
+Expected state:
+
+```txt
+working tree clean
+```
+
+### 3. Do Not Rewrite Working Configuration
+
+Do not replace real `.env` files with example values.
+
+Only edit these when updating documentation:
+
+```txt
+pionter-backend/.env.example
+pionter-ui/.env.example
+```
+
+### 4. Test After Each Meaningful Change
+
+After backend-related changes:
+
+```bash
+cd pionter-backend
+go run main.go
+```
+
+After frontend-related changes:
+
+```bash
+cd pionter-ui
+npm run dev
+```
+
+For production readiness:
+
+```bash
+cd pionter-ui
+npm run build
+```
+
+## Main User Flow
+
+Expected MVP user flow:
+
+1. User opens PionterCloud.
+2. User registers or logs in.
+3. User opens the server dashboard.
+4. User adds a server.
+5. User selects password or SSH key authentication.
+6. User sets an isolated folder path.
+7. User connects to the server.
+8. User manages files from the file manager.
+9. User creates share links when needed.
+10. User checks activity logs when needed.
+
+## File Manager Behavior
+
+Expected behavior:
+
+* Click folder: open folder.
+* Click file: select/open according to current UI behavior.
+* Context menu: show file/folder actions.
+* Breadcrumb: navigate to parent folders.
+* Upload: upload into current folder.
+* Move: move selected file/folder safely.
+* Delete: confirm before deleting.
+* Preview: open supported preview modal.
+* Edit: open editor for supported text/code files.
+* Share: create public file share link.
+
+## Share Link Behavior
+
+Share links should support:
+
+* Duration selection
+* Public share page
+* File download
+* Supported preview
+* Manual revoke
+* Expired state
+* Revoked state
+
+Share links should not expose:
+
+* Saved server password
+* Saved SSH private key
+* Internal credential data
+
+## Activity Log Behavior
+
+Activity logs should record important actions:
+
+* Upload
+* Create file
+* Create folder
+* Edit
+* Rename
+* Move
+* Delete
+* Share
+* Revoke share link
+
+Activity display should be understandable for normal users.
+
+## UI Notes
+
+Current UI expectations:
+
+* Login screen should remain clean and simple.
+* Server dashboard should clearly guide first-time users.
+* File manager should stay fast and understandable.
+* Custom modals should be used instead of browser confirm dialogs.
+* Custom tooltips should be used where needed.
+* Dark and light mode should both stay readable.
+* Turkish and English text should stay consistent.
+
+## Smoke Test Checklist
+
+Run this before deployment.
 
 ### Auth
 
-* Registration works normally.
-* Login works normally.
-* Logout works normally.
-* Login/register rate limiting returns `RATE_LIMITED` after too many attempts.
-* Frontend shows a friendly rate-limit message.
+* Register works.
+* Login works.
+* Logout works.
+* Wrong password shows readable error.
+* Rate limit message is readable.
 
 ### Server Management
 
 * Server list loads.
-* Server add works.
-* Server edit works.
-* Server delete works.
-* Server pin/unpin works.
-* Saved credentials are not returned to the frontend.
+* Add server works.
+* Server connection test works.
+* Update server works.
+* Delete server works.
+* Pin server works.
+* Password connection works.
+* SSH key connection works.
 
 ### File Manager
 
-* Folder listing works.
+* File list loads.
+* Folder navigation works.
+* Breadcrumb navigation works.
 * Upload works.
 * Download works.
-* New folder works.
-* New file works.
+* Create file works.
+* Create folder works.
 * Rename works.
 * Move works.
 * Delete works.
-* Bulk move works.
-* Bulk delete works.
-* Drag move works.
-* Breadcrumb move works.
-* Permission errors show friendly messages.
+* Recursive folder delete works.
+* Multi-select works.
+* Grid/list toggle works.
 
 ### Preview and Editor
 
+* Text preview works.
 * Image preview works.
-* Text/code preview works.
-* Large text/code warning works.
-* Edit mode works.
-* Save works.
-* Unsaved-change modal works.
-* Editor settings work.
-* Shared Monaco preview still works.
+* Unsupported file message is readable.
+* Editor opens for supported files.
+* Editor save works.
+* Large file limit message is readable.
 
 ### Share Links
 
-* Share link creation works.
-* Expiring share links work.
-* Unlimited share links work.
-* Public share info loads.
-* Public share preview loads for supported files.
-* Public share download works.
-* Revoked share links stop working.
-* Expired share links stop working.
-* Public share page does not display server credentials, server IP, SSH user, isolated folder, or token hash.
+* Share link can be created.
+* Share duration works.
+* Share link opens publicly.
+* Shared file can be downloaded.
+* Supported shared file can be previewed.
+* Share link can be revoked.
+* Revoked link stops working.
 
 ### Activity Logs
 
-* Activity Logs modal opens.
-* Activity log list loads.
-* Recent file activity labels appear when expected.
-* Activity log retention cleanup does not break startup.
+* Activity log opens.
+* Upload activity appears.
+* Edit activity appears.
+* Share activity appears.
+* Delete activity appears.
+* Revoke activity appears.
 
-### CORS and Security Headers
+### UI
 
-* Local frontend origin is allowed.
-* Unknown preflight origins are rejected.
-* Backend responses include basic security headers.
-* CORS allowed origins are controlled through `CORS_ALLOWED_ORIGINS`.
+* Turkish language works.
+* English language works.
+* Dark mode works.
+* Light mode works.
+* Main modals close correctly.
+* Main actions show readable feedback.
 
-### Retention
+## Launch Preparation Checklist
 
-* Expired/revoked share link cleanup is configured through `SHARE_LINK_RETENTION_DAYS`.
-* Activity log cleanup is configured through `ACTIVITY_LOG_RETENTION_DAYS`.
-* Active unlimited share links are not removed by expiration cleanup.
+Before launch:
 
-### Known Not-Yet-Production Items
+* Backend environment variables are set.
+* Frontend environment variables are set.
+* PostgreSQL is available.
+* Backend starts successfully.
+* Frontend build succeeds.
+* CORS is configured.
+* HTTPS is configured.
+* Real secrets are not committed.
+* README is updated.
+* DEVELOPMENT_NOTES is updated.
+* Final smoke test is completed.
 
-These are still future work and should not be forgotten:
+## Useful Commands
 
-* Email verification
-* Password reset
-* 2FA/passkeys
-* Production-grade distributed rate limiting
-* Production backup/restore strategy
-* Dedicated scheduled cleanup worker for multi-instance deployments
-* Full external security review
+Check git state:
 
-## Public SaaS Security Backlog
+```bash
+git status
+git log --oneline -5
+```
 
-Before public release, the project should consider:
+Start database:
 
-* Email verification
-* Password reset flow
-* Login rate limiting
-* Registration rate limiting
-* Stronger session management
-* Refresh-token strategy or better token lifecycle
-* 2FA/passkey support
-* CSRF review
-* CORS/origin hardening
-* Security headers
-* Audit logs
-* Admin moderation tools
-* Abuse prevention
-* Better secret management
-* Production-grade environment config
-* Backups and recovery strategy
-* Deployment hardening
-* Share link retention and cleanup policy
-* Activity log retention and cleanup policy
+```bash
+docker start pionter-db
+```
 
-## AI Direction
+Start backend:
 
-AI features are planned as optional and user-controlled.
+```bash
+cd pionter-backend
+go run main.go
+```
 
-Principles:
+Start frontend:
 
-* Users should provide their own API key.
-* AI should not create platform cost by default.
-* AI should not perform destructive actions without preview and confirmation.
-* AI should use safe backend APIs, not raw shell access.
-* AI should rely on activity logs for context.
-* AI actions should start read-only.
+```bash
+cd pionter-ui
+npm run dev
+```
 
-Low-risk AI ideas:
+Build frontend:
 
-* Summarize folder contents.
-* Find largest files in a folder.
-* Explain a code file.
-* Summarize recent activity.
-* Search logs.
-* Suggest cleanup candidates.
+```bash
+cd pionter-ui
+npm run build
+```
 
-Higher-risk AI ideas are deferred until logs, permissions, previews, confirmations, and rollback systems are stronger.
+Commit changes:
 
-## Development Philosophy
+```bash
+git add README.md DEVELOPMENT_NOTES.md
+git commit -m "Update project documentation"
+```
 
-Priorities:
+## Current Rule
 
-* correctness
-* security-aware design
-* maintainability
-* clear UX
-* controlled progress
-* quality over speed
+Until launch, focus on finishing and deploying the existing MVP.
 
-PionterCloud should grow carefully. Every powerful feature should be evaluated by how much it increases risk in a public BYOS SaaS environment.
+Do not add unnecessary complexity.
 
-## Critical Environment Notes
+Do not change working infrastructure unless required.
 
-`CREDENTIAL_ENCRYPTION_KEY` is a critical local/production secret.
+Do not touch real environment secrets unnecessarily.
 
-Important rules:
-
-* Do not overwrite the `.env` file blindly.
-* Do not remove `CREDENTIAL_ENCRYPTION_KEY`.
-* Do not commit real `.env` files.
-* Keep `CREDENTIAL_ENCRYPTION_KEY` backed up somewhere safe outside git.
-* Existing saved server passwords and SSH private keys are encrypted with this key.
-* If this key is lost, existing saved server credentials cannot be decrypted.
-* In that case, the user must re-enter server passwords or SSH private keys through the server edit flow.
-
-Local required backend environment variables:
-
-```env
-DATABASE_URL=postgres://admin:supergizli@localhost:5432/piontercloud
-CREDENTIAL_ENCRYPTION_KEY=base64-encoded-32-byte-key
-APP_PUBLIC_URL=http://localhost:3000
+Finish, test, document, deploy.
