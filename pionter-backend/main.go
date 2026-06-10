@@ -347,6 +347,7 @@ func main() {
 			sabitli BOOLEAN NOT NULL DEFAULT FALSE,
 			sunucu_sifre TEXT,
 			ssh_private_key TEXT,
+			ssh_host_key TEXT,
 			izole_klasor VARCHAR(200) NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS oturumlar (
@@ -419,6 +420,9 @@ func main() {
 		WHERE pionter_email IS NOT NULL;
 		ALTER TABLE sunucular
 		ADD COLUMN IF NOT EXISTS sabitli BOOLEAN NOT NULL DEFAULT FALSE;
+
+		ALTER TABLE sunucular
+		ADD COLUMN IF NOT EXISTS ssh_host_key TEXT;
 `)
 	if err != nil {
 		panic("Tablo oluşturulamadı: " + err.Error())
@@ -535,6 +539,7 @@ type GizliKimlik struct {
 	BaglantiTipi    string
 	SunucuSifre     string
 	SSHPrivateKey   string
+	SSHHostKey     string
 	IzoleKlasor     string
 }
 
@@ -862,7 +867,7 @@ func dosyalariGetir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
@@ -986,7 +991,7 @@ func dosyaIndir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
@@ -1394,7 +1399,7 @@ func dosyaPreviewGetir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 		Timeout:         5 * time.Second,
 	}
 
@@ -1587,7 +1592,7 @@ func dosyaKaydet(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 		Timeout:         5 * time.Second,
 	}
 
@@ -1773,7 +1778,7 @@ func paylasimLinkiOlustur(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 		Timeout:         8 * time.Second,
 	}
 
@@ -2749,7 +2754,7 @@ func paylasimPreviewGetir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 		Timeout:         8 * time.Second,
 	}
 
@@ -2969,7 +2974,7 @@ func paylasimDosyasiIndir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 		Timeout:         8 * time.Second,
 	}
 
@@ -3107,7 +3112,7 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
@@ -3244,7 +3249,7 @@ func klasorOlustur(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
@@ -3348,7 +3353,7 @@ func dosyaOlustur(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -3461,7 +3466,7 @@ func dosyaVeyaKlasorSil(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -3565,7 +3570,7 @@ func dosyaVeyaKlasorYenidenAdlandir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
@@ -3691,7 +3696,7 @@ func dosyaVeyaKlasorTasi(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 	}
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
@@ -4003,7 +4008,9 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		IzoleKlasor:     veri.IzoleKlasor,
 	}
 
-	err = sunucuBaglantisiCalisiyorMu(testKimlik)
+	sshHostKey, sshHostKey, err := sunucuBaglantisiCalisiyorMu(testKimlik)
+	_ = sshHostKey
+	_ = sshHostKey
 	if err != nil {
 		fmt.Println("Sunucu kayıt öncesi bağlantı testi hatası:", err)
 		http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
@@ -4034,9 +4041,10 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 			baglanti_tipi,
 			sunucu_sifre,
 			ssh_private_key,
+			ssh_host_key,
 			izole_klasor
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`,
 		userID,
 		veri.SunucuTakmaAd,
@@ -4046,6 +4054,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		veri.BaglantiTipi,
 		sifreliSunucuSifre,
 		sifreliSSHPrivateKey,
+		sshHostKey,
 		veri.IzoleKlasor,
 	)
 
@@ -4246,7 +4255,9 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		IzoleKlasor:     veri.IzoleKlasor,
 	}
 
-	err = sunucuBaglantisiCalisiyorMu(testKimlik)
+	sshHostKey, sshHostKey, err := sunucuBaglantisiCalisiyorMu(testKimlik)
+	_ = sshHostKey
+	_ = sshHostKey
 	if err != nil {
 		fmt.Println("Sunucu güncelleme öncesi bağlantı testi hatası:", err)
 		http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
@@ -4277,8 +4288,9 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 				baglanti_tipi = $5,
 				sunucu_sifre = $6,
 				ssh_private_key = $7,
-				izole_klasor = $8
-			WHERE id = $9 AND user_id = $10
+				ssh_host_key = $8,
+				izole_klasor = $9
+			WHERE id = $10 AND user_id = $11
 		`,
 		veri.SunucuTakmaAd,
 		veri.SunucuIP,
@@ -4287,6 +4299,7 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		veri.BaglantiTipi,
 		sifreliSunucuSifre,
 		sifreliSSHPrivateKey,
+		sshHostKey,
 		veri.IzoleKlasor,
 		veri.ServerID,
 		userID,
@@ -4903,37 +4916,65 @@ func cpuBilgisiCoz(cikti string) (float64, error) {
 	return float64(int(kullanim*10)) / 10, nil
 }
 
-func sunucuBaglantisiCalisiyorMu(kimlik GizliKimlik) error {
+
+func sshHostKeyDegeri(key ssh.PublicKey) string {
+	return base64.StdEncoding.EncodeToString(key.Marshal())
+}
+
+func sshHostKeyCallback(kimlik GizliKimlik, yakalananHostKey *string) ssh.HostKeyCallback {
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		gelenHostKey := sshHostKeyDegeri(key)
+
+		if yakalananHostKey != nil {
+			*yakalananHostKey = gelenHostKey
+		}
+
+		kayitliHostKey := strings.TrimSpace(kimlik.SSHHostKey)
+
+		if kayitliHostKey == "" {
+			return nil
+		}
+
+		if kayitliHostKey != gelenHostKey {
+			return fmt.Errorf("SSH host key doğrulanamadı")
+		}
+
+		return nil
+	}
+}
+
+func sunucuBaglantisiCalisiyorMu(kimlik GizliKimlik) (string, error) {
+	yakalananHostKey := ""
 	authMethods, err := sshAuthMethodOlustur(kimlik)
 	if err != nil {
-		return fmt.Errorf("SSH kimlik doğrulama hazırlanamadı: %w", err)
+		return "", fmt.Errorf("SSH kimlik doğrulama hazırlanamadı: %w", err)
 	}
 
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, &yakalananHostKey),
 		Timeout:         5 * time.Second,
 	}
 
 	client, err := ssh.Dial("tcp", kimlik.IP+":"+kimlik.Port, config)
 	if err != nil {
-		return fmt.Errorf("SSH bağlantısı kurulamadı: %w", err)
+		return "", fmt.Errorf("SSH bağlantısı kurulamadı: %w", err)
 	}
 	defer client.Close()
 
 	sftpClient, err := sftp.NewClient(client)
 	if err != nil {
-		return fmt.Errorf("SFTP bağlantısı kurulamadı: %w", err)
+		return "", fmt.Errorf("SFTP bağlantısı kurulamadı: %w", err)
 	}
 	defer sftpClient.Close()
 
 	_, err = sftpClient.Stat(kimlik.IzoleKlasor)
 	if err != nil {
-		return fmt.Errorf("İzole klasör bulunamadı veya erişilemedi: %w", err)
+		return "", fmt.Errorf("İzole klasör bulunamadı veya erişilemedi: %w", err)
 	}
 
-	return nil
+	return yakalananHostKey, nil
 }
 func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 	corsAyarla(w, "POST, OPTIONS")
@@ -5081,7 +5122,7 @@ func sunucuStatsGetir(w http.ResponseWriter, r *http.Request) {
 	config := &ssh.ClientConfig{
 		User:            kimlik.SunucuKullanici,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: sshHostKeyCallback(kimlik, nil),
 		Timeout:         5 * time.Second,
 	}
 
@@ -5310,6 +5351,7 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 			baglanti_tipi,
 			COALESCE(sunucu_sifre, ''),
 			COALESCE(ssh_private_key, ''),
+			COALESCE(ssh_host_key, ''),
 			izole_klasor
 		FROM sunucular
 		WHERE id = $1 AND user_id = $2
@@ -5321,6 +5363,7 @@ func sunucuKimlikSorgulaTokenIle(token string, serverID int) (GizliKimlik, error
 		&k.BaglantiTipi,
 		&k.SunucuSifre,
 		&k.SSHPrivateKey,
+		&k.SSHHostKey,
 		&k.IzoleKlasor,
 	)
 
@@ -5364,6 +5407,7 @@ func sunucuKimlikSorgulaUserIDIle(userID int, serverID int) (GizliKimlik, error)
 			baglanti_tipi,
 			COALESCE(sunucu_sifre, ''),
 			COALESCE(ssh_private_key, ''),
+			COALESCE(ssh_host_key, ''),
 			izole_klasor
 		FROM sunucular
 		WHERE id = $1 AND user_id = $2
@@ -5375,6 +5419,7 @@ func sunucuKimlikSorgulaUserIDIle(userID int, serverID int) (GizliKimlik, error)
 		&k.BaglantiTipi,
 		&k.SunucuSifre,
 		&k.SSHPrivateKey,
+		&k.SSHHostKey,
 		&k.IzoleKlasor,
 	)
 
