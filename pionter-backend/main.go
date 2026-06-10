@@ -325,6 +325,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(30 * time.Minute)
+	db.SetConnMaxIdleTime(5 * time.Minute)
 	err = db.Ping()
 	if err != nil {
 		panic(err)
@@ -464,7 +469,18 @@ func main() {
 		port = "8080"
 	}
 
-	http.ListenAndServe(":"+port, corsVeGuvenlikMiddleware(http.DefaultServeMux))
+	sunucu := &http.Server{
+		Addr:              ":" + port,
+		Handler:           corsVeGuvenlikMiddleware(http.DefaultServeMux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+
+	if err := sunucu.ListenAndServe(); err != nil {
+		panic("Sunucu başlatılamadı: " + err.Error())
+	}
 }
 
 type BaglantiBilgileri struct {
@@ -539,7 +555,7 @@ type GizliKimlik struct {
 	BaglantiTipi    string
 	SunucuSifre     string
 	SSHPrivateKey   string
-	SSHHostKey     string
+	SSHHostKey      string
 	IzoleKlasor     string
 }
 
@@ -3050,12 +3066,7 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 
 	r.Body = http.MaxBytesReader(w, r.Body, uploadMaxBytes)
 
-	if err := r.Body = http.MaxBytesReader(w, r.Body, uploadMaxBytes)
-
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		apiHatasiYaz(w, http.StatusRequestEntityTooLarge, "UPLOAD_TOO_LARGE", "Upload dosyası çok büyük")
-		return
-	}; err != nil {
 		apiHatasiYaz(w, http.StatusRequestEntityTooLarge, "UPLOAD_TOO_LARGE", "Upload dosyası çok büyük")
 		return
 	}
@@ -4008,7 +4019,7 @@ func sunucuKaydet(w http.ResponseWriter, r *http.Request) {
 		IzoleKlasor:     veri.IzoleKlasor,
 	}
 
-	sshHostKey, sshHostKey, err := sunucuBaglantisiCalisiyorMu(testKimlik)
+	sshHostKey, err := sunucuBaglantisiCalisiyorMu(testKimlik)
 	_ = sshHostKey
 	_ = sshHostKey
 	if err != nil {
@@ -4255,7 +4266,7 @@ func sunucuGuncelle(w http.ResponseWriter, r *http.Request) {
 		IzoleKlasor:     veri.IzoleKlasor,
 	}
 
-	sshHostKey, sshHostKey, err := sunucuBaglantisiCalisiyorMu(testKimlik)
+	sshHostKey, err := sunucuBaglantisiCalisiyorMu(testKimlik)
 	_ = sshHostKey
 	_ = sshHostKey
 	if err != nil {
@@ -4469,7 +4480,6 @@ func guvenliYolOlustur(izoleKlasor string, kullaniciYolu string) (string, error)
 	return path.Join(temizIzoleKlasor, temizKullaniciYolu), nil
 }
 func corsAyarla(w http.ResponseWriter, methods string) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", methods)
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
@@ -4916,7 +4926,6 @@ func cpuBilgisiCoz(cikti string) (float64, error) {
 	return float64(int(kullanim*10)) / 10, nil
 }
 
-
 func sshHostKeyDegeri(key ssh.PublicKey) string {
 	return base64.StdEncoding.EncodeToString(key.Marshal())
 }
@@ -4932,7 +4941,11 @@ func sshHostKeyCallback(kimlik GizliKimlik, yakalananHostKey *string) ssh.HostKe
 		kayitliHostKey := strings.TrimSpace(kimlik.SSHHostKey)
 
 		if kayitliHostKey == "" {
-			return nil
+			if yakalananHostKey != nil {
+				return nil
+			}
+
+			return fmt.Errorf("SSH host key kaydı eksik")
 		}
 
 		if kayitliHostKey != gelenHostKey {
@@ -5060,7 +5073,7 @@ func sunucuBaglantisiniTestEt(w http.ResponseWriter, r *http.Request) {
 		IzoleKlasor:     veri.IzoleKlasor,
 	}
 
-	err = sunucuBaglantisiCalisiyorMu(kimlik)
+	_, err = sunucuBaglantisiCalisiyorMu(kimlik)
 	if err != nil {
 		fmt.Println("Sunucu bağlantı testi hatası:", err)
 		http.Error(w, "Sunucu bağlantı testi başarısız", http.StatusBadGateway)
