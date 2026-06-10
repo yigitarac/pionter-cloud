@@ -40,6 +40,7 @@ var sunucuStatsCacheSuresi = 20 * time.Second
 const textPreviewLimit = 5 * 1024 * 1024
 const imagePreviewLimit = 5 * 1024 * 1024
 const textSaveLimit = 5 * 1024 * 1024
+const uploadMaxBytes = 1024 * 1024 * 1024 // 1 GB
 
 const (
 	aktiviteDurumBasarili = "success"
@@ -3041,7 +3042,18 @@ func dosyaYukle(w http.ResponseWriter, r *http.Request) {
 	if !postIstekKontrolu(w, r) {
 		return
 	}
-	r.ParseMultipartForm(10 << 20)
+
+	r.Body = http.MaxBytesReader(w, r.Body, uploadMaxBytes)
+
+	if err := r.Body = http.MaxBytesReader(w, r.Body, uploadMaxBytes)
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		apiHatasiYaz(w, http.StatusRequestEntityTooLarge, "UPLOAD_TOO_LARGE", "Upload dosyası çok büyük")
+		return
+	}; err != nil {
+		apiHatasiYaz(w, http.StatusRequestEntityTooLarge, "UPLOAD_TOO_LARGE", "Upload dosyası çok büyük")
+		return
+	}
 
 	token := strings.TrimSpace(r.FormValue("token"))
 	yol := strings.TrimSpace(r.FormValue("yol"))
