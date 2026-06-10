@@ -1,31 +1,67 @@
 # PionterCloud
 
-**PionterCloud** is a web-based cloud file manager built around a simple idea:
+**PionterCloud** is a bring-your-own-server cloud file manager.
 
-> Bring your own server. Manage your files from anywhere.
-
-Instead of storing files on a third-party cloud provider, PionterCloud lets users connect their own Linux servers and manage files through a modern browser interface.
+Connect your own Linux server, choose an isolated folder, and manage your files from a modern web interface.
 
 Live app: **https://cloud.pionter.net**
 
+![PionterCloud Login](docs/screenshots/login.png)
+
 ---
 
-## What is PionterCloud?
+## Overview
 
 PionterCloud is a self-managed cloud file manager for users who want more control over where their files live.
 
-Users can add their own servers, connect through SSH, choose an isolated folder, and manage files directly from the web UI.
+Instead of uploading files to a third-party cloud storage provider, users connect their own Linux servers and manage files directly through PionterCloud.
 
-The project is currently in MVP stage and is actively being developed.
+The project is currently a working MVP and is actively being improved.
 
 ---
 
-## Key Features
+## Why PionterCloud?
+
+Most cloud platforms require users to store their files on someone else’s infrastructure.
+
+PionterCloud takes a different approach:
+
+* Your files stay on your own server
+* You control your own storage
+* You can connect multiple servers
+* You manage files through a clean browser interface
+* You avoid being locked into a single storage provider
+
+PionterCloud is built for users who want the convenience of a cloud file manager without giving up control of their own infrastructure.
+
+---
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Server Management
+
+![Server Management](docs/screenshots/server-management.png)
+
+### File Actions
+
+![File Actions](docs/screenshots/file-actions.png)
+
+### Public Share Page
+
+![Public Share Page](docs/screenshots/share-link.png)
+
+---
+
+## Features
 
 * User registration and login
 * Multiple server management
 * SSH password and SSH key based server connection
-* Isolated folder support for safer file access
+* Isolated folder support
 * File and folder listing
 * File upload and download
 * Drag and drop upload
@@ -47,22 +83,6 @@ The project is currently in MVP stage and is actively being developed.
 
 ---
 
-## Why PionterCloud?
-
-Most cloud storage platforms require users to upload their files to someone else’s infrastructure.
-
-PionterCloud takes a different approach:
-
-* Your files stay on your server
-* You manage your own storage
-* You can connect multiple servers
-* You access everything through a clean web interface
-* You avoid being locked into a single cloud storage provider
-
-PionterCloud is not designed to replace full server administration tools. It focuses on giving users a simple and modern way to manage files on their own servers.
-
----
-
 ## Security Approach
 
 PionterCloud is designed with a cautious security-first mindset.
@@ -76,10 +96,10 @@ Current security-related decisions include:
 * Share links can be revoked
 * Backend CORS rules are restricted for production
 * Upload request size is limited
-* The backend uses HTTP server timeouts
+* Backend HTTP server timeouts are configured
 * PostgreSQL is intended to run privately and not be exposed to the public internet
 
-The terminal feature was intentionally removed from the project because unrestricted web-based terminal access would create a much higher security risk.
+A web-based terminal feature was intentionally removed from the project because unrestricted terminal access would create a much higher security risk.
 
 ---
 
@@ -90,7 +110,7 @@ The terminal feature was intentionally removed from the project because unrestri
 * Next.js
 * React
 * Monaco Editor
-* CSS modules / custom UI styling
+* Custom responsive UI
 
 ### Backend
 
@@ -99,7 +119,7 @@ The terminal feature was intentionally removed from the project because unrestri
 * SSH / SFTP integration
 * REST API
 
-### Production Deployment
+### Production
 
 * Ubuntu VPS
 * Nginx reverse proxy
@@ -124,6 +144,9 @@ Pionter-Cloud/
 │   ├── package.json
 │   └── .env.example
 │
+├── docs/
+│   └── screenshots/
+│
 ├── README.md
 └── DEVELOPMENT_NOTES.md
 ```
@@ -147,13 +170,13 @@ npm install
 npm run dev
 ```
 
-The frontend expects an API base URL such as:
+The frontend expects an API base URL:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ```
 
-The backend expects environment variables such as:
+The backend expects environment variables:
 
 ```env
 DATABASE_URL=postgres://user:password@localhost:5432/piontercloud
@@ -171,9 +194,9 @@ Do not commit real `.env` files or production secrets.
 
 PionterCloud is currently a working MVP.
 
-The project already supports core cloud file manager functionality, server connection, file operations, sharing links, activity logs, and production deployment.
+The project supports core cloud file manager functionality, server connection, file operations, public sharing links, activity logs, and production deployment.
 
-Further improvements will focus on security hardening, UI polish, reliability, and better user experience.
+Further improvements will focus on security hardening, reliability, UI polish, and better user experience.
 
 ---
 
